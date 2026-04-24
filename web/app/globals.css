@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand-black: #0b0b0b;
+  --brand-red: #d62828;
+  --brand-white: #f7f7f7;
+}
+
+body {
+  background: radial-gradient(circle at 20% 0%, #2b2b2b, #0b0b0b 50%);
+  color: var(--brand-white);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.section-card {
+  @apply rounded-xl border border-zinc-700 bg-zinc-900/70 p-6;
+}

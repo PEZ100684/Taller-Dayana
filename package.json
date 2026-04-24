@@ -1,0 +1,14 @@
+{
+  "name": "taller-dayana",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "backend": "npm run dev --prefix backend",
+    "web": "npm run dev --prefix web",
+    "mobile": "npm run start --prefix mobile",
+    "build:web": "npm run build --prefix web",
+    "start:all": "powershell -ExecutionPolicy Bypass -File scripts/start-all.ps1",
+    "setup:env": "powershell -ExecutionPolicy Bypass -File scripts/setup-env.ps1",
+    "verify": "powershell -ExecutionPolicy Bypass -File scripts/verify.ps1"
+  }
+}

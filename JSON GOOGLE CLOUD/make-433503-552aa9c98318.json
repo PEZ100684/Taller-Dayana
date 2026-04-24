@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "make-433503",
+  "private_key_id": "552aa9c98318c895d77a74068c50cddc7ce63ea5",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDYV/eux3/yJruw\nicLfOgJ9fMovg7DqNVsL6zswCcS0KyqbbX3w2obVfLr6YuAEgO/X8ODhHiqa9/6G\nkQBRRt5kGfIRkcxYOQS3U1f5nzC16XbJUjZ3J6YjkTjW65KYd6Une+mLA/CuFFA8\n/dJqwBsV0kpA2YtIVt3TIK03zvSVAX+UQtgye1azOqsiAHfaisUTm5WS+z4t1deJ\n60RjLL2Yjjuv2nxLkM3Y8kQJ/6oCEj7Fjrrb4lmixwoD3Ayes6/9sIr9UEK0o3Vr\ndev2o6IUDdU7rrKldgL3lRpEnKRBjVS1z7f5fiSLIaRqhdPu3gGw73SEy9YDiIeg\nfPonnqKfAgMBAAECggEAAaKm/to6z5DKMGs9Xt41MJxyrTZ4oUlmXWOzODy93bX9\nBdz0OI+rH0Gb6p9rhBbMn7xBZuvWDjY7sh0cfIDMCfbfccSOLK7zQZOB6CNZuE/o\neimCu30NCdqW+TQhd1rILWrUkoMLUBv1M1DT3o/oyueio6gOIBQQBZpX1Nxd1Im0\nmQoj7Mkn2EKaz6oUyffrq/hRLEUDSLyOmNeL4u895uN2fGBuMKXA/hXhxyM5a8Yv\nbwjz8BW02HaQHf9fRPhjFrzbHUfycnGZFLMMsk+Oj8cGWuBB36ggDGeep6JzytUI\ndtZj5JKBAWpDSN2QgAl6Pu0bCP3mxrtKkcVUO8GdUQKBgQD5R6xZu0BNXzivx5jk\nTFeiPnylyEuQKj0t1qI1MJpwpM6OKI4qxht/PkEdD2ID2Qvd1nX35OBIq1usoWnE\nxWpDMNvvm9Zk1FQXjenHZLmI9BnXn6JZIS31CtIecFqBegQ9BD1DwQDV76y1zfUg\nLa4a71piWZoXxKtTHLmhxPQtOQKBgQDeLP6WK9ihc9BwnuDh+Rx7QQZeYk8siqeU\naRvUJHMR3xjHjXBns5TpZ0nEyRwRiuUYeX2K7ePsf9aMvVlWqF9of415g6dGXl/x\nFwvi9nJ729oVo2E6CgSdg+29ewLfCn5lylkhWklvuKtzJPaFPvoDR3Jddg2WO1Cy\n++jBjW2mlwKBgQCZ5FiPcN1Kps1tH1DRKBw1ylPTWOrlTl5EjSvIoH/HqMbn1jum\nRnU1Qa6bDSMacwUzZ7GeX0rjMf6/fUq5spJedqxgqRlbWAWuIOtBMHqmBORrTF7C\nnYwsqgh7yCrnofc54AMeb+lfKb664jJBMlI4yKlI7D4IDF8kSSiEqP2BaQKBgQCN\niTBuTmRlBjilZjFxA5eHVXdPLWWuxG3Zd9RIoyfDHNLWXV5cUeTtg+VUvaFp84fa\nvZqipMXsZcwyQHXnZL/S/F8OKDap93k7RylFXyazjO0zl69aoAMsrV0ItpKvsCmx\nguShALmDuKtQYR3C6MmwyRUsQQaKzCKuwxgWJZjS5QKBgQCT7Od+uvua6wLJpbkf\nvIL5SmkJXy8Bp9mGoMQkr7Xqm27aVHogMgTC+3cz96y4VR3KsqtdQh6xtiuNscZq\npBeoYTDDdhAU5kfYFgYcLzFHvMOvpca6rjkxOSAEpSdK+IpOvXj5J+5Wuxiqyqxc\nEYDZC/JRlL0Rq0HhFTTiQplx8A==\n-----END PRIVATE KEY-----\n",
+  "client_email": "taller-dayana-calendar@make-433503.iam.gserviceaccount.com",
+  "client_id": "116088403710719164567",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/taller-dayana-calendar%40make-433503.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

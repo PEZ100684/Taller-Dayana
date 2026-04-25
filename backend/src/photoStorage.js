@@ -2,7 +2,7 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 
-const DEFAULT_PHOTOS_DIR = "C:\\Users\\pesca\\OneDrive\\Escritorio\\TALLER DAYANA\\FOTOS VEHICULOS";
+const DEFAULT_PHOTOS_DIR = path.resolve(process.cwd(), "..", "FOTOS VEHICULOS");
 
 const MIME_TO_EXT = {
   "image/jpeg": "jpg",

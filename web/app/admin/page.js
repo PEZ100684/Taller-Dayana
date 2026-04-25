@@ -12,7 +12,7 @@ const workshopStatusLabels = {
 
 export default function AdminPage() {
   const entryDateInputRef = useRef(null);
-  const [credentials, setCredentials] = useState({ username: "PESCADO", password: "PESCADO100684" });
+  const [credentials, setCredentials] = useState({ username: "", password: "" });
   const [token, setToken] = useState("");
   const [appointments, setAppointments] = useState([]);
   const [quotes, setQuotes] = useState([]);

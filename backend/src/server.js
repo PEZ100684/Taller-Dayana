@@ -32,14 +32,36 @@ const {
 } = require("./store");
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = Number(process.env.PORT);
 
-const allowedOrigins = [
-  process.env.FRONTEND_URL,
-  process.env.FRONTEND_URL_WWW,
-  "http://localhost:3000",
-  "http://127.0.0.1:3000"
-].filter(Boolean);
+if (!Number.isInteger(PORT) || PORT <= 0) {
+  throw new Error("PORT debe estar definido como entero positivo");
+}
+
+function normalizeOrigin(rawOrigin) {
+  if (!rawOrigin || typeof rawOrigin !== "string") {
+    return null;
+  }
+
+  try {
+    return new URL(rawOrigin.trim()).origin.toLowerCase();
+  } catch (_error) {
+    return null;
+  }
+}
+
+const allowedOrigins = new Set(
+  [
+    process.env.FRONTEND_URL,
+    process.env.FRONTEND_URL_WWW,
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173"
+  ]
+    .map((origin) => normalizeOrigin(origin))
+    .filter(Boolean)
+);
 
 function isValidAppointmentDateTime(value) {
   if (!value) {
@@ -67,16 +89,27 @@ app.use(
         return callback(null, true);
       }
 
-      if (allowedOrigins.includes(origin)) {
+      const normalizedOrigin = normalizeOrigin(origin);
+
+      if (normalizedOrigin && allowedOrigins.has(normalizedOrigin)) {
         return callback(null, true);
       }
 
       return callback(new Error("CORS origin no permitido"));
-    }
+    },
+    credentials: true
   })
 );
 app.use(express.json({ limit: "50mb" }));
 app.use("/api/uploads", express.static(getVehiclePhotosDir()));
+
+app.get("/", (_req, res) => {
+  res.json({
+    service: "Taller Dayana API",
+    status: "ok",
+    health: "/health"
+  });
+});
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
@@ -84,8 +117,8 @@ app.get("/health", (_req, res) => {
 
 app.post("/api/auth/login", (req, res) => {
   const { username, password } = req.body;
-  const expectedUser = process.env.ADMIN_USER || "PESCADO";
-  const expectedPass = process.env.ADMIN_PASSWORD || "PESCADO100684";
+  const expectedUser = process.env.ADMIN_USER || "admin";
+  const expectedPass = process.env.ADMIN_PASSWORD || "change-me";
 
   if (username !== expectedUser || password !== expectedPass) {
     return res.status(401).json({ error: "Credenciales invalidas" });
@@ -590,7 +623,7 @@ async function startServer() {
     console.error("No se pudo inicializar PostgreSQL:", error.message);
   }
 
-  app.listen(PORT, () => {
+  app.listen(PORT, "0.0.0.0", () => {
     console.log(`Taller Dayana backend activo en puerto ${PORT}`);
   });
 }

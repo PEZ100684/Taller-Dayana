@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { defaultDriveGallery } from "./driveGalleryData";
 
 const services = [
   {
@@ -14,21 +15,6 @@ const services = [
   {
     title: "Reparacion de carroceria",
     image: "/images/services/reparacion-carroceria.jpeg"
-  }
-];
-
-const gallery = [
-  {
-    title: "Antes y despues #1",
-    image: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=1000&q=80"
-  },
-  {
-    title: "Antes y despues #2",
-    image: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=1000&q=80"
-  },
-  {
-    title: "Antes y despues #3",
-    image: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1000&q=80"
   }
 ];
 
@@ -86,6 +72,25 @@ export default function Home() {
     appointmentTime: ""
   });
   const [appointmentStatus, setAppointmentStatus] = useState({ type: "idle", message: "" });
+  const [galleryItems, setGalleryItems] = useState(defaultDriveGallery);
+  const [visibleCount, setVisibleCount] = useState(12);
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
+
+  useEffect(() => {
+    const apiBase =
+      process.env.NEXT_PUBLIC_API_BASE_URL ||
+      process.env.NEXT_API_BASE_URL ||
+      "https://taller-dayana-api.onrender.com";
+
+    fetch(`${apiBase}/api/gallery`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0 && data[0]?.image) {
+          setGalleryItems(data);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const appointmentMinDate = useMemo(() => {
     const now = new Date();
@@ -445,16 +450,88 @@ export default function Home() {
       </section>
 
       <section id="galeria-trabajos" className="section-card scroll-mt-28">
-        <h2 className="text-2xl font-semibold">Galeria de trabajos antes y despues</h2>
-        <div className="mt-4 grid gap-4 md:grid-cols-3">
-          {gallery.map((item) => (
-            <article key={item.title} className="overflow-hidden rounded-lg border border-zinc-700 bg-zinc-950">
-              <img src={item.image} alt={item.title} className="h-48 w-full object-cover" />
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-2xl font-semibold">Galeria de trabajos realizados</h2>
+            <p className="mt-1 text-sm text-zinc-300">
+              Trabajos reales de enderezado, pintura y restauracion en Taller Dayana ({galleryItems.length} fotos sincronizadas de Google Drive).
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          {galleryItems.slice(0, visibleCount).map((item) => (
+            <article
+              key={item.id || item.title}
+              onClick={() => setSelectedPhoto(item)}
+              className="group cursor-pointer overflow-hidden rounded-lg border border-zinc-700 bg-zinc-950 transition hover:border-brandRed"
+            >
+              <img
+                src={item.image}
+                alt={item.title}
+                loading="lazy"
+                className="h-52 w-full object-cover transition duration-300 group-hover:scale-105"
+              />
               <p className="p-3 text-center text-sm text-zinc-200">{item.title}</p>
             </article>
           ))}
         </div>
+        {visibleCount < galleryItems.length ? (
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => setVisibleCount((prev) => Math.min(prev + 12, galleryItems.length))}
+              className="rounded-md bg-brandRed px-6 py-3 font-semibold text-white transition hover:opacity-90"
+            >
+              Ver 12 fotos mas ({visibleCount} de {galleryItems.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setVisibleCount(galleryItems.length)}
+              className="rounded-md border border-zinc-500 bg-zinc-900 px-6 py-3 font-semibold text-zinc-100 transition hover:border-white"
+            >
+              Ver todas las fotos ({galleryItems.length})
+            </button>
+          </div>
+        ) : galleryItems.length > 12 ? (
+          <div className="mt-6 flex justify-center">
+            <button
+              type="button"
+              onClick={() => setVisibleCount(12)}
+              className="rounded-md border border-zinc-500 bg-zinc-900 px-6 py-3 font-semibold text-zinc-100 transition hover:border-white"
+            >
+              Mostrar menos fotos
+            </button>
+          </div>
+        ) : null}
       </section>
+
+      {selectedPhoto ? (
+        <div
+          onClick={() => setSelectedPhoto(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-h-[90vh] max-w-4xl overflow-hidden rounded-xl border border-zinc-700 bg-zinc-950 p-3"
+          >
+            <img
+              src={selectedPhoto.fullImage || selectedPhoto.image}
+              alt={selectedPhoto.title}
+              className="max-h-[78vh] w-auto rounded-lg object-contain"
+            />
+            <div className="mt-3 flex items-center justify-between gap-4 px-2">
+              <p className="text-sm font-semibold text-white">{selectedPhoto.title}</p>
+              <button
+                type="button"
+                onClick={() => setSelectedPhoto(null)}
+                className="rounded-md bg-brandRed px-4 py-1.5 text-sm font-semibold text-white"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <section id="solicitar-presupuesto" className="section-card scroll-mt-28">
         <h2 className="text-2xl font-semibold">Solicitar presupuesto</h2>

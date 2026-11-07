@@ -171,8 +171,28 @@ app.get("/api/services", (_req, res) => {
   res.json(services);
 });
 
-app.get("/api/gallery", (_req, res) => {
-  res.json(gallery);
+app.get("/api/gallery", async (_req, res) => {
+  const webhookUrl = String(process.env.GOOGLE_SCRIPT_WEBHOOK_URL || "").trim();
+  const folderId = process.env.GOOGLE_DRIVE_GALLERY_FOLDER_ID || "1W3nJyaA8nMaI_HWQU_HD1xd8tkqzwR12";
+
+  if (webhookUrl) {
+    try {
+      const response = await fetch(
+        `${webhookUrl}${webhookUrl.includes("?") ? "&" : "?"}action=gallery&folderId=${encodeURIComponent(folderId)}`,
+        { redirect: "follow" }
+      );
+      if (response.ok) {
+        const payload = await response.json();
+        if (payload && Array.isArray(payload.items) && payload.items.length > 0) {
+          return res.json(payload.items);
+        }
+      }
+    } catch (_err) {
+      // Fallback to static gallery list
+    }
+  }
+
+  return res.json(gallery);
 });
 
 app.post("/api/quotes", async (req, res) => {

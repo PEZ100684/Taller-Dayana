@@ -32,7 +32,7 @@ const {
 } = require("./store");
 
 const app = express();
-const PORT = Number(process.env.PORT);
+const PORT = Number(process.env.PORT || 4000);
 
 if (!Number.isInteger(PORT) || PORT <= 0) {
   throw new Error("PORT debe estar definido como entero positivo");
@@ -50,10 +50,16 @@ function normalizeOrigin(rawOrigin) {
   }
 }
 
+const extraFrontendUrls = String(process.env.FRONTEND_URLS || "")
+  .split(",")
+  .map((item) => item.trim())
+  .filter(Boolean);
+
 const allowedOrigins = new Set(
   [
     process.env.FRONTEND_URL,
     process.env.FRONTEND_URL_WWW,
+    ...extraFrontendUrls,
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:5173",
@@ -64,11 +70,40 @@ const allowedOrigins = new Set(
 );
 
 function isValidAppointmentDateTime(value) {
-  if (!value) {
+  if (!value || typeof value !== "string") {
     return false;
   }
 
-  const parsed = new Date(value);
+  const trimmed = value.trim();
+  const localMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?$/);
+
+  if (localMatch) {
+    const year = Number(localMatch[1]);
+    const month = Number(localMatch[2]);
+    const dayOfMonth = Number(localMatch[3]);
+    const hour = localMatch[4] !== undefined ? Number(localMatch[4]) : 9;
+    const minute = localMatch[5] !== undefined ? Number(localMatch[5]) : 0;
+
+    const utcDate = new Date(Date.UTC(year, month - 1, dayOfMonth, hour, minute));
+    if (
+      Number.isNaN(utcDate.getTime()) ||
+      utcDate.getUTCFullYear() !== year ||
+      utcDate.getUTCMonth() !== month - 1 ||
+      utcDate.getUTCDate() !== dayOfMonth
+    ) {
+      return false;
+    }
+
+    const dayOfWeek = utcDate.getUTCDay();
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      return false;
+    }
+
+    const totalMinutes = hour * 60 + minute;
+    return totalMinutes >= 9 * 60 && totalMinutes <= 16 * 60;
+  }
+
+  const parsed = new Date(trimmed);
   if (Number.isNaN(parsed.getTime())) {
     return false;
   }
@@ -118,7 +153,7 @@ app.get("/health", (_req, res) => {
 app.post("/api/auth/login", (req, res) => {
   const { username, password } = req.body;
   const expectedUser = process.env.ADMIN_USER || "admin";
-  const expectedPass = process.env.ADMIN_PASSWORD || "change-me";
+  const expectedPass = process.env.ADMIN_PASSWORD || "admin123";
 
   if (username !== expectedUser || password !== expectedPass) {
     return res.status(401).json({ error: "Credenciales invalidas" });
@@ -260,8 +295,8 @@ app.get("/api/repairs/status/:plate", async (req, res) => {
 
   return res.json({
     plate,
-    appointmentStatus: appointment ? appointment.status : "no appointment",
-    quoteStatus: quote ? quote.status : "no quote",
+    appointmentStatus: appointment ? appointment.status : "no_appointment",
+    quoteStatus: quote ? quote.status : "no_quote",
     progressPhotos: Array.isArray(progressPhotos)
       ? progressPhotos.map((photo) => ({
           ...photo,

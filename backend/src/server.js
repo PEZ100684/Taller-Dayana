@@ -324,25 +324,68 @@ app.post("/api/appointments", async (req, res) => {
 
 app.get("/api/repairs/status/:plate", async (req, res) => {
   const { plate } = req.params;
-  const [{ appointment, quote }, progressPhotos] = await Promise.all([
-    getRepairStatus(plate),
-    listWorkshopProgressPhotos(plate)
+  const normalizedPlate = String(plate || "").trim().toUpperCase();
+  const [{ appointment, quote }, dbProgressPhotos] = await Promise.all([
+    getRepairStatus(normalizedPlate),
+    listWorkshopProgressPhotos(normalizedPlate)
   ]);
 
-  if (!appointment && !quote && (!Array.isArray(progressPhotos) || progressPhotos.length === 0)) {
+  let drivePhotos = [];
+  const webhookUrl = String(process.env.GOOGLE_SCRIPT_WEBHOOK_URL || "").trim();
+  const folderId = process.env.GOOGLE_DRIVE_GALLERY_FOLDER_ID || "1W3nJyaA8nMaI_HWQU_HD1xd8tkqzwR12";
+
+  if (webhookUrl && normalizedPlate) {
+    try {
+      const response = await fetch(
+        `${webhookUrl}${webhookUrl.includes("?") ? "&" : "?"}action=plate_photos&folderId=${encodeURIComponent(folderId)}&plate=${encodeURIComponent(normalizedPlate)}`,
+        { redirect: "follow" }
+      );
+      if (response.ok) {
+        const payload = await response.json();
+        if (payload && Array.isArray(payload.items) && payload.items.length > 0) {
+          drivePhotos = payload.items.map((item, idx) => ({
+            id: `drive-${item.id || idx + 1}`,
+            plate: normalizedPlate,
+            photoUrl: item.image || `https://drive.google.com/thumbnail?id=${item.id}&sz=w1400`,
+            description: item.description || `Avance en proceso (${idx + 1})`,
+            createdAt: item.createdAt || new Date().toISOString()
+          }));
+        }
+      }
+    } catch (_err) {
+      // Continuar con fotos en base de datos si el webhook no responde
+    }
+  }
+
+  const combinedPhotos = [
+    ...(Array.isArray(dbProgressPhotos)
+      ? dbProgressPhotos.map((photo) => ({
+          ...photo,
+          photoUrl: toPublicPhotoUrl(photo.photoUrl)
+        }))
+      : []),
+    ...drivePhotos
+  ];
+
+  // Deduplicar por URL
+  const uniquePhotos = [];
+  const seenUrls = new Set();
+  for (const photo of combinedPhotos) {
+    if (photo.photoUrl && !seenUrls.has(photo.photoUrl)) {
+      seenUrls.add(photo.photoUrl);
+      uniquePhotos.push(photo);
+    }
+  }
+
+  if (!appointment && !quote && uniquePhotos.length === 0) {
     return res.status(404).json({ error: "No se encontro informacion para esta placa" });
   }
 
   return res.json({
-    plate,
-    appointmentStatus: appointment ? appointment.status : "no_appointment",
+    plate: normalizedPlate,
+    appointmentStatus: appointment ? appointment.status : uniquePhotos.length > 0 ? "in_progress" : "no_appointment",
     quoteStatus: quote ? quote.status : "no_quote",
-    progressPhotos: Array.isArray(progressPhotos)
-      ? progressPhotos.map((photo) => ({
-          ...photo,
-          photoUrl: toPublicPhotoUrl(photo.photoUrl)
-        }))
-      : []
+    progressPhotos: uniquePhotos
   });
 });
 

@@ -84,6 +84,9 @@ function buildTransportConfig() {
     host,
     port,
     secure,
+    connectionTimeout: 4000,
+    greetingTimeout: 4000,
+    socketTimeout: 6000,
     auth: {
       user,
       pass
@@ -91,8 +94,48 @@ function buildTransportConfig() {
   };
 }
 
+async function sendViaGoogleAppsScript(payload) {
+  const webhookUrl = String(process.env.GOOGLE_SCRIPT_WEBHOOK_URL || "").trim();
+  if (!webhookUrl) {
+    return null;
+  }
+
+  const response = await fetch(webhookUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload),
+    redirect: "follow"
+  });
+
+  if (!response.ok) {
+    throw new Error(`Google Script webhook error (${response.status})`);
+  }
+
+  const data = await response.json().catch(() => ({ ok: true }));
+  return {
+    sent: true,
+    via: "google_apps_script",
+    ...data
+  };
+}
+
 async function sendQuoteNotification(quote) {
   const recipients = normalizeRecipients(process.env.QUOTE_ALERT_RECIPIENTS);
+
+  const webhookResult = await sendViaGoogleAppsScript({
+    type: "quote",
+    recipients,
+    quote
+  });
+  if (webhookResult) {
+    return {
+      ...webhookResult,
+      recipients
+    };
+  }
+
   const transportConfig = buildTransportConfig();
 
   if (!transportConfig) {
@@ -146,6 +189,24 @@ async function sendQuoteNotification(quote) {
 async function sendAppointmentNotification(appointment) {
   const calendarEmail = process.env.GOOGLE_CALENDAR_ID || DEFAULT_CALENDAR_EMAIL;
   const recipients = normalizeRecipients(process.env.QUOTE_ALERT_RECIPIENTS, calendarEmail);
+  const parsedStart = parseCostaRicaDate(appointment.appointmentDate);
+  const parsedEnd = new Date(parsedStart.getTime() + 60 * 60 * 1000);
+
+  const webhookResult = await sendViaGoogleAppsScript({
+    type: "appointment",
+    recipients,
+    calendarEmail,
+    appointment,
+    startIso: parsedStart.toISOString(),
+    endIso: parsedEnd.toISOString()
+  });
+  if (webhookResult) {
+    return {
+      ...webhookResult,
+      recipients
+    };
+  }
+
   const transportConfig = buildTransportConfig();
 
   if (!transportConfig) {
@@ -158,7 +219,6 @@ async function sendAppointmentNotification(appointment) {
 
   const transporter = nodemailer.createTransport(transportConfig);
   const from = process.env.SMTP_FROM || process.env.SMTP_USER;
-  const parsedStart = parseCostaRicaDate(appointment.appointmentDate);
   const appointmentTime = appointment.appointmentDate
     ? parsedStart.toLocaleString("es-CR", {
         timeZone: "America/Costa_Rica",

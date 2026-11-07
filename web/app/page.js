@@ -219,6 +219,9 @@ export default function Home() {
         message: "Solicitud enviada correctamente. Notificación enviada al correo y lista para WhatsApp:",
         waLinks
       });
+      if (typeof window !== "undefined" && waLinks[0]?.url) {
+        window.open(waLinks[0].url, "_blank", "noopener,noreferrer");
+      }
       setFormData({
         customerName: "",
         phone: "",
@@ -298,6 +301,9 @@ export default function Home() {
         message: "Cita registrada correctamente en el calendario y lista para WhatsApp:",
         waLinks
       });
+      if (typeof window !== "undefined" && waLinks[0]?.url) {
+        window.open(waLinks[0].url, "_blank", "noopener,noreferrer");
+      }
       setAppointmentForm({
         customerName: "",
         phone: "",

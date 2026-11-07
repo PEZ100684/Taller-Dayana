@@ -3,17 +3,28 @@
 @tailwind utilities;
 
 :root {
-  --brand-black: #0b0b0b;
-  --brand-red: #d62828;
-  --brand-white: #f7f7f7;
+  --brand-black: #09090b;
+  --brand-red: #dc2626;
+  --brand-white: #f8fafc;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: radial-gradient(circle at 20% 0%, #2b2b2b, #0b0b0b 50%);
+  background-color: #09090b;
+  background-image:
+    radial-gradient(at 15% 0%, rgba(220, 38, 38, 0.16) 0px, transparent 45%),
+    radial-gradient(at 85% 10%, rgba(39, 39, 42, 0.45) 0px, transparent 50%);
   color: var(--brand-white);
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
 }
 
 .section-card {
-  @apply rounded-xl border border-zinc-700 bg-zinc-900/70 p-6;
+  @apply rounded-2xl border border-zinc-800/90 bg-zinc-900/75 p-6 shadow-xl shadow-black/40 backdrop-blur-md md:p-8;
+}
+
+.input-modern {
+  @apply w-full rounded-xl border border-zinc-700/80 bg-zinc-950/90 px-4 py-3 text-white placeholder-zinc-400 transition focus:border-brandRed focus:outline-none focus:ring-2 focus:ring-brandRed/30;
 }

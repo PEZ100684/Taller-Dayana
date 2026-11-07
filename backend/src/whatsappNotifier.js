@@ -1,6 +1,6 @@
 const https = require("https");
 
-const DEFAULT_NUMBERS = ["50670439248", "50686898157"];
+const DEFAULT_NUMBERS = ["50670439248", "50688698157"];
 
 function getConfiguredTargets() {
   const sharedTextMeBotKey =
@@ -19,13 +19,18 @@ function getConfiguredTargets() {
       callMeBotKey: process.env.WHATSAPP_CALLMEBOT_KEY_70439248 || ""
     },
     {
-      phone: "50686898157",
-      label: "8689-8157",
+      phone: "50688698157",
+      label: "8869-8157",
       textMeBotKey:
+        process.env.TEXTMEBOT_KEY_88698157 ||
+        process.env.WHATSAPP_TEXTMEBOT_KEY_88698157 ||
         process.env.TEXTMEBOT_KEY_86898157 ||
         process.env.WHATSAPP_TEXTMEBOT_KEY_86898157 ||
         sharedTextMeBotKey,
-      callMeBotKey: process.env.WHATSAPP_CALLMEBOT_KEY_86898157 || ""
+      callMeBotKey:
+        process.env.WHATSAPP_CALLMEBOT_KEY_88698157 ||
+        process.env.WHATSAPP_CALLMEBOT_KEY_86898157 ||
+        ""
     }
   ];
 }
@@ -138,7 +143,7 @@ function buildDirectLinks(message) {
   const encoded = encodeURIComponent(message);
   return DEFAULT_NUMBERS.map((phone) => ({
     phone,
-    label: phone === "50670439248" ? "7043-9248" : "8689-8157",
+    label: phone === "50670439248" ? "7043-9248" : "8869-8157",
     url: `https://wa.me/${phone}?text=${encoded}`
   }));
 }

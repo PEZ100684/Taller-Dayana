@@ -52,7 +52,7 @@ const historyTimeline = [
 
 const whatsappContacts = [
   { number: "7043-9248", link: "https://wa.me/50670439248" },
-  { number: "8689-8157", link: "https://wa.me/50686898157" }
+  { number: "8869-8157", link: "https://wa.me/50688698157" }
 ];
 const mapsLink =
   "https://www.google.com/maps/place/Taller+Dayana/@10.0189955,-84.2360667,20.5z/data=!4m11!1m4!7m3!1m1!1s116661075415157394462!2e2!3m5!1s0x8fa0f9604b8acd11:0xe3eb01ff61086c8b!8m2!3d10.0188372!4d-84.2361356!16s%2Fg%2F11hdkshc7w?entry=ttu&g_ep=EgoyMDI2MDQxNS4wIKXMDSoASAFQAw%3D%3D";
@@ -211,7 +211,7 @@ export default function Home() {
 
       const waLinks = [
         { number: "7043-9248", url: `https://wa.me/50670439248?text=${waText}` },
-        { number: "8689-8157", url: `https://wa.me/50686898157?text=${waText}` }
+        { number: "8869-8157", url: `https://wa.me/50688698157?text=${waText}` }
       ];
 
       setStatus({
@@ -293,7 +293,7 @@ export default function Home() {
 
       const waLinks = [
         { number: "7043-9248", url: `https://wa.me/50670439248?text=${waText}` },
-        { number: "8689-8157", url: `https://wa.me/50686898157?text=${waText}` }
+        { number: "8869-8157", url: `https://wa.me/50688698157?text=${waText}` }
       ];
 
       setAppointmentStatus({

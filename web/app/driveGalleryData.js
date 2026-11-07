@@ -103,12 +103,26 @@ const DRIVE_PHOTO_IDS = [
   "1bRyOvONsKbWFEYBtmGi5bszE2azPjZNP"
 ];
 
-export const defaultDriveGallery = DRIVE_PHOTO_IDS.map((id, index) => ({
-  id,
-  title: `Caso atendido #${index + 1}`,
-  image: `https://drive.google.com/thumbnail?id=${id}&sz=w1000`,
-  fullImage: `https://drive.google.com/thumbnail?id=${id}&sz=w1600`
-}));
+export const cleanGalleryOverrides = {
+  "17-7AjFROhYb4SA5Zk-tsfNoorGxAmFU0": "/gallery/case_6_clean.jpg",
+  "17CH-1YnOjq4ZtIJ6YAGAfX71vyiis0Wl": "/gallery/case_36_clean.jpg",
+  "141zLnD6xE8IlIxgVt4o4x1JP0Bjoaysx": "/gallery/case_71_clean.jpg",
+  "1MF7UPDLpec6wqEZSnXpAKX2bt7CcD3pi": "/gallery/case_76_clean.jpg",
+  "1H4sg05hxlgc-3W0dD8l1IgXbXEjTLKgq": "/gallery/case_84_clean.jpg",
+  "1ca4JeLixy3q4kvFswKVN0IRZQYuORbKu": "/gallery/case_92_clean.jpg",
+  "151SSpse75q4s30I2F6vfz24EXy70axh3": "/gallery/case_94_clean.jpg",
+  "1bRyOvONsKbWFEYBtmGi5bszE2azPjZNP": "/gallery/case_100_clean.jpg"
+};
+
+export const defaultDriveGallery = DRIVE_PHOTO_IDS.map((id, index) => {
+  const cleanImage = cleanGalleryOverrides[id];
+  return {
+    id,
+    title: `Caso atendido #`,
+    image: cleanImage || `https://drive.google.com/thumbnail?id=&sz=w1000`,
+    fullImage: cleanImage || `https://drive.google.com/thumbnail?id=&sz=w1600`
+  };
+});
 
 export const ownerPhotos = {
   dagoberto: {

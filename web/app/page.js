@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { defaultBeforeAfterCases, defaultDriveGallery, ownerPhotos } from "./driveGalleryData";
+import { cleanGalleryOverrides, defaultBeforeAfterCases, defaultDriveGallery, ownerPhotos } from "./driveGalleryData";
 
 const services = [
   {
@@ -118,8 +118,19 @@ export default function Home() {
     fetch(`${apiBase}/api/gallery`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0 && data[0]?.image) {
-          setGalleryItems(data);
+                if (Array.isArray(data) && data.length > 0 && data[0]?.image) {
+          const sanitized = data.map((item) => {
+            const cleanImage = cleanGalleryOverrides[item.id];
+            if (cleanImage) {
+              return {
+                ...item,
+                image: cleanImage,
+                fullImage: cleanImage
+              };
+            }
+            return item;
+          });
+          setGalleryItems(sanitized);
         }
       })
       .catch(() => {});

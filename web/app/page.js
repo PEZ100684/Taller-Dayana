@@ -89,18 +89,9 @@ export default function Home() {
   const [reviews, setReviews] = useState([
     {
       id: "rev-1",
-      customerName: "Carlos Méndez",
+      customerName: "Macaco",
       plate: "ADT564",
       comment: "Excelente trabajo de pintura y entrega puntual. El carro quedó como salido de agencia.",
-      ratings: { servicio: 5, trato: 5, calidad: 5, precio: 5, puntualidad: 5 },
-      average: 5,
-      date: "Reciente"
-    },
-    {
-      id: "rev-2",
-      customerName: "María Fernanda Rojas",
-      plate: "BLC990",
-      comment: "Muy buena comunicación durante toda la reparación y atención directa con don Randy.",
       ratings: { servicio: 5, trato: 5, calidad: 5, precio: 5, puntualidad: 5 },
       average: 5,
       date: "Reciente"
@@ -143,11 +134,18 @@ export default function Home() {
       .catch(() => {});
 
     try {
-      const savedLocal = JSON.parse(localStorage.getItem("taller_dayana_reviews") || "[]");
+      const savedLocal = JSON.parse(localStorage.getItem("taller_dayana_reviews") || "[]").filter(
+        (r) => r.id !== "rev-2" && r.plate !== "BLC990"
+      );
       if (Array.isArray(savedLocal) && savedLocal.length > 0) {
         setReviews((prev) => {
           const existingIds = new Set(prev.map((r) => r.id));
-          const merged = [...savedLocal.filter((r) => !existingIds.has(r.id)), ...prev];
+          const merged = [
+            ...savedLocal
+              .map((r) => (r.id === "rev-1" ? { ...r, customerName: "Macaco" } : r))
+              .filter((r) => !existingIds.has(r.id)),
+            ...prev
+          ];
           return merged;
         });
       }

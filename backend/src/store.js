@@ -891,18 +891,9 @@ async function listReviews() {
   const defaultSeed = [
     {
       id: "rev-1",
-      customerName: "Carlos Méndez",
+      customerName: "Macaco",
       plate: "ADT564",
       comment: "Excelente trabajo de pintura y entrega puntual. El carro quedó como salido de agencia.",
-      ratings: { servicio: 5, trato: 5, calidad: 5, precio: 5, puntualidad: 5 },
-      average: 5,
-      date: "Reciente"
-    },
-    {
-      id: "rev-2",
-      customerName: "María Fernanda Rojas",
-      plate: "BLC990",
-      comment: "Muy buena comunicación durante toda la reparación y atención directa con don Randy.",
       ratings: { servicio: 5, trato: 5, calidad: 5, precio: 5, puntualidad: 5 },
       average: 5,
       date: "Reciente"

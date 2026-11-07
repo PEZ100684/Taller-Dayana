@@ -48,7 +48,10 @@ export default function AdminPage() {
   const [activePhotosPlate, setActivePhotosPlate] = useState("");
   const [status, setStatus] = useState("");
 
-  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
+  const apiBase =
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    process.env.NEXT_API_BASE_URL ||
+    "https://taller-dayana-api.onrender.com";
 
   const openEntryDatePicker = () => {
     const input = entryDateInputRef.current;
@@ -529,42 +532,68 @@ export default function AdminPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-8 px-4 py-8 text-white md:px-8">
       <section className="section-card border-brandRed/40 bg-gradient-to-br from-zinc-950 to-zinc-900">
-        <p className="text-sm uppercase tracking-[0.3em] text-brandRed">Panel Interno</p>
-        <h1 className="mt-2 text-3xl font-bold md:text-4xl">Panel admin - Taller Dayana</h1>
-        <p className="mt-2 text-zinc-300">Gestion de citas, vehiculos en proceso y avances de reparacion.</p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm uppercase tracking-[0.3em] text-brandRed">Panel Interno</p>
+            <h1 className="mt-2 text-3xl font-bold md:text-4xl">Panel admin - Taller Dayana</h1>
+            <p className="mt-2 text-zinc-300">Gestion de citas, vehiculos en proceso y avances de reparacion.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <a
+              href="/"
+              className="rounded-md border border-zinc-600 bg-zinc-900 px-4 py-2 text-sm font-semibold text-zinc-100 transition hover:border-brandRed hover:text-white"
+            >
+              ← Ir al inicio
+            </a>
+            <a
+              href="/seguimiento"
+              className="rounded-md border border-zinc-600 bg-zinc-900 px-4 py-2 text-sm font-semibold text-zinc-100 transition hover:border-brandRed hover:text-white"
+            >
+              Ver Seguimiento
+            </a>
+          </div>
+        </div>
       </section>
 
       <section className="section-card space-y-3">
         <h2 className="border-l-4 border-brandRed pl-3 text-xl font-semibold">Autenticacion</h2>
-        <div className="grid gap-3 md:grid-cols-2">
-          <input
-            className="rounded-md border border-zinc-600 bg-zinc-950 p-3 text-white placeholder:text-zinc-400"
-            value={credentials.username}
-            onChange={(e) => setCredentials((prev) => ({ ...prev, username: e.target.value }))}
-            placeholder="Usuario"
-          />
-          <input
-            type="password"
-            className="rounded-md border border-zinc-600 bg-zinc-950 p-3 text-white placeholder:text-zinc-400"
-            value={credentials.password}
-            onChange={(e) => setCredentials((prev) => ({ ...prev, password: e.target.value }))}
-            placeholder="Contrasena"
-          />
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <button onClick={login} className="rounded-md bg-brandRed px-4 py-2 font-semibold text-white transition hover:opacity-90">
-            Ingresar
-          </button>
-          <button onClick={loadAppointments} className="rounded-md border border-zinc-500 px-4 py-2 text-zinc-100 transition hover:border-white">
-            Cargar citas
-          </button>
-          <button onClick={loadQuotes} className="rounded-md border border-zinc-500 px-4 py-2 text-zinc-100 transition hover:border-white">
-            Cargar presupuestos
-          </button>
-          <button onClick={loadWorkshopVehicles} className="rounded-md border border-zinc-500 px-4 py-2 text-zinc-100 transition hover:border-white">
-            Cargar vehiculos en taller
-          </button>
-        </div>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            login();
+          }}
+          className="space-y-3"
+        >
+          <div className="grid gap-3 md:grid-cols-2">
+            <input
+              className="rounded-md border border-zinc-600 bg-zinc-950 p-3 text-white placeholder:text-zinc-400"
+              value={credentials.username}
+              onChange={(e) => setCredentials((prev) => ({ ...prev, username: e.target.value }))}
+              placeholder="Usuario"
+            />
+            <input
+              type="password"
+              className="rounded-md border border-zinc-600 bg-zinc-950 p-3 text-white placeholder:text-zinc-400"
+              value={credentials.password}
+              onChange={(e) => setCredentials((prev) => ({ ...prev, password: e.target.value }))}
+              placeholder="Contrasena"
+            />
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <button type="submit" className="rounded-md bg-brandRed px-4 py-2 font-semibold text-white transition hover:opacity-90">
+              Ingresar
+            </button>
+            <button type="button" onClick={loadAppointments} className="rounded-md border border-zinc-500 px-4 py-2 text-zinc-100 transition hover:border-white">
+              Cargar citas
+            </button>
+            <button type="button" onClick={loadQuotes} className="rounded-md border border-zinc-500 px-4 py-2 text-zinc-100 transition hover:border-white">
+              Cargar presupuestos
+            </button>
+            <button type="button" onClick={loadWorkshopVehicles} className="rounded-md border border-zinc-500 px-4 py-2 text-zinc-100 transition hover:border-white">
+              Cargar vehiculos en taller
+            </button>
+          </div>
+        </form>
         <p className="text-sm text-zinc-300">{status}</p>
       </section>
 
@@ -963,6 +992,25 @@ export default function AdminPage() {
               </p>
               <p className="text-sm text-zinc-300">Fotos: {Array.isArray(item.photos) ? item.photos.length : 0}</p>
               <p className="text-sm text-zinc-300">Detalle: {item.damageDescription}</p>
+              {Array.isArray(item.photos) && item.photos.length > 0 ? (
+                <div className="mt-3 grid gap-2 sm:grid-cols-3 md:grid-cols-5">
+                  {item.photos.map((photo, idx) => (
+                    <a
+                      key={`${item.id}-photo-${idx}`}
+                      href={photo.dataUrl}
+                      download={photo.name || `presupuesto-${item.plate}-${idx + 1}.jpg`}
+                      className="block overflow-hidden rounded border border-zinc-700 bg-zinc-900 p-1"
+                      title="Clic para descargar foto"
+                    >
+                      <img
+                        src={photo.dataUrl}
+                        alt={photo.name || `Foto ${idx + 1}`}
+                        className="h-24 w-full rounded object-cover"
+                      />
+                    </a>
+                  ))}
+                </div>
+              ) : null}
             </article>
           ))}
           {quotes.length === 0 ? <p className="text-zinc-300">No hay presupuestos registrados.</p> : null}

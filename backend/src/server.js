@@ -29,7 +29,9 @@ const {
   addWorkshopProgressPhoto,
   listWorkshopProgressPhotos,
   deleteWorkshopProgressPhoto,
-  syncPhotosFromFilesystem
+  syncPhotosFromFilesystem,
+  listReviews,
+  createReview
 } = require("./store");
 
 const app = express();
@@ -169,6 +171,28 @@ app.post("/api/auth/login", (req, res) => {
 
 app.get("/api/services", (_req, res) => {
   res.json(services);
+});
+
+app.get("/api/reviews", async (_req, res) => {
+  try {
+    const items = await listReviews();
+    return res.json(items);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/reviews", async (req, res) => {
+  const { customerName, plate, comment, ratings } = req.body || {};
+  if (!customerName || !comment) {
+    return res.status(400).json({ error: "Nombre y comentario son requeridos" });
+  }
+  try {
+    const created = await createReview({ customerName, plate, comment, ratings });
+    return res.status(201).json(created);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
 });
 
 app.get("/api/gallery", async (_req, res) => {

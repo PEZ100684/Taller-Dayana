@@ -285,7 +285,7 @@ export default function AdminPage() {
   const labelByRecordType = {
     quote: "Presupuesto",
     appointment: "Cita",
-    workshop: "Vehiculo taller"
+    workshop: "Vehículo taller"
   };
 
   const loadAppointments = async () => {
@@ -563,8 +563,8 @@ export default function AdminPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-brandRed">Panel Interno</p>
-            <h1 className="mt-2 text-3xl font-bold md:text-4xl">Panel admin - Taller Dayana</h1>
-            <p className="mt-2 text-zinc-300">Gestion de citas, vehiculos en proceso y avances de reparacion.</p>
+            <h1 className="mt-2 text-3xl font-bold md:text-4xl">Panel Admin - Taller Dayana</h1>
+            <p className="mt-2 text-zinc-300">Gestión de citas, vehículos en proceso y avances de reparación.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <a
@@ -584,7 +584,7 @@ export default function AdminPage() {
       </section>
 
       <section className="section-card space-y-3">
-        <h2 className="border-l-4 border-brandRed pl-3 text-xl font-semibold">Autenticacion</h2>
+        <h2 className="border-l-4 border-brandRed pl-3 text-xl font-semibold">Autenticación</h2>
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -604,7 +604,7 @@ export default function AdminPage() {
               className="rounded-md border border-zinc-600 bg-zinc-950 p-3 text-white placeholder:text-zinc-400"
               value={credentials.password}
               onChange={(e) => setCredentials((prev) => ({ ...prev, password: e.target.value }))}
-              placeholder="Contrasena"
+              placeholder="Contraseña"
             />
           </div>
           <div className="flex flex-wrap gap-3">
@@ -618,7 +618,7 @@ export default function AdminPage() {
               Cargar presupuestos
             </button>
             <button type="button" onClick={loadWorkshopVehicles} className="rounded-md border border-zinc-500 px-4 py-2 text-zinc-100 transition hover:border-white">
-              Cargar vehiculos en taller
+              Cargar vehículos en taller
             </button>
           </div>
         </form>
@@ -626,7 +626,7 @@ export default function AdminPage() {
       </section>
 
       <section className="section-card space-y-4">
-        <h2 className="border-l-4 border-brandRed pl-3 text-xl font-semibold">Registrar vehiculo en taller</h2>
+        <h2 className="border-l-4 border-brandRed pl-3 text-xl font-semibold">Registrar vehículo en taller</h2>
         <form className="grid gap-3 md:grid-cols-2" onSubmit={registerWorkshopVehicle}>
           <input
             value={vehicleForm.plate}
@@ -681,13 +681,13 @@ export default function AdminPage() {
             <option value="ready">Listo para entregar</option>
           </select>
           <button type="submit" className="rounded-md bg-brandRed px-4 py-3 font-semibold text-white transition hover:opacity-90 md:col-span-2">
-            Registrar vehiculo
+            Registrar vehículo
           </button>
         </form>
       </section>
 
       <section className="section-card space-y-3">
-        <h2 className="border-l-4 border-brandRed pl-3 text-xl font-semibold">Vehiculos en taller</h2>
+        <h2 className="border-l-4 border-brandRed pl-3 text-xl font-semibold">Vehículos en taller</h2>
         <div className="space-y-2">
           {workshopVehicles.map((item) => (
             <article key={item.id} className="rounded-md border border-zinc-700 bg-zinc-950 p-4">
@@ -699,7 +699,7 @@ export default function AdminPage() {
               <p className="text-sm text-zinc-300">Estado: {workshopStatusLabels[item.status] || item.status}</p>
               <p className="text-sm text-zinc-300">
                 Fotos de avance: {item.photoCount || 0}
-                {item.lastPhotoAt ? ` | Ultima: ${new Date(item.lastPhotoAt).toLocaleString()}` : ""}
+                {item.lastPhotoAt ? ` | Última: ${new Date(item.lastPhotoAt).toLocaleString()}` : ""}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {workshopStatusOptions.map((nextStatus) => (
@@ -795,7 +795,7 @@ export default function AdminPage() {
             className="rounded-md border border-zinc-600 bg-zinc-950 p-3 text-white"
             required
           >
-            <option value="">Seleccionar vehiculo por placa</option>
+            <option value="">Seleccionar vehículo por placa</option>
             {workshopVehicles.map((item) => (
               <option key={`plate-${item.id}`} value={item.plate}>
                 {item.plate} - {item.customerName}
@@ -832,11 +832,11 @@ export default function AdminPage() {
             onChange={(e) => setPhotoForm((prev) => ({ ...prev, description: e.target.value }))}
             className="rounded-md border border-zinc-600 bg-zinc-950 p-3 text-white placeholder:text-zinc-400"
             rows={3}
-            placeholder='Descripcion del avance (ej: "Dia 1 - Lijado inicial")'
+            placeholder='Descripción del avance (ej: "Día 1 - Lijado inicial")'
             required
           />
 
-          <p className="text-sm text-zinc-300">Fecha: se registra automaticamente al subir la foto.</p>
+          <p className="text-sm text-zinc-300">Fecha: se registra automáticamente al subir la foto.</p>
 
           {photoPreview ? (
             <div className="rounded-md border border-zinc-700 bg-zinc-950 p-3">

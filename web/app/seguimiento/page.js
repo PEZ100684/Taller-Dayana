@@ -63,7 +63,7 @@ export default function SeguimientoPage() {
     e.preventDefault();
 
     if (!plate.trim()) {
-      setError("Por favor ingresa una placa de vehiculo");
+      setError("Por favor ingresa una placa de vehículo");
       return;
     }
 
@@ -76,7 +76,7 @@ export default function SeguimientoPage() {
 
       if (!response.ok) {
         if (response.status === 404) {
-          setError("No se encontro informacion para esta placa. Verifica el numero de placa.");
+          setError("No se encontró información para esta placa. Verifica el número de placa.");
         } else {
           setError("Error al consultar el estado. Intenta de nuevo.");
         }
@@ -86,7 +86,7 @@ export default function SeguimientoPage() {
       const data = await response.json();
       setStatus(data);
     } catch (err) {
-      setError("Error de conexion. Verifica tu conexion a internet.");
+      setError("Error de conexión. Verifica tu conexión a internet.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -100,8 +100,8 @@ export default function SeguimientoPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="max-w-4xl">
             <p className="text-sm uppercase tracking-[0.3em] text-brandRed">Seguimiento</p>
-            <h1 className="mb-2 mt-2 text-4xl font-bold">Seguimiento de tu Vehiculo</h1>
-            <p className="text-lg text-zinc-300">Consulta el estado actual de tu reparacion</p>
+            <h1 className="mb-2 mt-2 text-4xl font-bold">Seguimiento de tu Vehículo</h1>
+            <p className="text-lg text-zinc-300">Consulta el estado actual de tu reparación</p>
           </div>
           <a
             href="/"
@@ -117,7 +117,7 @@ export default function SeguimientoPage() {
         <div className="mx-auto max-w-3xl">
           <form onSubmit={handleSearch} className="rounded-xl border border-zinc-700 bg-zinc-950 p-8">
             <label className="mb-4 block">
-              <span className="mb-2 block font-semibold text-white">Ingresa la placa de tu vehiculo</span>
+              <span className="mb-2 block font-semibold text-white">Ingresa la placa de tu vehículo</span>
               <input
                 type="text"
                 value={plate}
@@ -152,7 +152,7 @@ export default function SeguimientoPage() {
             <div className="rounded-xl border border-zinc-700 bg-zinc-950 p-8">
               {/* Plate Info */}
               <div className="mb-8 border-b border-zinc-700 pb-6">
-                <p className="text-sm font-semibold uppercase tracking-wide text-zinc-400">Placa de vehiculo</p>
+                <p className="text-sm font-semibold uppercase tracking-wide text-zinc-400">Placa de vehículo</p>
                 <p className="mt-2 text-3xl font-bold text-white">{status.plate}</p>
               </div>
 
@@ -177,16 +177,16 @@ export default function SeguimientoPage() {
 
               {/* Status Guide */}
               <div className="mt-8 rounded-lg border-l-4 border-brandRed bg-zinc-900 p-4">
-                <p className="mb-3 font-semibold text-white">¿Que significa cada estado?</p>
+                <p className="mb-3 font-semibold text-white">¿Qué significa cada estado?</p>
                 <ul className="space-y-2 text-sm text-zinc-300">
                   <li>
-                    <span className="font-semibold">Presupuesto Recibido:</span> Hemos evaluado tu vehiculo
+                    <span className="font-semibold">Presupuesto Recibido:</span> Hemos evaluado tu vehículo
                   </li>
                   <li>
                     <span className="font-semibold">Cita Agendada:</span> Se ha confirmado la fecha de inicio
                   </li>
                   <li>
-                    <span className="font-semibold">En Proceso:</span> Tu vehiculo esta siendo reparado
+                    <span className="font-semibold">En Proceso:</span> Tu vehículo está siendo reparado
                   </li>
                   <li>
                     <span className="font-semibold">Listo para Recoger:</span> Finalizado, puedes venir a recogerlo
@@ -222,16 +222,16 @@ export default function SeguimientoPage() {
                   </div>
                 ) : (
                   <div className="rounded-lg border border-zinc-700 bg-zinc-900 p-4 text-sm text-zinc-300">
-                    Aun no hay fotos de avance para esta placa.
+                    Aún no hay fotos de avance para esta placa.
                   </div>
                 )}
               </div>
 
               {/* Contact Info */}
               <div className="mt-8 rounded-lg border border-zinc-700 bg-gradient-to-br from-zinc-900 to-zinc-950 p-4">
-                <p className="mb-3 font-semibold text-white">¿Preguntas sobre tu reparacion?</p>
+                <p className="mb-3 font-semibold text-white">¿Preguntas sobre tu reparación?</p>
                 <p className="mb-4 text-sm text-zinc-300">
-                  Contactanos directamente por WhatsApp para mas informacion
+                  Contáctanos directamente por WhatsApp para más información
                 </p>
                 <div className="flex flex-wrap gap-3">
                   {whatsappContacts.map((contact) => (
@@ -255,28 +255,28 @@ export default function SeguimientoPage() {
       {/* Info Section */}
       <section className="section-card">
         <div className="mx-auto max-w-5xl">
-          <h2 className="mb-8 border-l-4 border-brandRed pl-3 text-2xl font-bold text-white">Como usar el seguimiento</h2>
+          <h2 className="mb-8 border-l-4 border-brandRed pl-3 text-2xl font-bold text-white">Cómo usar el seguimiento</h2>
           <div className="grid gap-6 md:grid-cols-3">
             <div className="rounded-lg border border-zinc-700 bg-zinc-950 p-6">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-red-900/30">
                 <span className="text-2xl font-bold text-brandRed">1</span>
               </div>
               <h3 className="mb-2 font-semibold text-white">Ingresa tu placa</h3>
-              <p className="text-sm text-zinc-300">Escribe el numero de placa de tu vehiculo en el campo de arriba</p>
+              <p className="text-sm text-zinc-300">Escribe el número de placa de tu vehículo en el campo de arriba</p>
             </div>
             <div className="rounded-lg border border-zinc-700 bg-zinc-950 p-6">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-red-900/30">
                 <span className="text-2xl font-bold text-brandRed">2</span>
               </div>
               <h3 className="mb-2 font-semibold text-white">Consulta el estado</h3>
-              <p className="text-sm text-zinc-300">Presiona el boton para ver el estado actual de tu reparacion</p>
+              <p className="text-sm text-zinc-300">Presiona el botón para ver el estado actual de tu reparación</p>
             </div>
             <div className="rounded-lg border border-zinc-700 bg-zinc-950 p-6">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-red-900/30">
                 <span className="text-2xl font-bold text-brandRed">3</span>
               </div>
               <h3 className="mb-2 font-semibold text-white">Recibe actualizaciones</h3>
-              <p className="text-sm text-zinc-300">Contactanos si deseas mas informacion detallada</p>
+              <p className="text-sm text-zinc-300">Contáctanos si deseas más información detallada</p>
             </div>
           </div>
         </div>

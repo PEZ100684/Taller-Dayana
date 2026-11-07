@@ -886,6 +886,107 @@ async function syncPhotosFromFilesystem() {
   return synced;
 }
 
+async function listReviews() {
+  const pool = getPool();
+  const defaultSeed = [
+    {
+      id: "rev-1",
+      customerName: "Carlos Méndez",
+      plate: "ADT564",
+      comment: "Excelente trabajo de pintura y entrega puntual. El carro quedó como salido de agencia.",
+      ratings: { servicio: 5, trato: 5, calidad: 5, precio: 5, puntualidad: 5 },
+      average: 5,
+      date: "Reciente"
+    },
+    {
+      id: "rev-2",
+      customerName: "María Fernanda Rojas",
+      plate: "BLC990",
+      comment: "Muy buena comunicación durante toda la reparación y atención directa con don Randy.",
+      ratings: { servicio: 5, trato: 5, calidad: 5, precio: 5, puntualidad: 5 },
+      average: 5,
+      date: "Reciente"
+    }
+  ];
+
+  if (!pool) {
+    return defaultSeed;
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT id, customer_name, plate, comment, ratings_json, average_rating, created_at
+       FROM reviews
+       ORDER BY id DESC
+       LIMIT 30`
+    );
+    const dbRows = result.rows.map((row) => ({
+      id: `db-${row.id}`,
+      customerName: row.customer_name,
+      plate: row.plate || "",
+      comment: row.comment,
+      ratings: row.ratings_json || { servicio: 5, trato: 5, calidad: 5, precio: 5, puntualidad: 5 },
+      average: Number(row.average_rating) || 5,
+      date: row.created_at instanceof Date ? row.created_at.toLocaleDateString("es-CR") : "Reciente"
+    }));
+    return [...dbRows, ...defaultSeed];
+  } catch {
+    return defaultSeed;
+  }
+}
+
+async function createReview(input) {
+  const pool = getPool();
+  const ratings = input.ratings || { servicio: 5, trato: 5, calidad: 5, precio: 5, puntualidad: 5 };
+  const average =
+    Number(
+      (
+        (Number(ratings.servicio || 5) +
+          Number(ratings.trato || 5) +
+          Number(ratings.calidad || 5) +
+          Number(ratings.precio || 5) +
+          Number(ratings.puntualidad || 5)) /
+        5
+      ).toFixed(1)
+    ) || 5;
+
+  if (!pool) {
+    return {
+      id: `rev-${Date.now()}`,
+      customerName: input.customerName,
+      plate: input.plate || "",
+      comment: input.comment,
+      ratings,
+      average,
+      date: new Date().toLocaleDateString("es-CR")
+    };
+  }
+
+  const result = await pool.query(
+    `INSERT INTO reviews (customer_name, plate, comment, ratings_json, average_rating)
+     VALUES ($1, $2, $3, $4::jsonb, $5)
+     RETURNING id, customer_name, plate, comment, ratings_json, average_rating, created_at`,
+    [
+      String(input.customerName || "Cliente").trim(),
+      String(input.plate || "").trim().toUpperCase(),
+      String(input.comment || "").trim(),
+      JSON.stringify(ratings),
+      average
+    ]
+  );
+
+  const row = result.rows[0];
+  return {
+    id: `db-${row.id}`,
+    customerName: row.customer_name,
+    plate: row.plate || "",
+    comment: row.comment,
+    ratings: row.ratings_json,
+    average: Number(row.average_rating),
+    date: row.created_at instanceof Date ? row.created_at.toLocaleDateString("es-CR") : "Reciente"
+  };
+}
+
 module.exports = {
   createQuote,
   createAppointment,
@@ -903,5 +1004,7 @@ module.exports = {
   addWorkshopProgressPhoto,
   listWorkshopProgressPhotos,
   deleteWorkshopProgressPhoto,
-  syncPhotosFromFilesystem
+  syncPhotosFromFilesystem,
+  listReviews,
+  createReview
 };

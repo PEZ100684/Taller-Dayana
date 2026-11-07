@@ -63,3 +63,14 @@ CREATE TABLE IF NOT EXISTS workshop_progress_photos (
   description TEXT NOT NULL,
   created_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS reviews (
+  id SERIAL PRIMARY KEY,
+  customer_name VARCHAR(120) NOT NULL,
+  plate VARCHAR(20),
+  vehicle VARCHAR(120),
+  comment TEXT NOT NULL,
+  ratings_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+  average_rating NUMERIC(3,2) NOT NULL DEFAULT 5.00,
+  created_at TIMESTAMP DEFAULT NOW()
+);

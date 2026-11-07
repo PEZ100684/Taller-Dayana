@@ -17,7 +17,7 @@ const services = [
     image: "/images/services/pintura.jpeg"
   },
   {
-    title: "Reparacion de carroceria",
+    title: "Reparación de carrocería",
     subtitle: "Desde golpes leves y aros hasta colisiones fuertes y restauraciones completas.",
     badge: "Restauración integral",
     image: "/images/services/reparacion-carroceria.jpeg"
@@ -32,13 +32,13 @@ const historyTimeline = [
   },
   {
     period: "Legado",
-    title: "Mas de 60 años de experiencia",
-    description: "Generaciones de trabajo consolidan una tradicion de calidad en enderezado y pintura automotriz."
+    title: "Más de 60 años de experiencia",
+    description: "Generaciones de trabajo consolidan una tradición de calidad en enderezado y pintura automotriz."
   },
   {
     period: "Actualidad",
     title: "Dirigido por Randy Barrantes",
-    description: "La nueva generacion mantiene vivo el legado con atencion cercana, tecnologia y acabados de alto nivel."
+    description: "La nueva generación mantiene vivo el legado con atención cercana, tecnología y acabados de alto nivel."
   }
 ];
 
@@ -48,6 +48,7 @@ const whatsappContacts = [
 ];
 const mapsLink =
   "https://www.google.com/maps/place/Taller+Dayana/@10.0189955,-84.2360667,20.5z/data=!4m11!1m4!7m3!1m1!1s116661075415157394462!2e2!3m5!1s0x8fa0f9604b8acd11:0xe3eb01ff61086c8b!8m2!3d10.0188372!4d-84.2361356!16s%2Fg%2F11hdkshc7w?entry=ttu&g_ep=EgoyMDI2MDQxNS4wIKXMDSoASAFQAw%3D%3D";
+const wazeLink = "https://waze.com/ul?ll=10.0188372,-84.2361356&navigate=yes";
 
 const navigationTabs = [
   { id: "servicios", label: "Servicios" },
@@ -85,6 +86,37 @@ export default function Home() {
   const [visibleCount, setVisibleCount] = useState(12);
   const [selectedIndex, setSelectedIndex] = useState(null);
   const [selectedLightboxPhoto, setSelectedLightboxPhoto] = useState(null);
+  const [reviews, setReviews] = useState([
+    {
+      id: "rev-1",
+      customerName: "Carlos Méndez",
+      plate: "ADT564",
+      comment: "Excelente trabajo de pintura y entrega puntual. El carro quedó como salido de agencia.",
+      ratings: { servicio: 5, trato: 5, calidad: 5, precio: 5, puntualidad: 5 },
+      average: 5,
+      date: "Reciente"
+    },
+    {
+      id: "rev-2",
+      customerName: "María Fernanda Rojas",
+      plate: "BLC990",
+      comment: "Muy buena comunicación durante toda la reparación y atención directa con don Randy.",
+      ratings: { servicio: 5, trato: 5, calidad: 5, precio: 5, puntualidad: 5 },
+      average: 5,
+      date: "Reciente"
+    }
+  ]);
+  const [reviewForm, setReviewForm] = useState({
+    customerName: "",
+    plate: "",
+    comment: "",
+    servicio: 5,
+    trato: 5,
+    calidad: 5,
+    precio: 5,
+    puntualidad: 5
+  });
+  const [reviewStatus, setReviewStatus] = useState({ type: "idle", message: "" });
 
   useEffect(() => {
     const apiBase =
@@ -100,6 +132,26 @@ export default function Home() {
         }
       })
       .catch(() => {});
+
+    fetch(`${apiBase}/api/reviews`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setReviews(data);
+        }
+      })
+      .catch(() => {});
+
+    try {
+      const savedLocal = JSON.parse(localStorage.getItem("taller_dayana_reviews") || "[]");
+      if (Array.isArray(savedLocal) && savedLocal.length > 0) {
+        setReviews((prev) => {
+          const existingIds = new Set(prev.map((r) => r.id));
+          const merged = [...savedLocal.filter((r) => !existingIds.has(r.id)), ...prev];
+          return merged;
+        });
+      }
+    } catch {}
   }, []);
 
   const appointmentMinDate = useMemo(() => {
@@ -174,7 +226,7 @@ export default function Home() {
 
     const hasInvalidType = files.some((file) => !file.type.startsWith("image/"));
     if (hasInvalidType) {
-      setStatus({ type: "error", message: "Solo se permiten imagenes." });
+      setStatus({ type: "error", message: "Solo se permiten imágenes." });
       event.target.value = "";
       return;
     }
@@ -264,7 +316,7 @@ export default function Home() {
     if (!isValidAppointmentDateTime(appointmentDateTime)) {
       setAppointmentStatus({
         type: "error",
-        message: "Seleccione una fecha valida de lunes a viernes entre 9:00 a.m. y 4:00 p.m."
+        message: "Seleccione una fecha válida de lunes a viernes entre 9:00 a.m. y 4:00 p.m."
       });
       return;
     }
@@ -331,6 +383,64 @@ export default function Home() {
     } catch (error) {
       setAppointmentStatus({ type: "error", message: error.message || "Error inesperado." });
     }
+  };
+
+  const onReviewSubmit = async (event) => {
+    event.preventDefault();
+    const ratings = {
+      servicio: Number(reviewForm.servicio) || 5,
+      trato: Number(reviewForm.trato) || 5,
+      calidad: Number(reviewForm.calidad) || 5,
+      precio: Number(reviewForm.precio) || 5,
+      puntualidad: Number(reviewForm.puntualidad) || 5
+    };
+    const average = Number(
+      ((ratings.servicio + ratings.trato + ratings.calidad + ratings.precio + ratings.puntualidad) / 5).toFixed(1)
+    );
+    const newEntry = {
+      id: `rev-${Date.now()}`,
+      customerName: reviewForm.customerName.trim(),
+      plate: reviewForm.plate.trim().toUpperCase(),
+      comment: reviewForm.comment.trim(),
+      ratings,
+      average,
+      date: new Date().toLocaleDateString("es-CR")
+    };
+
+    setReviews((prev) => {
+      const updated = [newEntry, ...prev];
+      try {
+        localStorage.setItem("taller_dayana_reviews", JSON.stringify(updated.slice(0, 20)));
+      } catch {}
+      return updated;
+    });
+
+    try {
+      const apiBase =
+        process.env.NEXT_PUBLIC_API_BASE_URL ||
+        process.env.NEXT_API_BASE_URL ||
+        "https://taller-dayana-api.onrender.com";
+      await fetch(`${apiBase}/api/reviews`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newEntry)
+      });
+    } catch {}
+
+    setReviewForm({
+      customerName: "",
+      plate: "",
+      comment: "",
+      servicio: 5,
+      trato: 5,
+      calidad: 5,
+      precio: 5,
+      puntualidad: 5
+    });
+    setReviewStatus({
+      type: "success",
+      message: "¡Muchas gracias por su calificación! Su opinión ya está publicada."
+    });
   };
 
   const selectedPhoto = selectedIndex !== null ? galleryItems[selectedIndex] : null;
@@ -440,15 +550,26 @@ export default function Home() {
                     <span className="text-xs opacity-90">Chatear ahora →</span>
                   </a>
                 ))}
-                <a
-                  href={mapsLink}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-between rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:border-white hover:text-white"
-                >
-                  <span>Cómo llegar en Google Maps</span>
-                  <span className="text-xs text-brandRed">Abrir mapa →</span>
-                </a>
+                <div className="grid grid-cols-2 gap-2">
+                  <a
+                    href={mapsLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-between rounded-xl border border-zinc-700 bg-zinc-900 px-3.5 py-3 text-xs font-semibold text-zinc-200 transition hover:border-white hover:text-white"
+                  >
+                    <span>📍 Google Maps</span>
+                    <span className="text-brandRed">Ir →</span>
+                  </a>
+                  <a
+                    href={wazeLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-between rounded-xl border border-sky-500/40 bg-sky-500/15 px-3.5 py-3 text-xs font-semibold text-sky-300 transition hover:bg-sky-500 hover:text-white"
+                  >
+                    <span>🚗 Ir con Waze</span>
+                    <span>Abrir →</span>
+                  </a>
+                </div>
               </div>
 
               <div className="mt-4 grid grid-cols-3 gap-2 border-t border-zinc-800 pt-4 text-center">
@@ -677,10 +798,10 @@ export default function Home() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.25em] text-brandRed">Portafolio Real</p>
-              <h2 className="mt-1 text-3xl font-bold text-white">Galeria de proyectos y casos atendidos</h2>
+              <h2 className="mt-1 text-3xl font-bold text-white">Galería de proyectos y casos atendidos</h2>
               <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-300">
-                Asi llegan y se trabajan los vehiculos que han pasado por nuestras manos: atendemos carros antiguos y
-                modernos, aros, golpes pequenos, danos fuertes por colision y proyectos de restauracion.
+                Así llegan y se trabajan los vehículos que han pasado por nuestras manos: atendemos carros antiguos y
+                modernos, aros, golpes pequeños, daños fuertes por colisión y proyectos de restauración.
               </p>
             </div>
             <span className="inline-flex shrink-0 items-center rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2 text-xs font-semibold text-zinc-200">
@@ -957,7 +1078,7 @@ export default function Home() {
               <span className="inline-block rounded-lg bg-brandRed/15 px-3 py-1 text-xs font-bold uppercase tracking-wider text-brandRed">
                 Paso 2 • Atención presencial
               </span>
-              <h2 className="mt-2 text-2xl font-bold text-white md:text-3xl">Solicitar cita de atencion</h2>
+              <h2 className="mt-2 text-2xl font-bold text-white md:text-3xl">Solicitar cita de atención</h2>
               <p className="mt-2 text-sm text-zinc-300">
                 Elija el día y la hora para revisar su vehículo en el taller. Horario de citas: lunes a viernes de 9:00
                 a.m. a 4:00 p.m.
@@ -1112,7 +1233,7 @@ export default function Home() {
                 <span className="h-2 w-2 rounded-full bg-brandRed" />
                 Consulta en línea 24/7
               </span>
-              <h2 className="mt-2 text-2xl font-bold text-white md:text-3xl">Seguimiento de tu reparacion</h2>
+              <h2 className="mt-2 text-2xl font-bold text-white md:text-3xl">Seguimiento de tu reparación</h2>
               <p className="mt-2 max-w-2xl text-sm text-zinc-300">
                 ¿Tu vehículo ya está en el taller? Ingresa el número de placa para ver en tiempo real el avance y las
                 fotos del proceso de reparación.
@@ -1122,7 +1243,7 @@ export default function Home() {
               href="/seguimiento"
               className="inline-flex shrink-0 items-center justify-center rounded-xl bg-brandRed px-7 py-4 text-sm font-bold text-white shadow-lg shadow-brandRed/30 transition hover:scale-[1.02] hover:opacity-95"
             >
-              Ver estado de mi vehiculo →
+              Ver estado de mi vehículo →
             </a>
           </div>
         </section>
@@ -1135,7 +1256,7 @@ export default function Home() {
           <p className="text-xs font-bold uppercase tracking-[0.3em] text-brandRed">Nuestra Historia</p>
           <h2 className="mt-2 text-3xl font-bold text-white md:text-4xl">Orgullo familiar que cruza generaciones</h2>
           <p className="mt-3 max-w-3xl text-zinc-200">
-            Taller Dayana es un negocio familiar construido sobre confianza, trabajo duro y pasion por hacer las cosas
+            Taller Dayana es un negocio familiar construido sobre confianza, trabajo duro y pasión por hacer las cosas
             bien.
           </p>
 
@@ -1193,19 +1314,36 @@ export default function Home() {
                 className="mx-auto h-[350px] w-[350px] max-w-full rounded-xl bg-zinc-950 object-contain object-center"
               />
               <p className="mt-4 text-xs font-bold uppercase tracking-wider text-brandRed">Director actual</p>
-              <p className="text-xl font-bold text-white">Randy</p>
+              <p className="text-xl font-bold text-white">Randy Barrantes</p>
               <p className="mt-3 text-sm font-semibold italic text-zinc-100">
-                "No eligio este oficio por necesidad, lo eligio por amor."
+                "No eligió este oficio por necesidad, lo eligió por amor y vocación."
               </p>
               <p className="mt-2 text-sm leading-relaxed text-zinc-300">
-                A los 24 años, Randy tomo una decision que cambiaria su vida: unirse al taller de su padre Dagoberto
-                para trabajar hombro a hombro con el. No fue por obligacion ni por falta de opciones, fue por el deseo
-                genuino de compartir cada dia junto a quienes mas admiraba. Aprendio el arte del enderezado y la pintura
-                de las dos personas mas importantes de su vida: su padre, quien construyo este legado con sus propias
-                manos desde los 13 años, y su esposa Ana Beatriz, quien ya conocia el oficio desde joven y se convirtio
-                en su companera de vida y de trabajo. Hoy, con 60 años y mas de tres decadas de experiencia, Randy sigue
-                llegando al taller con las mismas ganas del primer dia, honrando el legado familiar con cada vehiculo
-                que pasa por sus manos.
+                A los 24 años, Randy tomó una decisión que marcaría su destino: unirse al taller de su padre Dagoberto
+                para trabajar hombro a hombro con él. No fue por obligación ni por falta de opciones, sino por el deseo
+                genuino de aprender y compartir cada jornada junto a quienes más admiraba.
+              </p>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-300">
+                Perfeccionó el arte del enderezado y la pintura de la mano de dos pilares fundamentales en su vida: su
+                padre, quien forjó este legado desde los 13 años, y su esposa Ana Beatriz, quien conocía el oficio desde
+                joven y se convirtió en su gran compañera de vida y de trabajo.
+              </p>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-300">
+                Hoy, como director y administrador al frente de Taller Dayana, Randy es el motor diario que mantiene
+                viva la tradición. Recibe personalmente a cada cliente, supervisa cada detalle en el área de trabajo y
+                se asegura de que cada carrocería y cada acabado de pintura salgan con perfección.
+              </p>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-300">
+                No es solo mantener un taller abierto. Es ganarse la confianza día a día.
+              </p>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-300">
+                Por eso los clientes de toda la vida siguen viniendo y las nuevas generaciones confían sus vehículos en
+                sus manos: porque saben que con don Randy hay palabra, honestidad y resultados que hablan por sí solos.
+              </p>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-300">
+                Con 60 años y más de tres décadas de entrega ininterrumpida, Randy llega cada mañana al taller con la
+                misma energía del primer día, haciendo que los trabajos salgan impecables y llevando el apellido
+                Barrantes aún más alto.
               </p>
             </article>
           </div>
@@ -1222,7 +1360,7 @@ export default function Home() {
           </div>
 
           <blockquote className="mt-7 rounded-2xl border border-brandRed/60 bg-brandRed/10 p-6 text-xl font-bold italic text-white md:text-2xl">
-            "No reparamos solo carrocerias: protegemos el legado de una familia que aprendio a convertir golpes en
+            "No reparamos solo carrocerías: protegemos el legado de una familia que aprendió a convertir golpes en
             orgullo."
           </blockquote>
         </section>
@@ -1231,9 +1369,9 @@ export default function Home() {
         <section id="ubicacion-contacto" className="grid gap-6 md:grid-cols-2 scroll-mt-24">
           <article className="section-card">
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-brandRed">Visítenos</p>
-            <h2 className="mt-1 text-2xl font-bold text-white">Ubicacion y horarios</h2>
+            <h2 className="mt-1 text-2xl font-bold text-white">Ubicación y horarios</h2>
             <p className="mt-3 text-sm leading-relaxed text-zinc-200">
-              📍 Barrio San Jose de Alajuela, Calle La Torre, Urbanizacion La Union, al puro fondo.
+              📍 Barrio San José de Alajuela, Calle La Torre, Urbanización La Unión, al puro fondo.
             </p>
             <div className="mt-4 space-y-1 rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-sm text-zinc-200">
               <p>
@@ -1243,14 +1381,24 @@ export default function Home() {
                 <span className="font-semibold text-white">Sábado:</span> 8:00 a.m. - 1:00 p.m.
               </p>
             </div>
-            <a
-              href={mapsLink}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-4 inline-flex w-full items-center justify-center rounded-xl border border-zinc-600 bg-zinc-900 px-4 py-3 text-sm font-semibold text-white transition hover:border-white"
-            >
-              Ver ubicacion en Google Maps →
-            </a>
+            <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
+              <a
+                href={mapsLink}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex w-full items-center justify-center rounded-xl border border-zinc-600 bg-zinc-900 px-4 py-3 text-sm font-semibold text-white transition hover:border-white"
+              >
+                📍 Abrir en Google Maps →
+              </a>
+              <a
+                href={wazeLink}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex w-full items-center justify-center rounded-xl border border-sky-500/50 bg-sky-500/15 px-4 py-3 text-sm font-bold text-sky-300 transition hover:bg-sky-500 hover:text-white"
+              >
+                🚗 Abrir en Waze →
+              </a>
+            </div>
             <p className="mt-5 text-sm text-zinc-300">
               Teléfonos y WhatsApp:{" "}
               <span className="font-bold text-white">
@@ -1276,20 +1424,100 @@ export default function Home() {
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.25em] text-brandRed">Confianza</p>
               <h2 className="mt-1 text-2xl font-bold text-white">Lo que dicen nuestros clientes</h2>
-              <div className="mt-4 space-y-4">
-                <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-                  <p className="text-sm italic text-zinc-200">
-                    "Excelente trabajo de pintura y entrega puntual. El carro quedó como salido de agencia."
-                  </p>
-                  <p className="mt-2 text-xs font-semibold text-brandRed">★★★★★ — Cliente verificado</p>
-                </div>
-                <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-                  <p className="text-sm italic text-zinc-200">
-                    "Muy buena comunicación durante toda la reparación y atención directa con don Randy."
-                  </p>
-                  <p className="mt-2 text-xs font-semibold text-brandRed">★★★★★ — Cliente verificado</p>
-                </div>
+              <p className="mt-1 text-xs text-zinc-400">
+                Calificaciones reales sobre servicio, trato, calidad, precio y puntualidad.
+              </p>
+
+              <div className="mt-4 max-h-80 space-y-3 overflow-y-auto pr-1">
+                {reviews.map((rev) => (
+                  <div key={rev.id} className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-white">
+                        {rev.customerName} {rev.plate ? `• Placa ${rev.plate}` : ""}
+                      </span>
+                      <span className="text-xs font-bold text-amber-400">
+                        {"★".repeat(Math.round(rev.average || 5))} ({rev.average || 5}/5)
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm italic text-zinc-200">"{rev.comment}"</p>
+                    {rev.ratings ? (
+                      <div className="mt-2.5 flex flex-wrap gap-1.5 text-[11px] text-zinc-300">
+                        <span className="rounded bg-zinc-900 px-2 py-0.5">Servicio: {rev.ratings.servicio}★</span>
+                        <span className="rounded bg-zinc-900 px-2 py-0.5">Trato: {rev.ratings.trato}★</span>
+                        <span className="rounded bg-zinc-900 px-2 py-0.5">Calidad: {rev.ratings.calidad}★</span>
+                        <span className="rounded bg-zinc-900 px-2 py-0.5">Precio: {rev.ratings.precio}★</span>
+                        <span className="rounded bg-zinc-900 px-2 py-0.5">Puntualidad: {rev.ratings.puntualidad}★</span>
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
               </div>
+
+              {/* Formulario para calificar servicio */}
+              <form onSubmit={onReviewSubmit} className="mt-5 space-y-3 rounded-xl border border-zinc-800 bg-zinc-950/90 p-4">
+                <p className="text-sm font-bold text-white">⭐ Calificar nuestro servicio</p>
+                <div className="grid gap-2.5 sm:grid-cols-2">
+                  <input
+                    value={reviewForm.customerName}
+                    onChange={(e) => setReviewForm((prev) => ({ ...prev, customerName: e.target.value }))}
+                    required
+                    placeholder="Su nombre"
+                    className="input-modern text-xs"
+                  />
+                  <input
+                    value={reviewForm.plate}
+                    onChange={(e) => setReviewForm((prev) => ({ ...prev, plate: e.target.value.toUpperCase() }))}
+                    placeholder="Placa (opcional)"
+                    className="input-modern text-xs uppercase"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                  {[
+                    { key: "servicio", label: "Servicio" },
+                    { key: "trato", label: "Trato" },
+                    { key: "calidad", label: "Calidad" },
+                    { key: "precio", label: "Precio" },
+                    { key: "puntualidad", label: "Puntualidad" }
+                  ].map((cat) => (
+                    <label key={cat.key} className="block rounded-lg border border-zinc-800 bg-zinc-900 p-2 text-center">
+                      <span className="block text-[11px] font-semibold text-zinc-300">{cat.label}</span>
+                      <select
+                        value={reviewForm[cat.key]}
+                        onChange={(e) =>
+                          setReviewForm((prev) => ({ ...prev, [cat.key]: Number(e.target.value) }))
+                        }
+                        className="mt-1 w-full rounded bg-zinc-950 px-1 py-1 text-center text-xs font-bold text-amber-400"
+                      >
+                        <option value={5}>5 ★</option>
+                        <option value={4}>4 ★</option>
+                        <option value={3}>3 ★</option>
+                        <option value={2}>2 ★</option>
+                        <option value={1}>1 ★</option>
+                      </select>
+                    </label>
+                  ))}
+                </div>
+
+                <textarea
+                  value={reviewForm.comment}
+                  onChange={(e) => setReviewForm((prev) => ({ ...prev, comment: e.target.value }))}
+                  required
+                  rows={2}
+                  placeholder="Cuéntenos cómo quedó su vehículo y su experiencia con nosotros..."
+                  className="input-modern text-xs"
+                />
+
+                <button
+                  type="submit"
+                  className="w-full rounded-xl bg-brandRed px-4 py-2.5 text-xs font-bold text-white transition hover:opacity-90"
+                >
+                  Publicar calificación
+                </button>
+                {reviewStatus.message ? (
+                  <p className="text-xs font-medium text-green-400">{reviewStatus.message}</p>
+                ) : null}
+              </form>
             </div>
 
             <div className="mt-6 flex items-center justify-between border-t border-zinc-800 pt-4 text-xs text-zinc-400">

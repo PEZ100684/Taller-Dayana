@@ -1,4 +1,4 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 
 const services = [
@@ -120,13 +120,69 @@ const gallery = DRIVE_PHOTO_IDS.map((id, index) => ({
 const dataDir = path.join(__dirname, "..", "data");
 const dataFilePath = path.join(dataDir, "local-store.json");
 
+const defaultWorkshopVehicles = [
+  {
+    id: 1,
+    plate: "BLC990",
+    customerName: "Vehículo en Taller",
+    workType: "Enderezado y pintura",
+    status: "in_progress",
+    notes: "Proceso de enderezado y pintura en curso",
+    createdAt: "2026-11-06T18:00:00.000Z"
+  },
+  {
+    id: 2,
+    plate: "537676",
+    customerName: "Vehículo en Taller",
+    workType: "Enderezado y pintura",
+    status: "in_progress",
+    notes: "Proceso de pintura y acabado",
+    createdAt: "2026-11-06T18:00:00.000Z"
+  },
+  {
+    id: 3,
+    plate: "514471",
+    customerName: "Vehículo en Taller",
+    workType: "Enderezado y pintura",
+    status: "in_progress",
+    notes: "Proceso de reparación",
+    createdAt: "2026-11-06T18:00:00.000Z"
+  },
+  {
+    id: 4,
+    plate: "514474",
+    customerName: "Vehículo en Taller",
+    workType: "Enderezado y pintura",
+    status: "in_progress",
+    notes: "Proceso de reparación",
+    createdAt: "2026-11-06T18:00:00.000Z"
+  }
+];
+
+const defaultWorkshopProgressPhotos = [
+  { id: 1, workshopVehicleId: 1, plate: "BLC990", photoUrl: "https://drive.google.com/thumbnail?id=1C8UgbvQAhV6DUWzs_4fVB3zjJ0GS69dl&sz=w1200", description: "Avance de reparación - Foto 1", createdAt: "2026-11-06T18:10:00.000Z" },
+  { id: 2, workshopVehicleId: 1, plate: "BLC990", photoUrl: "https://drive.google.com/thumbnail?id=1vAILWRXxJFkh2UO_8oJgLcMDR2NvLz7I&sz=w1200", description: "Avance de reparación - Foto 2", createdAt: "2026-11-06T18:11:00.000Z" },
+  { id: 3, workshopVehicleId: 1, plate: "BLC990", photoUrl: "https://drive.google.com/thumbnail?id=1IAHskzL4KFc-G1HS849wMI8ylHRbtKk1&sz=w1200", description: "Avance de reparación - Foto 3", createdAt: "2026-11-06T18:12:00.000Z" },
+  { id: 4, workshopVehicleId: 1, plate: "BLC990", photoUrl: "https://drive.google.com/thumbnail?id=1iETMmviO-81cHFvG-E3z8HIje4IYQ2Uc&sz=w1200", description: "Avance de reparación - Foto 4", createdAt: "2026-11-06T18:13:00.000Z" },
+  { id: 5, workshopVehicleId: 2, plate: "537676", photoUrl: "https://drive.google.com/thumbnail?id=1dpUNMGpTKvHDhl02jPkrHG5FJnH1flYb&sz=w1200", description: "Avance de reparación - Foto 1", createdAt: "2026-11-06T18:20:00.000Z" },
+  { id: 6, workshopVehicleId: 2, plate: "537676", photoUrl: "https://drive.google.com/thumbnail?id=1ULiEoKj94rcO-IHjCsuaeZx8_X003MWU&sz=w1200", description: "Avance de reparación - Foto 2", createdAt: "2026-11-06T18:21:00.000Z" },
+  { id: 7, workshopVehicleId: 2, plate: "537676", photoUrl: "https://drive.google.com/thumbnail?id=1h-n4F4xqdq94L7cUfBN7adQzUmeGTRIc&sz=w1200", description: "Avance de reparación - Foto 3", createdAt: "2026-11-06T18:22:00.000Z" },
+  { id: 8, workshopVehicleId: 2, plate: "537676", photoUrl: "https://drive.google.com/thumbnail?id=17NbmT4FpQPAbxL4egWTxk6NAlS0bVAoJ&sz=w1200", description: "Avance de reparación - Foto 4", createdAt: "2026-11-06T18:23:00.000Z" },
+  { id: 9, workshopVehicleId: 2, plate: "537676", photoUrl: "https://drive.google.com/thumbnail?id=1VE0x7c7ROWG1-309teKqdq_6yJs6z0tk&sz=w1200", description: "Avance de reparación - Foto 5", createdAt: "2026-11-06T18:24:00.000Z" },
+  { id: 10, workshopVehicleId: 2, plate: "537676", photoUrl: "https://drive.google.com/thumbnail?id=1GF9H1-vDtj52liBIFpCAkjt2UOVdXSVX&sz=w1200", description: "Avance de reparación - Foto 6", createdAt: "2026-11-06T18:25:00.000Z" },
+  { id: 11, workshopVehicleId: 3, plate: "514471", photoUrl: "https://drive.google.com/thumbnail?id=1jNoctxVXwMGVHZ5gccrKcc_k9TjkRKgF&sz=w1200", description: "Avance de reparación - Foto 1", createdAt: "2026-11-06T18:30:00.000Z" },
+  { id: 12, workshopVehicleId: 3, plate: "514471", photoUrl: "https://drive.google.com/thumbnail?id=16KHqtFTh-h5hyGsaJqA5MHNUfWAUmECB&sz=w1200", description: "Avance de reparación - Foto 2", createdAt: "2026-11-06T18:31:00.000Z" },
+  { id: 13, workshopVehicleId: 4, plate: "514474", photoUrl: "https://drive.google.com/thumbnail?id=1jNoctxVXwMGVHZ5gccrKcc_k9TjkRKgF&sz=w1200", description: "Avance de reparación - Foto 1", createdAt: "2026-11-06T18:30:00.000Z" },
+  { id: 14, workshopVehicleId: 4, plate: "514474", photoUrl: "https://drive.google.com/thumbnail?id=16KHqtFTh-h5hyGsaJqA5MHNUfWAUmECB&sz=w1200", description: "Avance de reparación - Foto 2", createdAt: "2026-11-06T18:31:00.000Z" }
+];
+
 function defaultData() {
   return {
     quotes: [],
     appointments: [],
     notifications: [],
-    workshopVehicles: [],
-    workshopProgressPhotos: []
+    workshopVehicles: [...defaultWorkshopVehicles],
+    workshopProgressPhotos: [...defaultWorkshopProgressPhotos]
   };
 }
 

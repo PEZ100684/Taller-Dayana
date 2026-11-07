@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { defaultBeforeAfterCases, defaultDriveGallery, ownerPhotos } from "./driveGalleryData";
@@ -90,7 +90,7 @@ export default function Home() {
     {
       id: "rev-1",
       customerName: "Macaco",
-      plate: "ADT564",
+      verified: true,
       comment: "Excelente trabajo de pintura y entrega puntual. El carro quedó como salido de agencia.",
       ratings: { servicio: 5, trato: 5, calidad: 5, precio: 5, puntualidad: 5 },
       average: 5,
@@ -671,7 +671,7 @@ export default function Home() {
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800 pb-4">
                   <div>
                     <span className="inline-block rounded-lg bg-brandRed px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white">
-                      Placa {vehicleCase.plate}
+                      Trabajo Terminado • Privacidad Protegida
                     </span>
                     <h3 className="mt-2 text-xl font-bold text-white">{vehicleCase.title}</h3>
                     <p className="text-xs text-zinc-400">{vehicleCase.subtitle}</p>
@@ -700,7 +700,7 @@ export default function Home() {
                           key={photo.id}
                           onClick={() =>
                             setSelectedLightboxPhoto({
-                              title: `Placa ${vehicleCase.plate} • ${photo.label}`,
+                              title: ` • ${photo.label}`,
                               image: photo.fullImage || photo.image
                             })
                           }
@@ -735,7 +735,7 @@ export default function Home() {
                           key={photo.id}
                           onClick={() =>
                             setSelectedLightboxPhoto({
-                              title: `Placa ${vehicleCase.plate} • ${photo.label}`,
+                              title: ` • ${photo.label}`,
                               image: photo.fullImage || photo.image
                             })
                           }
@@ -1431,7 +1431,7 @@ export default function Home() {
                   <div key={rev.id} className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-xs font-bold text-white">
-                        {rev.customerName} {rev.plate ? `• Placa ${rev.plate}` : ""}
+                        {rev.customerName} <span className="text-[11px] font-normal text-emerald-400">• Cliente Verificado</span>
                       </span>
                       <span className="text-xs font-bold text-amber-400">
                         {"★".repeat(Math.round(rev.average || 5))} ({rev.average || 5}/5)
@@ -1465,7 +1465,7 @@ export default function Home() {
                   <input
                     value={reviewForm.plate}
                     onChange={(e) => setReviewForm((prev) => ({ ...prev, plate: e.target.value.toUpperCase() }))}
-                    placeholder="Placa (opcional)"
+                    placeholder="Placa (privada / uso interno)"
                     className="input-modern text-xs uppercase"
                   />
                 </div>

@@ -1,4 +1,4 @@
-export const DRIVE_FOLDER_ID = "1W3nJyaA8nMaI_HWQU_HD1xd8tkqzwR12";
+﻿export const DRIVE_FOLDER_ID = "1W3nJyaA8nMaI_HWQU_HD1xd8tkqzwR12";
 
 const DRIVE_PHOTO_IDS = [
   "1yea1pPwHO4Rz7UjSDWzdjmKDPG_ad_pn",
@@ -126,40 +126,41 @@ export const ownerPhotos = {
 export const defaultBeforeAfterCases = [
   {
     plate: "ADT564",
-    title: "Vehículo Placa ADT564",
-    subtitle: "Proceso de reparación y acabado final en Taller Dayana",
+    title: "Restauración integral y acabado premium",
+    subtitle: "Enderezado de precisión, preparación de superficie y pintura bicapa al horno",
+    category: "Sedán familiar",
     beforePhotos: [
       {
-        id: "1endYjZyb6cd2eAEFo2W_7qiDTd0xkPe8",
-        label: "En proceso #1",
-        image: "https://drive.google.com/thumbnail?id=1endYjZyb6cd2eAEFo2W_7qiDTd0xkPe8&sz=w1000",
-        fullImage: "https://drive.google.com/thumbnail?id=1endYjZyb6cd2eAEFo2W_7qiDTd0xkPe8&sz=w1600"
+        id: "caso-p1",
+        label: "Ingreso / Daño frontal",
+        image: "/cases/caso-proceso-1.jpg",
+        fullImage: "/cases/caso-proceso-1.jpg"
       },
       {
-        id: "1ZX_3hxEEM4os4GSVq7gjvO8mMHxCkQ3M",
-        label: "En proceso #2",
-        image: "https://drive.google.com/thumbnail?id=1ZX_3hxEEM4os4GSVq7gjvO8mMHxCkQ3M&sz=w1000",
-        fullImage: "https://drive.google.com/thumbnail?id=1ZX_3hxEEM4os4GSVq7gjvO8mMHxCkQ3M&sz=w1600"
+        id: "caso-p2",
+        label: "Alineación y banco de enderezado",
+        image: "/cases/caso-proceso-2.jpg",
+        fullImage: "/cases/caso-proceso-2.jpg"
       }
     ],
     afterPhotos: [
       {
-        id: "1IeW7BfrUapvlXezbhSZYZv0mZJLgFq4c",
-        label: "Resultado final #1",
-        image: "https://drive.google.com/thumbnail?id=1IeW7BfrUapvlXezbhSZYZv0mZJLgFq4c&sz=w1000",
-        fullImage: "https://drive.google.com/thumbnail?id=1IeW7BfrUapvlXezbhSZYZv0mZJLgFq4c&sz=w1600"
+        id: "caso-f1",
+        label: "Acabado final frontal",
+        image: "/cases/caso-final-1.jpg",
+        fullImage: "/cases/caso-final-1.jpg"
       },
       {
-        id: "1nqORpMBuF6fpy_ujoXS2zXXHQey8Ed6p",
-        label: "Resultado final #2",
-        image: "https://drive.google.com/thumbnail?id=1nqORpMBuF6fpy_ujoXS2zXXHQey8Ed6p&sz=w1000",
-        fullImage: "https://drive.google.com/thumbnail?id=1nqORpMBuF6fpy_ujoXS2zXXHQey8Ed6p&sz=w1600"
+        id: "caso-f2",
+        label: "Inspección lateral y brillo",
+        image: "/cases/caso-final-2.jpg",
+        fullImage: "/cases/caso-final-2.jpg"
       },
       {
-        id: "13qTRE0TVN6WseBQb399TDGbeXy0I64Gq",
-        label: "Resultado final #3",
-        image: "https://drive.google.com/thumbnail?id=13qTRE0TVN6WseBQb399TDGbeXy0I64Gq&sz=w1000",
-        fullImage: "https://drive.google.com/thumbnail?id=13qTRE0TVN6WseBQb399TDGbeXy0I64Gq&sz=w1600"
+        id: "caso-f3",
+        label: "Listo para entrega al cliente",
+        image: "/cases/caso-final-3.jpg",
+        fullImage: "/cases/caso-final-3.jpg"
       }
     ]
   }

@@ -1,0 +1,871 @@
+const { getPool } = require("./db");
+const { discoverPhotosFromFilesystem } = require("./photoStorage");
+const {
+  quotes,
+  appointments,
+  notifications,
+  workshopVehicles,
+  workshopProgressPhotos,
+  persistLocalData
+} = require("./data");
+
+function persistIfLocal() {
+  persistLocalData({
+    quotes,
+    appointments,
+    notifications,
+    workshopVehicles,
+    workshopProgressPhotos
+  });
+}
+
+function formatDateOnly(value) {
+  if (!value) {
+    return null;
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString().slice(0, 10);
+  }
+
+  return String(value).slice(0, 10);
+}
+
+function formatDateTime(value) {
+  if (!value) {
+    return null;
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  const parsed = new Date(value);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toISOString();
+  }
+
+  return String(value);
+}
+
+function buildQuoteRow(input, id = quotes.length + 1) {
+  return {
+    id,
+    customerName: input.customerName,
+    phone: input.phone,
+    vehicle: input.vehicle,
+    plate: input.plate,
+    damageDescription: input.damageDescription,
+    photos: Array.isArray(input.photos) ? input.photos : [],
+    status: input.status || "received",
+    createdAt: input.createdAt || new Date().toISOString()
+  };
+}
+
+function buildAppointmentRow(input, id = appointments.length + 1) {
+  return {
+    id,
+    customerName: input.customerName,
+    phone: input.phone,
+    vehicle: input.vehicle,
+    plate: input.plate,
+    appointmentDate: input.appointmentDate || null,
+    status: input.status || "scheduled",
+    createdAt: input.createdAt || new Date().toISOString()
+  };
+}
+
+function buildWorkshopVehicleRow(input, id = workshopVehicles.length + 1) {
+  return {
+    id,
+    plate: input.plate,
+    customerName: input.customerName,
+    workType: input.workType,
+    entryDate: input.entryDate,
+    status: input.status || "received",
+    createdAt: input.createdAt || new Date().toISOString(),
+    photoCount: input.photoCount || 0,
+    lastPhotoAt: input.lastPhotoAt || null
+  };
+}
+
+function buildProgressPhotoRow(input, id = workshopProgressPhotos.length + 1) {
+  return {
+    id,
+    workshopVehicleId: input.workshopVehicleId,
+    plate: input.plate,
+    photoUrl: input.photoUrl,
+    description: input.description,
+    createdAt: input.createdAt || new Date().toISOString()
+  };
+}
+
+async function runInTransaction(pool, callback) {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+    const result = await callback(client);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function createQuote(input) {
+  const pool = getPool();
+
+  if (!pool) {
+    const quote = buildQuoteRow(input);
+    quotes.push(quote);
+    persistIfLocal();
+    return quote;
+  }
+
+  return runInTransaction(pool, async (client) => {
+    const clientResult = await client.query(
+      "INSERT INTO clients (name, phone) VALUES ($1, $2) RETURNING id",
+      [input.customerName, input.phone]
+    );
+    const clientId = clientResult.rows[0].id;
+
+    const vehicleResult = await client.query(
+      "INSERT INTO vehicles (client_id, make_model, plate) VALUES ($1, $2, $3) RETURNING id",
+      [clientId, input.vehicle, input.plate]
+    );
+    const vehicleId = vehicleResult.rows[0].id;
+
+    const quoteResult = await client.query(
+      "INSERT INTO quotes (client_id, vehicle_id, damage_description, photos_json, status) VALUES ($1, $2, $3, $4::jsonb, $5) RETURNING id, created_at",
+      [clientId, vehicleId, input.damageDescription, JSON.stringify(input.photos || []), "received"]
+    );
+
+    return buildQuoteRow(
+      {
+        ...input,
+        photos: input.photos || [],
+        status: "received",
+        createdAt: quoteResult.rows[0].created_at.toISOString()
+      },
+      quoteResult.rows[0].id
+    );
+  });
+}
+
+async function createAppointment(input) {
+  const pool = getPool();
+
+  if (!pool) {
+    const appointment = buildAppointmentRow(input);
+    appointments.push(appointment);
+    persistIfLocal();
+    return appointment;
+  }
+
+  return runInTransaction(pool, async (client) => {
+    const clientResult = await client.query(
+      "INSERT INTO clients (name, phone) VALUES ($1, $2) RETURNING id",
+      [input.customerName, input.phone]
+    );
+    const clientId = clientResult.rows[0].id;
+
+    const vehicleResult = await client.query(
+      "INSERT INTO vehicles (client_id, make_model, plate) VALUES ($1, $2, $3) RETURNING id",
+      [clientId, input.vehicle, input.plate]
+    );
+    const vehicleId = vehicleResult.rows[0].id;
+
+    const appointmentResult = await client.query(
+      "INSERT INTO appointments (client_id, vehicle_id, appointment_date, status) VALUES ($1, $2, $3, $4) RETURNING id, created_at, appointment_date",
+      [clientId, vehicleId, input.appointmentDate || null, "scheduled"]
+    );
+
+    return buildAppointmentRow(
+      {
+        ...input,
+        status: "scheduled",
+        createdAt: appointmentResult.rows[0].created_at.toISOString(),
+        appointmentDate: formatDateTime(appointmentResult.rows[0].appointment_date)
+      },
+      appointmentResult.rows[0].id
+    );
+  });
+}
+
+async function listAppointments() {
+  const pool = getPool();
+
+  if (!pool) {
+    return appointments;
+  }
+
+  const result = await pool.query(
+    `SELECT
+      a.id,
+      c.name AS "customerName",
+      c.phone,
+      v.make_model AS "vehicle",
+      v.plate,
+      a.appointment_date AS "appointmentDate",
+      a.status,
+      a.created_at AS "createdAt"
+    FROM appointments a
+    JOIN clients c ON c.id = a.client_id
+    JOIN vehicles v ON v.id = a.vehicle_id
+    ORDER BY a.id ASC`
+  );
+
+  return result.rows.map((row) => ({
+    ...row,
+    appointmentDate: formatDateTime(row.appointmentDate),
+    createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt
+  }));
+}
+
+async function listQuotes() {
+  const pool = getPool();
+
+  if (!pool) {
+    return quotes;
+  }
+
+  const result = await pool.query(
+    `SELECT
+      q.id,
+      c.name AS "customerName",
+      c.phone,
+      v.make_model AS "vehicle",
+      v.plate,
+      q.damage_description AS "damageDescription",
+      q.photos_json AS photos,
+      q.status,
+      q.created_at AS "createdAt"
+    FROM quotes q
+    JOIN clients c ON c.id = q.client_id
+    JOIN vehicles v ON v.id = q.vehicle_id
+    ORDER BY q.id ASC`
+  );
+
+  return result.rows.map((row) => ({
+    ...row,
+    photos: Array.isArray(row.photos) ? row.photos : [],
+    createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt
+  }));
+}
+
+async function getRepairStatus(plate) {
+  const pool = getPool();
+  const normalized = plate.trim().toLowerCase();
+
+  if (!pool) {
+    const appointment = [...appointments].reverse().find((item) => item.plate.toLowerCase() === normalized);
+    const quote = [...quotes].reverse().find((item) => item.plate.toLowerCase() === normalized);
+    const workshopVehicle = [...workshopVehicles].reverse().find((item) => item.plate.toLowerCase() === normalized);
+    return {
+      appointment: appointment || (workshopVehicle ? { status: workshopVehicle.status } : null),
+      quote
+    };
+  }
+
+  const appointmentResult = await pool.query(
+    `SELECT a.status
+     FROM appointments a
+     JOIN vehicles v ON v.id = a.vehicle_id
+     WHERE LOWER(v.plate) = $1
+     ORDER BY a.created_at DESC
+     LIMIT 1`,
+    [normalized]
+  );
+
+  const quoteResult = await pool.query(
+    `SELECT q.status
+     FROM quotes q
+     JOIN vehicles v ON v.id = q.vehicle_id
+     WHERE LOWER(v.plate) = $1
+     ORDER BY q.created_at DESC
+     LIMIT 1`,
+    [normalized]
+  );
+
+  const workshopResult = await pool.query(
+    `SELECT status
+     FROM workshop_vehicles
+     WHERE LOWER(plate) = $1
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [normalized]
+  );
+
+  return {
+    appointment:
+      appointmentResult.rows[0]
+        ? { status: appointmentResult.rows[0].status }
+        : workshopResult.rows[0]
+          ? { status: workshopResult.rows[0].status }
+          : null,
+    quote: quoteResult.rows[0] ? { status: quoteResult.rows[0].status } : null
+  };
+}
+
+async function listNotificationsByPlate(plate) {
+  const pool = getPool();
+  const normalized = plate.trim().toLowerCase();
+
+  if (!pool) {
+    return notifications.filter((item) => item.plate.toLowerCase() === normalized);
+  }
+
+  const result = await pool.query(
+    `SELECT id, plate, message, created_at AS "createdAt"
+     FROM notifications
+     WHERE LOWER(plate) = $1
+     ORDER BY created_at ASC`,
+    [normalized]
+  );
+
+  return result.rows.map((row) => ({
+    ...row,
+    createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt
+  }));
+}
+
+async function updateAppointmentStatus(id, status) {
+  const pool = getPool();
+  const numericId = Number(id);
+
+  if (!pool) {
+    const target = appointments.find((item) => item.id === numericId);
+    if (!target) {
+      return null;
+    }
+
+    target.status = status;
+
+    if (status.toLowerCase() === "ready") {
+      notifications.push({
+        id: notifications.length + 1,
+        plate: target.plate,
+        message: "Su vehiculo esta listo para retiro",
+        createdAt: new Date().toISOString()
+      });
+    }
+
+    persistIfLocal();
+
+    return target;
+  }
+
+  return runInTransaction(pool, async (client) => {
+    const updateResult = await client.query(
+      `UPDATE appointments
+       SET status = $1
+       WHERE id = $2
+       RETURNING id, status, created_at, client_id, vehicle_id`,
+      [status, numericId]
+    );
+
+    if (!updateResult.rows[0]) {
+      return null;
+    }
+
+    if (status.toLowerCase() === "ready") {
+      const vehicleResult = await client.query("SELECT plate FROM vehicles WHERE id = $1", [updateResult.rows[0].vehicle_id]);
+      const plate = vehicleResult.rows[0]?.plate;
+
+      if (plate) {
+        await client.query(
+          "INSERT INTO notifications (plate, message) VALUES ($1, $2)",
+          [plate, "Su vehiculo esta listo para retiro"]
+        );
+      }
+    }
+
+    return {
+      id: updateResult.rows[0].id,
+      status: updateResult.rows[0].status,
+      createdAt: updateResult.rows[0].created_at instanceof Date ? updateResult.rows[0].created_at.toISOString() : updateResult.rows[0].created_at
+    };
+  });
+}
+
+async function deleteAppointment(id) {
+  const pool = getPool();
+  const numericId = Number(id);
+
+  if (!pool) {
+    const index = appointments.findIndex((item) => item.id === numericId);
+    if (index < 0) {
+      return null;
+    }
+
+    const [deleted] = appointments.splice(index, 1);
+    persistIfLocal();
+    return deleted;
+  }
+
+  const result = await pool.query(
+    `DELETE FROM appointments
+     WHERE id = $1
+     RETURNING id, status, created_at, appointment_date`,
+    [numericId]
+  );
+
+  if (!result.rows[0]) {
+    return null;
+  }
+
+  return {
+    id: result.rows[0].id,
+    status: result.rows[0].status,
+    createdAt:
+      result.rows[0].created_at instanceof Date
+        ? result.rows[0].created_at.toISOString()
+        : result.rows[0].created_at,
+    appointmentDate: formatDateTime(result.rows[0].appointment_date)
+  };
+}
+
+async function registerWorkshopVehicle(input) {
+  const pool = getPool();
+
+  if (!pool) {
+    const item = buildWorkshopVehicleRow(input);
+    workshopVehicles.push(item);
+    persistIfLocal();
+    return item;
+  }
+
+  const result = await pool.query(
+    `INSERT INTO workshop_vehicles (plate, customer_name, work_type, entry_date, status)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING id, plate, customer_name, work_type, entry_date, status, created_at`,
+    [input.plate, input.customerName, input.workType, input.entryDate, input.status || "received"]
+  );
+
+  const row = result.rows[0];
+  return {
+    id: row.id,
+    plate: row.plate,
+    customerName: row.customer_name,
+    workType: row.work_type,
+    entryDate: formatDateOnly(row.entry_date),
+    status: row.status,
+    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
+    photoCount: 0,
+    lastPhotoAt: null
+  };
+}
+
+async function deleteQuote(id) {
+  const pool = getPool();
+  const numericId = Number(id);
+
+  if (!pool) {
+    const index = quotes.findIndex((item) => item.id === numericId);
+    if (index < 0) {
+      return null;
+    }
+
+    const [deleted] = quotes.splice(index, 1);
+    persistIfLocal();
+    return deleted;
+  }
+
+  const result = await pool.query(
+    `DELETE FROM quotes
+     WHERE id = $1
+     RETURNING id, status, created_at`,
+    [numericId]
+  );
+
+  if (!result.rows[0]) {
+    return null;
+  }
+
+  return {
+    id: result.rows[0].id,
+    status: result.rows[0].status,
+    createdAt:
+      result.rows[0].created_at instanceof Date
+        ? result.rows[0].created_at.toISOString()
+        : result.rows[0].created_at
+  };
+}
+
+async function listWorkshopVehicles() {
+  const pool = getPool();
+
+  if (!pool) {
+    return [...workshopVehicles]
+      .sort((a, b) => Number(b.id) - Number(a.id))
+      .map((vehicle) => {
+        const photos = workshopProgressPhotos.filter((photo) => photo.workshopVehicleId === vehicle.id);
+        const lastPhoto = photos.length > 0 ? photos[photos.length - 1] : null;
+
+        return {
+          ...vehicle,
+          photoCount: photos.length,
+          lastPhotoAt: lastPhoto ? lastPhoto.createdAt : null
+        };
+      });
+  }
+
+  const result = await pool.query(
+    `SELECT
+      wv.id,
+      wv.plate,
+      wv.customer_name,
+      wv.work_type,
+      wv.entry_date,
+      wv.status,
+      wv.created_at,
+      COUNT(wpp.id)::int AS photo_count,
+      MAX(wpp.created_at) AS last_photo_at
+    FROM workshop_vehicles wv
+    LEFT JOIN workshop_progress_photos wpp ON wpp.workshop_vehicle_id = wv.id
+    GROUP BY wv.id
+    ORDER BY wv.id DESC`
+  );
+
+  return result.rows.map((row) => ({
+    id: row.id,
+    plate: row.plate,
+    customerName: row.customer_name,
+    workType: row.work_type,
+    entryDate: formatDateOnly(row.entry_date),
+    status: row.status,
+    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
+    photoCount: row.photo_count,
+    lastPhotoAt: row.last_photo_at instanceof Date ? row.last_photo_at.toISOString() : row.last_photo_at
+  }));
+}
+
+async function updateWorkshopVehicleStatus(id, status) {
+  const pool = getPool();
+  const numericId = Number(id);
+
+  if (!pool) {
+    const target = workshopVehicles.find((item) => item.id === numericId);
+    if (!target) {
+      return null;
+    }
+
+    target.status = status;
+    persistIfLocal();
+    return target;
+  }
+
+  const result = await pool.query(
+    `UPDATE workshop_vehicles
+     SET status = $1
+     WHERE id = $2
+     RETURNING id, plate, customer_name, work_type, entry_date, status, created_at`,
+    [status, numericId]
+  );
+
+  if (!result.rows[0]) {
+    return null;
+  }
+
+  const row = result.rows[0];
+  return {
+    id: row.id,
+    plate: row.plate,
+    customerName: row.customer_name,
+    workType: row.work_type,
+    entryDate: formatDateOnly(row.entry_date),
+    status: row.status,
+    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at
+  };
+}
+
+async function deleteWorkshopVehicle(id) {
+  const pool = getPool();
+  const numericId = Number(id);
+
+  if (!pool) {
+    const index = workshopVehicles.findIndex((item) => item.id === numericId);
+    if (index < 0) {
+      return null;
+    }
+
+    const [deleted] = workshopVehicles.splice(index, 1);
+    const deletedPhotos = workshopProgressPhotos
+      .filter((item) => item.workshopVehicleId === numericId)
+      .map((item) => item.photoUrl);
+
+    for (let i = workshopProgressPhotos.length - 1; i >= 0; i -= 1) {
+      if (workshopProgressPhotos[i].workshopVehicleId === numericId) {
+        workshopProgressPhotos.splice(i, 1);
+      }
+    }
+
+    persistIfLocal();
+    return {
+      ...deleted,
+      deletedPhotoUrls: deletedPhotos
+    };
+  }
+
+  return runInTransaction(pool, async (client) => {
+    const photoRows = await client.query(
+      `SELECT photo_url
+       FROM workshop_progress_photos
+       WHERE workshop_vehicle_id = $1`,
+      [numericId]
+    );
+
+    const deleteResult = await client.query(
+      `DELETE FROM workshop_vehicles
+       WHERE id = $1
+       RETURNING id, plate, customer_name, work_type, entry_date, status, created_at`,
+      [numericId]
+    );
+
+    if (!deleteResult.rows[0]) {
+      return null;
+    }
+
+    const row = deleteResult.rows[0];
+    return {
+      id: row.id,
+      plate: row.plate,
+      customerName: row.customer_name,
+      workType: row.work_type,
+      entryDate: formatDateOnly(row.entry_date),
+      status: row.status,
+      createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
+      deletedPhotoUrls: photoRows.rows.map((photo) => photo.photo_url).filter(Boolean)
+    };
+  });
+}
+
+async function addWorkshopProgressPhoto(input) {
+  const pool = getPool();
+  const normalizedPlate = input.plate.trim().toUpperCase();
+
+  if (!pool) {
+    const targetVehicle = [...workshopVehicles].reverse().find((item) => item.plate.toUpperCase() === normalizedPlate);
+
+    if (!targetVehicle) {
+      return null;
+    }
+
+    const photo = buildProgressPhotoRow({
+      workshopVehicleId: targetVehicle.id,
+      plate: targetVehicle.plate,
+      photoUrl: input.photoUrl,
+      description: input.description
+    });
+
+    workshopProgressPhotos.push(photo);
+    persistIfLocal();
+    return photo;
+  }
+
+  const vehicleResult = await pool.query(
+    `SELECT id, plate
+     FROM workshop_vehicles
+     WHERE UPPER(plate) = $1
+     ORDER BY id DESC
+     LIMIT 1`,
+    [normalizedPlate]
+  );
+
+  const vehicle = vehicleResult.rows[0];
+  if (!vehicle) {
+    return null;
+  }
+
+  const photoResult = await pool.query(
+    `INSERT INTO workshop_progress_photos (workshop_vehicle_id, plate, photo_url, description)
+     VALUES ($1, $2, $3, $4)
+     RETURNING id, workshop_vehicle_id, plate, photo_url, description, created_at`,
+    [vehicle.id, vehicle.plate, input.photoUrl, input.description]
+  );
+
+  const row = photoResult.rows[0];
+  return {
+    id: row.id,
+    workshopVehicleId: row.workshop_vehicle_id,
+    plate: row.plate,
+    photoUrl: row.photo_url,
+    description: row.description,
+    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at
+  };
+}
+
+async function listWorkshopProgressPhotos(plate) {
+  const pool = getPool();
+  const normalizedPlate = plate ? plate.trim().toUpperCase() : "";
+
+  if (!pool) {
+    const filtered = normalizedPlate
+      ? workshopProgressPhotos.filter((item) => item.plate.toUpperCase() === normalizedPlate)
+      : workshopProgressPhotos;
+    return filtered.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  }
+
+  if (!normalizedPlate) {
+    const result = await pool.query(
+      `SELECT id, workshop_vehicle_id, plate, photo_url, description, created_at
+       FROM workshop_progress_photos
+       ORDER BY created_at ASC`
+    );
+    return result.rows.map((row) => ({
+      id: row.id,
+      workshopVehicleId: row.workshop_vehicle_id,
+      plate: row.plate,
+      photoUrl: row.photo_url,
+      description: row.description,
+      createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at
+    }));
+  }
+
+  const result = await pool.query(
+    `SELECT id, workshop_vehicle_id, plate, photo_url, description, created_at
+     FROM workshop_progress_photos
+     WHERE UPPER(plate) = $1
+     ORDER BY created_at ASC`,
+    [normalizedPlate]
+  );
+
+  return result.rows.map((row) => ({
+    id: row.id,
+    workshopVehicleId: row.workshop_vehicle_id,
+    plate: row.plate,
+    photoUrl: row.photo_url,
+    description: row.description,
+    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at
+  }));
+}
+
+async function deleteWorkshopProgressPhoto(id) {
+  const pool = getPool();
+  const numericId = Number(id);
+
+  if (!pool) {
+    const index = workshopProgressPhotos.findIndex((item) => item.id === numericId);
+    if (index < 0) {
+      return null;
+    }
+
+    const [deleted] = workshopProgressPhotos.splice(index, 1);
+    persistIfLocal();
+    return deleted;
+  }
+
+  const result = await pool.query(
+    `DELETE FROM workshop_progress_photos
+     WHERE id = $1
+     RETURNING id, workshop_vehicle_id, plate, photo_url, description, created_at`,
+    [numericId]
+  );
+
+  if (!result.rows[0]) {
+    return null;
+  }
+
+  const row = result.rows[0];
+  return {
+    id: row.id,
+    workshopVehicleId: row.workshop_vehicle_id,
+    plate: row.plate,
+    photoUrl: row.photo_url,
+    description: row.description,
+    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at
+  };
+}
+
+async function syncPhotosFromFilesystem() {
+  const discovered = discoverPhotosFromFilesystem();
+  const pool = getPool();
+
+  if (!pool) {
+    const synced = [];
+
+    for (const photo of discovered) {
+      const existing = workshopProgressPhotos.find(
+        (p) => p.plate === photo.plate && p.photoUrl === photo.photoUrl
+      );
+
+      if (!existing) {
+        const newPhoto = buildProgressPhotoRow(
+          {
+            workshopVehicleId: null,
+            plate: photo.plate,
+            photoUrl: photo.photoUrl,
+            description: photo.description,
+            createdAt: photo.createdAt
+          },
+          workshopProgressPhotos.length + 1
+        );
+
+        workshopProgressPhotos.push(newPhoto);
+        synced.push(newPhoto);
+      }
+    }
+
+    if (synced.length > 0) {
+      persistIfLocal();
+    }
+
+    return synced;
+  }
+
+  const synced = [];
+
+  for (const photo of discovered) {
+    const existing = await pool.query(
+      `SELECT id FROM workshop_progress_photos WHERE plate = $1 AND photo_url = $2`,
+      [photo.plate, photo.photoUrl]
+    );
+
+    if (!existing.rows[0]) {
+      const result = await pool.query(
+        `INSERT INTO workshop_progress_photos (plate, photo_url, description, created_at)
+         VALUES ($1, $2, $3, $4)
+         RETURNING id, workshop_vehicle_id, plate, photo_url, description, created_at`,
+        [photo.plate, photo.photoUrl, photo.description, photo.createdAt]
+      );
+
+      if (result.rows[0]) {
+        const row = result.rows[0];
+        synced.push({
+          id: row.id,
+          workshopVehicleId: row.workshop_vehicle_id,
+          plate: row.plate,
+          photoUrl: row.photo_url,
+          description: row.description,
+          createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at
+        });
+      }
+    }
+  }
+
+  return synced;
+}
+
+module.exports = {
+  createQuote,
+  createAppointment,
+  listAppointments,
+  listQuotes,
+  getRepairStatus,
+  listNotificationsByPlate,
+  updateAppointmentStatus,
+  deleteAppointment,
+  registerWorkshopVehicle,
+  listWorkshopVehicles,
+  updateWorkshopVehicleStatus,
+  deleteWorkshopVehicle,
+  deleteQuote,
+  addWorkshopProgressPhoto,
+  listWorkshopProgressPhotos,
+  deleteWorkshopProgressPhoto,
+  syncPhotosFromFilesystem
+};

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { defaultDriveGallery } from "./driveGalleryData";
+import { defaultBeforeAfterCases, defaultDriveGallery, ownerPhotos } from "./driveGalleryData";
 
 const services = [
   {
@@ -51,6 +51,7 @@ const mapsLink =
 
 const navigationTabs = [
   { id: "servicios", label: "Servicios" },
+  { id: "trabajos-listos", label: "Antes y después" },
   { id: "galeria-trabajos", label: "Proyectos y casos atendidos" },
   { id: "solicitar-presupuesto", label: "Solicitar presupuesto" },
   { id: "solicitar-cita-visita", label: "Agendar cita" },
@@ -83,6 +84,7 @@ export default function Home() {
   const [galleryItems, setGalleryItems] = useState(defaultDriveGallery);
   const [visibleCount, setVisibleCount] = useState(12);
   const [selectedIndex, setSelectedIndex] = useState(null);
+  const [selectedLightboxPhoto, setSelectedLightboxPhoto] = useState(null);
 
   useEffect(() => {
     const apiBase =
@@ -524,6 +526,151 @@ export default function Home() {
             ))}
           </div>
         </section>
+
+        {/* Before & After Section: Vehículos Listos (Antes y Después) */}
+        <section id="trabajos-listos" className="section-card border-brandRed/40 scroll-mt-24">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.25em] text-brandRed">Resultados Comprobados</p>
+              <h2 className="mt-1 text-3xl font-bold text-white">Trabajos listos: Antes y Después</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-300">
+                Conozca el proceso real de cómo ingresan los vehículos al taller y el acabado final con el que los
+                entregamos a nuestros clientes.
+              </p>
+            </div>
+            <span className="inline-flex shrink-0 items-center rounded-xl border border-brandRed/50 bg-brandRed/10 px-3.5 py-2 text-xs font-bold text-red-200">
+              {defaultBeforeAfterCases.length} {defaultBeforeAfterCases.length === 1 ? "vehículo documentado" : "vehículos documentados"}
+            </span>
+          </div>
+
+          <div className="mt-6 space-y-8">
+            {defaultBeforeAfterCases.map((vehicleCase) => (
+              <div
+                key={vehicleCase.plate}
+                className="rounded-2xl border border-zinc-800 bg-zinc-950/90 p-5 shadow-xl md:p-6"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800 pb-4">
+                  <div>
+                    <span className="inline-block rounded-lg bg-brandRed px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white">
+                      Placa {vehicleCase.plate}
+                    </span>
+                    <h3 className="mt-2 text-xl font-bold text-white">{vehicleCase.title}</h3>
+                    <p className="text-xs text-zinc-400">{vehicleCase.subtitle}</p>
+                  </div>
+                  <a
+                    href="#solicitar-presupuesto"
+                    className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-xs font-semibold text-zinc-200 transition hover:border-brandRed hover:text-white"
+                  >
+                    Cotizar un trabajo así →
+                  </a>
+                </div>
+
+                <div className="mt-5 grid gap-6 lg:grid-cols-2">
+                  {/* En Proceso / Antes */}
+                  <div className="rounded-xl border border-amber-500/30 bg-amber-950/10 p-4">
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-300">
+                        <span className="h-2 w-2 rounded-full bg-amber-400" />
+                        Antes / Fotos en proceso ({vehicleCase.beforePhotos.length})
+                      </span>
+                      <span className="text-[11px] text-zinc-400">Cómo ingresó y se trabajó</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {vehicleCase.beforePhotos.map((photo) => (
+                        <article
+                          key={photo.id}
+                          onClick={() =>
+                            setSelectedLightboxPhoto({
+                              title: `Placa ${vehicleCase.plate} • ${photo.label}`,
+                              image: photo.fullImage || photo.image
+                            })
+                          }
+                          className="group relative cursor-pointer overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900"
+                        >
+                          <img
+                            src={photo.image}
+                            alt={`Placa ${vehicleCase.plate} - ${photo.label}`}
+                            loading="lazy"
+                            className="h-44 w-full object-cover transition duration-300 group-hover:scale-105"
+                          />
+                          <span className="absolute bottom-2 left-2 rounded-md bg-black/80 px-2 py-1 text-[11px] font-semibold text-amber-300">
+                            {photo.label}
+                          </span>
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Fotos Finales / Después */}
+                  <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/10 p-4">
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-300">
+                        <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                        Después / Fotos finales ({vehicleCase.afterPhotos.length})
+                      </span>
+                      <span className="text-[11px] text-zinc-400">Trabajo terminado</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      {vehicleCase.afterPhotos.map((photo) => (
+                        <article
+                          key={photo.id}
+                          onClick={() =>
+                            setSelectedLightboxPhoto({
+                              title: `Placa ${vehicleCase.plate} • ${photo.label}`,
+                              image: photo.fullImage || photo.image
+                            })
+                          }
+                          className="group relative cursor-pointer overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900"
+                        >
+                          <img
+                            src={photo.image}
+                            alt={`Placa ${vehicleCase.plate} - ${photo.label}`}
+                            loading="lazy"
+                            className="h-44 w-full object-cover transition duration-300 group-hover:scale-105"
+                          />
+                          <span className="absolute bottom-2 left-2 rounded-md bg-black/80 px-2 py-1 text-[11px] font-semibold text-emerald-300">
+                            {photo.label}
+                          </span>
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Lightbox Modal for Before/After Single Photo */}
+        {selectedLightboxPhoto ? (
+          <div
+            onClick={() => setSelectedLightboxPhoto(null)}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-950 p-4 shadow-2xl"
+            >
+              <div className="flex items-center justify-between pb-3">
+                <p className="text-sm font-bold text-white">{selectedLightboxPhoto.title}</p>
+                <button
+                  type="button"
+                  onClick={() => setSelectedLightboxPhoto(null)}
+                  className="rounded-lg bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brandRed"
+                >
+                  ✕ Cerrar
+                </button>
+              </div>
+              <div className="flex items-center justify-center overflow-hidden rounded-xl bg-black/60">
+                <img
+                  src={selectedLightboxPhoto.image}
+                  alt={selectedLightboxPhoto.title}
+                  className="max-h-[75vh] w-auto object-contain"
+                />
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {/* Gallery Section */}
         <section id="galeria-trabajos" className="section-card scroll-mt-24">
@@ -995,7 +1142,11 @@ export default function Home() {
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             <article className="rounded-2xl border border-zinc-800 bg-zinc-950/85 p-5 shadow-lg">
               <img
-                src="/dagoberto-barrantes.jpg"
+                src={ownerPhotos.dagoberto.localPath}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = ownerPhotos.dagoberto.driveUrl;
+                }}
                 alt="Dagoberto Barrantes"
                 className="mx-auto h-[350px] w-[350px] max-w-full rounded-xl bg-zinc-950 object-contain object-center"
               />
@@ -1033,7 +1184,11 @@ export default function Home() {
 
             <article className="rounded-2xl border border-zinc-800 bg-zinc-950/85 p-5 shadow-lg">
               <img
-                src="/randy-barrantes.jpg"
+                src={ownerPhotos.randy.localPath}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = ownerPhotos.randy.driveUrl;
+                }}
                 alt="Randy Barrantes"
                 className="mx-auto h-[350px] w-[350px] max-w-full rounded-xl bg-zinc-950 object-contain object-center"
               />

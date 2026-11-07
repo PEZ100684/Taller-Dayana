@@ -32,8 +32,8 @@ const whatsappContacts = [
     link: "https://wa.me/50670439248?text=Hola%2C%20quisiera%20saber%20sobre%20mi%20reparacion"
   },
   {
-    number: "8689-8157",
-    link: "https://wa.me/50686898157?text=Hola%2C%20quisiera%20saber%20sobre%20mi%20reparacion"
+    number: "8869-8157",
+    link: "https://wa.me/50688698157?text=Hola%2C%20quisiera%20saber%20sobre%20mi%20reparacion"
   }
 ];
 

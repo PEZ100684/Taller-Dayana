@@ -109,3 +109,58 @@ export const defaultDriveGallery = DRIVE_PHOTO_IDS.map((id, index) => ({
   image: `https://drive.google.com/thumbnail?id=${id}&sz=w1000`,
   fullImage: `https://drive.google.com/thumbnail?id=${id}&sz=w1600`
 }));
+
+export const ownerPhotos = {
+  dagoberto: {
+    id: "1S0bFg77r-fhsAl3nmwZNTnOkvWllQiRs",
+    localPath: "/dagoberto-barrantes.jpg",
+    driveUrl: "https://drive.google.com/thumbnail?id=1S0bFg77r-fhsAl3nmwZNTnOkvWllQiRs&sz=w1200"
+  },
+  randy: {
+    id: "1iWdA5ACDT92QFDvknUUrH20v4dWH8vbM",
+    localPath: "/randy-barrantes.jpg",
+    driveUrl: "https://drive.google.com/thumbnail?id=1iWdA5ACDT92QFDvknUUrH20v4dWH8vbM&sz=w1200"
+  }
+};
+
+export const defaultBeforeAfterCases = [
+  {
+    plate: "ADT564",
+    title: "Vehículo Placa ADT564",
+    subtitle: "Proceso de reparación y acabado final en Taller Dayana",
+    beforePhotos: [
+      {
+        id: "1endYjZyb6cd2eAEFo2W_7qiDTd0xkPe8",
+        label: "En proceso #1",
+        image: "https://drive.google.com/thumbnail?id=1endYjZyb6cd2eAEFo2W_7qiDTd0xkPe8&sz=w1000",
+        fullImage: "https://drive.google.com/thumbnail?id=1endYjZyb6cd2eAEFo2W_7qiDTd0xkPe8&sz=w1600"
+      },
+      {
+        id: "1ZX_3hxEEM4os4GSVq7gjvO8mMHxCkQ3M",
+        label: "En proceso #2",
+        image: "https://drive.google.com/thumbnail?id=1ZX_3hxEEM4os4GSVq7gjvO8mMHxCkQ3M&sz=w1000",
+        fullImage: "https://drive.google.com/thumbnail?id=1ZX_3hxEEM4os4GSVq7gjvO8mMHxCkQ3M&sz=w1600"
+      }
+    ],
+    afterPhotos: [
+      {
+        id: "1IeW7BfrUapvlXezbhSZYZv0mZJLgFq4c",
+        label: "Resultado final #1",
+        image: "https://drive.google.com/thumbnail?id=1IeW7BfrUapvlXezbhSZYZv0mZJLgFq4c&sz=w1000",
+        fullImage: "https://drive.google.com/thumbnail?id=1IeW7BfrUapvlXezbhSZYZv0mZJLgFq4c&sz=w1600"
+      },
+      {
+        id: "1nqORpMBuF6fpy_ujoXS2zXXHQey8Ed6p",
+        label: "Resultado final #2",
+        image: "https://drive.google.com/thumbnail?id=1nqORpMBuF6fpy_ujoXS2zXXHQey8Ed6p&sz=w1000",
+        fullImage: "https://drive.google.com/thumbnail?id=1nqORpMBuF6fpy_ujoXS2zXXHQey8Ed6p&sz=w1600"
+      },
+      {
+        id: "13qTRE0TVN6WseBQb399TDGbeXy0I64Gq",
+        label: "Resultado final #3",
+        image: "https://drive.google.com/thumbnail?id=13qTRE0TVN6WseBQb399TDGbeXy0I64Gq&sz=w1000",
+        fullImage: "https://drive.google.com/thumbnail?id=13qTRE0TVN6WseBQb399TDGbeXy0I64Gq&sz=w1600"
+      }
+    ]
+  }
+];

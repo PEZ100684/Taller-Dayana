@@ -4,7 +4,7 @@ Set-Content -Encoding ascii -Path "$root\backend\.env" -Value @"
 PORT=4000
 JWT_SECRET=change-me
 ADMIN_USER=admin
-ADMIN_PASSWORD=change-me
+ADMIN_PASSWORD=admin123
 FRONTEND_URL=http://localhost:3000
 FRONTEND_URL_WWW=
 FRONTEND_URLS=

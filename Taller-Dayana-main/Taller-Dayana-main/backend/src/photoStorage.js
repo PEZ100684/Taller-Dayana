@@ -41,7 +41,18 @@ function ensurePlateDir(plate) {
 }
 
 function toPublicUploadsUrl(fileName) {
-  return `/api/uploads/${encodeURIComponent(fileName)}`;
+  const segments = String(fileName || "")
+    .replace(/\\/g, "/")
+    .split("/")
+    .filter(Boolean)
+    .map((segment) => {
+      try {
+        return encodeURIComponent(decodeURIComponent(segment));
+      } catch (_err) {
+        return encodeURIComponent(segment);
+      }
+    });
+  return `/api/uploads/${segments.join("/")}`;
 }
 
 function toPublicPhotoUrl(photoUrl) {
@@ -54,10 +65,14 @@ function toPublicPhotoUrl(photoUrl) {
   if (
     raw.startsWith("http://") ||
     raw.startsWith("https://") ||
-    raw.startsWith("data:image/") ||
-    raw.startsWith("/api/uploads/")
+    raw.startsWith("data:image/")
   ) {
     return raw;
+  }
+
+  if (raw.startsWith("/api/uploads/")) {
+    const suffix = raw.slice("/api/uploads/".length);
+    return toPublicUploadsUrl(suffix);
   }
 
   const normalized = raw.replace(/\\/g, "/");

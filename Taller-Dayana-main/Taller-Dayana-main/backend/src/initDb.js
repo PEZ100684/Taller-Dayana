@@ -4,10 +4,12 @@ const path = require("path");
 const { getPool } = require("./db");
 
 async function seedDemoData(pool) {
-  const quoteCountResult = await pool.query("SELECT COUNT(*)::int AS count FROM quotes");
-  const quoteCount = quoteCountResult.rows[0].count;
+  const existingCheck = await pool.query(
+    "SELECT (SELECT COUNT(*)::int FROM quotes) + (SELECT COUNT(*)::int FROM vehicles) AS total"
+  );
+  const totalCount = existingCheck.rows[0].total;
 
-  if (quoteCount > 0) {
+  if (totalCount > 0) {
     return { seeded: false, message: "Datos demo existentes" };
   }
 
@@ -23,7 +25,12 @@ async function seedDemoData(pool) {
     const clientId = clientResult.rows[0].id;
 
     const vehicleResult = await client.query(
-      "INSERT INTO vehicles (client_id, make_model, plate) VALUES ($1, $2, $3) RETURNING id",
+      `INSERT INTO vehicles (client_id, make_model, plate)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (plate) DO UPDATE
+         SET client_id = EXCLUDED.client_id,
+             make_model = EXCLUDED.make_model
+       RETURNING id`,
       [clientId, "Toyota Corolla", "CR1234"]
     );
     const vehicleId = vehicleResult.rows[0].id;

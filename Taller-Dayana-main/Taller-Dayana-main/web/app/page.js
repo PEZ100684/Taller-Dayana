@@ -50,8 +50,10 @@ const historyTimeline = [
   }
 ];
 
-const whatsappNumber = "7043-9248";
-const whatsappLink = "https://wa.me/50670439248";
+const whatsappContacts = [
+  { number: "7043-9248", link: "https://wa.me/50670439248" },
+  { number: "8689-8157", link: "https://wa.me/50686898157" }
+];
 const mapsLink =
   "https://www.google.com/maps/place/Taller+Dayana/@10.0189955,-84.2360667,20.5z/data=!4m11!1m4!7m3!1m1!1s116661075415157394462!2e2!3m5!1s0x8fa0f9604b8acd11:0xe3eb01ff61086c8b!8m2!3d10.0188372!4d-84.2361356!16s%2Fg%2F11hdkshc7w?entry=ttu&g_ep=EgoyMDI2MDQxNS4wIKXMDSoASAFQAw%3D%3D";
 
@@ -65,6 +67,7 @@ const navigationTabs = [
 
 export default function Home() {
   const appointmentDateInputRef = useRef(null);
+  const photoInputRef = useRef(null);
   const [formData, setFormData] = useState({
     customerName: "",
     phone: "",
@@ -187,7 +190,8 @@ export default function Home() {
       });
 
       if (!response.ok) {
-        throw new Error("No se pudo enviar la solicitud.");
+        const errorPayload = await response.json().catch(() => ({}));
+        throw new Error(errorPayload.error || "No se pudo enviar la solicitud.");
       }
 
       setStatus({ type: "success", message: "Solicitud enviada correctamente." });
@@ -199,6 +203,9 @@ export default function Home() {
         damageDescription: "",
         photos: []
       });
+      if (photoInputRef.current) {
+        photoInputRef.current.value = "";
+      }
     } catch (error) {
       setStatus({ type: "error", message: error.message || "Error inesperado." });
     }
@@ -448,6 +455,7 @@ export default function Home() {
               <label className="inline-flex cursor-pointer rounded-md border border-zinc-500 px-4 py-2 text-sm font-semibold text-zinc-100 transition hover:border-white">
                 Agregar fotos
                 <input
+                  ref={photoInputRef}
                   type="file"
                   accept="image/*"
                   multiple
@@ -630,16 +638,24 @@ export default function Home() {
             Ver ubicacion en Google Maps
           </a>
           <p className="mt-4 text-zinc-200">
-            WhatsApp: <span className="font-semibold text-white">{whatsappNumber}</span>
+            WhatsApp:{" "}
+            <span className="font-semibold text-white">
+              {whatsappContacts.map((item) => item.number).join(" / ")}
+            </span>
           </p>
-          <a
-            href={whatsappLink}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-4 inline-flex rounded-md bg-brandRed px-4 py-3 font-semibold text-white transition hover:opacity-90"
-          >
-            Escribir por WhatsApp
-          </a>
+          <div className="mt-4 flex flex-wrap gap-3">
+            {whatsappContacts.map((contact) => (
+              <a
+                key={contact.number}
+                href={contact.link}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex rounded-md bg-brandRed px-4 py-3 font-semibold text-white transition hover:opacity-90"
+              >
+                WhatsApp ({contact.number})
+              </a>
+            ))}
+          </div>
         </article>
 
         <article className="section-card">

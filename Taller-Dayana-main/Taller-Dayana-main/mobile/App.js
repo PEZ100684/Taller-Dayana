@@ -62,6 +62,12 @@ export default function App() {
     }
   };
 
+  const submitAppointment = () => {
+    const rawDate = String(appointment.appointmentDate || "").trim();
+    const formattedDate = rawDate && !rawDate.includes("T") ? `${rawDate}T09:00` : rawDate;
+    postJson("/api/appointments", { ...appointment, appointmentDate: formattedDate }, "Cita enviada");
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -86,8 +92,8 @@ export default function App() {
           <TextInput style={styles.input} placeholder="Telefono" placeholderTextColor="#ccc" onChangeText={(v) => setAppointment((p) => ({ ...p, phone: v }))} />
           <TextInput style={styles.input} placeholder="Vehiculo" placeholderTextColor="#ccc" onChangeText={(v) => setAppointment((p) => ({ ...p, vehicle: v }))} />
           <TextInput style={styles.input} placeholder="Placa" placeholderTextColor="#ccc" onChangeText={(v) => setAppointment((p) => ({ ...p, plate: v }))} />
-          <TextInput style={styles.input} placeholder="Fecha (YYYY-MM-DD)" placeholderTextColor="#ccc" onChangeText={(v) => setAppointment((p) => ({ ...p, appointmentDate: v }))} />
-          <Pressable style={styles.button} onPress={() => postJson("/api/appointments", appointment, "Cita enviada") }>
+          <TextInput style={styles.input} placeholder="Fecha (YYYY-MM-DD o YYYY-MM-DDTHH:mm)" placeholderTextColor="#ccc" onChangeText={(v) => setAppointment((p) => ({ ...p, appointmentDate: v }))} />
+          <Pressable style={styles.button} onPress={submitAppointment}>
             <Text style={styles.buttonText}>Enviar cita</Text>
           </Pressable>
         </View>
@@ -111,11 +117,17 @@ export default function App() {
 
         <View style={styles.card}>
           <Text style={styles.title}>Contacto rapido</Text>
-          <Pressable style={styles.button} onPress={() => Linking.openURL("tel:+50600000000") }>
-            <Text style={styles.buttonText}>Llamar</Text>
+          <Pressable style={styles.button} onPress={() => Linking.openURL("tel:+50670439248") }>
+            <Text style={styles.buttonText}>Llamar (7043-9248)</Text>
           </Pressable>
-          <Pressable style={styles.buttonSecondary} onPress={() => Linking.openURL("https://wa.me/50600000000") }>
-            <Text style={styles.buttonText}>WhatsApp</Text>
+          <Pressable style={styles.button} onPress={() => Linking.openURL("tel:+50686898157") }>
+            <Text style={styles.buttonText}>Llamar (8689-8157)</Text>
+          </Pressable>
+          <Pressable style={styles.buttonSecondary} onPress={() => Linking.openURL("https://wa.me/50670439248") }>
+            <Text style={styles.buttonText}>WhatsApp (7043-9248)</Text>
+          </Pressable>
+          <Pressable style={styles.buttonSecondary} onPress={() => Linking.openURL("https://wa.me/50686898157") }>
+            <Text style={styles.buttonText}>WhatsApp (8689-8157)</Text>
           </Pressable>
         </View>
       </ScrollView>

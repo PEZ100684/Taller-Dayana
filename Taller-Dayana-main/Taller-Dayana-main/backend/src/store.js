@@ -48,13 +48,21 @@ function formatDateTime(value) {
   return String(value);
 }
 
-function buildQuoteRow(input, id = quotes.length + 1) {
+function nextId(collection) {
+  if (!Array.isArray(collection) || collection.length === 0) {
+    return 1;
+  }
+
+  return Math.max(0, ...collection.map((item) => Number(item?.id) || 0)) + 1;
+}
+
+function buildQuoteRow(input, id = nextId(quotes)) {
   return {
     id,
     customerName: input.customerName,
     phone: input.phone,
     vehicle: input.vehicle,
-    plate: input.plate,
+    plate: String(input.plate || "").trim().toUpperCase(),
     damageDescription: input.damageDescription,
     photos: Array.isArray(input.photos) ? input.photos : [],
     status: input.status || "received",
@@ -62,23 +70,23 @@ function buildQuoteRow(input, id = quotes.length + 1) {
   };
 }
 
-function buildAppointmentRow(input, id = appointments.length + 1) {
+function buildAppointmentRow(input, id = nextId(appointments)) {
   return {
     id,
     customerName: input.customerName,
     phone: input.phone,
     vehicle: input.vehicle,
-    plate: input.plate,
+    plate: String(input.plate || "").trim().toUpperCase(),
     appointmentDate: input.appointmentDate || null,
     status: input.status || "scheduled",
     createdAt: input.createdAt || new Date().toISOString()
   };
 }
 
-function buildWorkshopVehicleRow(input, id = workshopVehicles.length + 1) {
+function buildWorkshopVehicleRow(input, id = nextId(workshopVehicles)) {
   return {
     id,
-    plate: input.plate,
+    plate: String(input.plate || "").trim().toUpperCase(),
     customerName: input.customerName,
     workType: input.workType,
     entryDate: input.entryDate,
@@ -89,11 +97,11 @@ function buildWorkshopVehicleRow(input, id = workshopVehicles.length + 1) {
   };
 }
 
-function buildProgressPhotoRow(input, id = workshopProgressPhotos.length + 1) {
+function buildProgressPhotoRow(input, id = nextId(workshopProgressPhotos)) {
   return {
     id,
     workshopVehicleId: input.workshopVehicleId,
-    plate: input.plate,
+    plate: String(input.plate || "").trim().toUpperCase(),
     photoUrl: input.photoUrl,
     description: input.description,
     createdAt: input.createdAt || new Date().toISOString()
@@ -118,9 +126,10 @@ async function runInTransaction(pool, callback) {
 
 async function createQuote(input) {
   const pool = getPool();
+  const normalizedPlate = String(input.plate || "").trim().toUpperCase();
 
   if (!pool) {
-    const quote = buildQuoteRow(input);
+    const quote = buildQuoteRow({ ...input, plate: normalizedPlate });
     quotes.push(quote);
     persistIfLocal();
     return quote;
@@ -134,8 +143,13 @@ async function createQuote(input) {
     const clientId = clientResult.rows[0].id;
 
     const vehicleResult = await client.query(
-      "INSERT INTO vehicles (client_id, make_model, plate) VALUES ($1, $2, $3) RETURNING id",
-      [clientId, input.vehicle, input.plate]
+      `INSERT INTO vehicles (client_id, make_model, plate)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (plate) DO UPDATE
+         SET client_id = EXCLUDED.client_id,
+             make_model = EXCLUDED.make_model
+       RETURNING id`,
+      [clientId, input.vehicle, normalizedPlate]
     );
     const vehicleId = vehicleResult.rows[0].id;
 
@@ -147,6 +161,7 @@ async function createQuote(input) {
     return buildQuoteRow(
       {
         ...input,
+        plate: normalizedPlate,
         photos: input.photos || [],
         status: "received",
         createdAt: quoteResult.rows[0].created_at.toISOString()
@@ -158,9 +173,10 @@ async function createQuote(input) {
 
 async function createAppointment(input) {
   const pool = getPool();
+  const normalizedPlate = String(input.plate || "").trim().toUpperCase();
 
   if (!pool) {
-    const appointment = buildAppointmentRow(input);
+    const appointment = buildAppointmentRow({ ...input, plate: normalizedPlate });
     appointments.push(appointment);
     persistIfLocal();
     return appointment;
@@ -174,8 +190,13 @@ async function createAppointment(input) {
     const clientId = clientResult.rows[0].id;
 
     const vehicleResult = await client.query(
-      "INSERT INTO vehicles (client_id, make_model, plate) VALUES ($1, $2, $3) RETURNING id",
-      [clientId, input.vehicle, input.plate]
+      `INSERT INTO vehicles (client_id, make_model, plate)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (plate) DO UPDATE
+         SET client_id = EXCLUDED.client_id,
+             make_model = EXCLUDED.make_model
+       RETURNING id`,
+      [clientId, input.vehicle, normalizedPlate]
     );
     const vehicleId = vehicleResult.rows[0].id;
 
@@ -187,6 +208,7 @@ async function createAppointment(input) {
     return buildAppointmentRow(
       {
         ...input,
+        plate: normalizedPlate,
         status: "scheduled",
         createdAt: appointmentResult.rows[0].created_at.toISOString(),
         appointmentDate: formatDateTime(appointmentResult.rows[0].appointment_date)
@@ -347,7 +369,7 @@ async function updateAppointmentStatus(id, status) {
 
     if (status.toLowerCase() === "ready") {
       notifications.push({
-        id: notifications.length + 1,
+        id: nextId(notifications),
         plate: target.plate,
         message: "Su vehiculo esta listo para retiro",
         createdAt: new Date().toISOString()
@@ -794,15 +816,19 @@ async function syncPhotosFromFilesystem() {
       );
 
       if (!existing) {
+        const targetVehicle = [...workshopVehicles]
+          .reverse()
+          .find((item) => item.plate.toUpperCase() === photo.plate.toUpperCase());
+
         const newPhoto = buildProgressPhotoRow(
           {
-            workshopVehicleId: null,
+            workshopVehicleId: targetVehicle ? targetVehicle.id : null,
             plate: photo.plate,
             photoUrl: photo.photoUrl,
             description: photo.description,
             createdAt: photo.createdAt
           },
-          workshopProgressPhotos.length + 1
+          nextId(workshopProgressPhotos)
         );
 
         workshopProgressPhotos.push(newPhoto);
@@ -821,16 +847,26 @@ async function syncPhotosFromFilesystem() {
 
   for (const photo of discovered) {
     const existing = await pool.query(
-      `SELECT id FROM workshop_progress_photos WHERE plate = $1 AND photo_url = $2`,
-      [photo.plate, photo.photoUrl]
+      `SELECT id FROM workshop_progress_photos WHERE UPPER(plate) = $1 AND photo_url = $2`,
+      [photo.plate.toUpperCase(), photo.photoUrl]
     );
 
     if (!existing.rows[0]) {
+      const vehicleResult = await pool.query(
+        `SELECT id, plate FROM workshop_vehicles WHERE UPPER(plate) = $1 ORDER BY id DESC LIMIT 1`,
+        [photo.plate.toUpperCase()]
+      );
+
+      const vehicle = vehicleResult.rows[0];
+      if (!vehicle) {
+        continue;
+      }
+
       const result = await pool.query(
-        `INSERT INTO workshop_progress_photos (plate, photo_url, description, created_at)
-         VALUES ($1, $2, $3, $4)
+        `INSERT INTO workshop_progress_photos (workshop_vehicle_id, plate, photo_url, description, created_at)
+         VALUES ($1, $2, $3, $4, $5)
          RETURNING id, workshop_vehicle_id, plate, photo_url, description, created_at`,
-        [photo.plate, photo.photoUrl, photo.description, photo.createdAt]
+        [vehicle.id, vehicle.plate, photo.photoUrl, photo.description, photo.createdAt]
       );
 
       if (result.rows[0]) {

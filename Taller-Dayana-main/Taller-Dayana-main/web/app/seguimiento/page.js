@@ -9,7 +9,9 @@ const statusColors = {
   completed: "bg-green-950/40 border-green-700 text-green-100",
   received: "bg-zinc-800 border-zinc-600 text-zinc-100",
   no_appointment: "bg-zinc-900 border-zinc-700 text-zinc-200",
-  no_quote: "bg-zinc-900 border-zinc-700 text-zinc-200"
+  "no appointment": "bg-zinc-900 border-zinc-700 text-zinc-200",
+  no_quote: "bg-zinc-900 border-zinc-700 text-zinc-200",
+  "no quote": "bg-zinc-900 border-zinc-700 text-zinc-200"
 };
 
 const statusLabels = {
@@ -19,8 +21,21 @@ const statusLabels = {
   completed: "Completado",
   received: "Presupuesto Recibido",
   no_appointment: "Sin Cita",
-  no_quote: "Sin Presupuesto"
+  "no appointment": "Sin Cita",
+  no_quote: "Sin Presupuesto",
+  "no quote": "Sin Presupuesto"
 };
+
+const whatsappContacts = [
+  {
+    number: "7043-9248",
+    link: "https://wa.me/50670439248?text=Hola%2C%20quisiera%20saber%20sobre%20mi%20reparacion"
+  },
+  {
+    number: "8689-8157",
+    link: "https://wa.me/50686898157?text=Hola%2C%20quisiera%20saber%20sobre%20mi%20reparacion"
+  }
+];
 
 export default function SeguimientoPage() {
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
@@ -79,10 +94,18 @@ export default function SeguimientoPage() {
     <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-8 px-4 py-8 text-white md:px-8">
       {/* Header */}
       <section className="section-card border-brandRed/40 bg-gradient-to-br from-zinc-950 to-zinc-900">
-        <div className="max-w-4xl">
-          <p className="text-sm uppercase tracking-[0.3em] text-brandRed">Seguimiento</p>
-          <h1 className="mb-2 mt-2 text-4xl font-bold">Seguimiento de tu Vehiculo</h1>
-          <p className="text-lg text-zinc-300">Consulta el estado actual de tu reparacion</p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="max-w-4xl">
+            <p className="text-sm uppercase tracking-[0.3em] text-brandRed">Seguimiento</p>
+            <h1 className="mb-2 mt-2 text-4xl font-bold">Seguimiento de tu Vehiculo</h1>
+            <p className="text-lg text-zinc-300">Consulta el estado actual de tu reparacion</p>
+          </div>
+          <a
+            href="/"
+            className="inline-flex items-center justify-center rounded-md border border-zinc-600 bg-zinc-900 px-4 py-2 text-sm font-semibold text-zinc-100 transition hover:border-brandRed hover:text-white"
+          >
+            ← Volver al inicio
+          </a>
         </div>
       </section>
 
@@ -207,14 +230,19 @@ export default function SeguimientoPage() {
                 <p className="mb-4 text-sm text-zinc-300">
                   Contactanos directamente por WhatsApp para mas informacion
                 </p>
-                <a
-                  href="https://wa.me/50686898157?text=Hola%2C%20quisiera%20saber%20sobre%20mi%20reparacion"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block rounded-lg bg-green-500 px-6 py-2 font-semibold text-white transition hover:bg-green-600"
-                >
-                  Contactar por WhatsApp
-                </a>
+                <div className="flex flex-wrap gap-3">
+                  {whatsappContacts.map((contact) => (
+                    <a
+                      key={contact.number}
+                      href={contact.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block rounded-lg bg-green-500 px-6 py-2 font-semibold text-white transition hover:bg-green-600"
+                    >
+                      WhatsApp ({contact.number})
+                    </a>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

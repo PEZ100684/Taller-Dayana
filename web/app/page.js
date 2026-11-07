@@ -197,7 +197,28 @@ export default function Home() {
         throw new Error(errorPayload.error || "No se pudo enviar la solicitud.");
       }
 
-      setStatus({ type: "success", message: "Solicitud enviada correctamente." });
+      const waText = encodeURIComponent(
+        [
+          "🚗 *SOLICITUD DE PRESUPUESTO - TALLER DAYANA*",
+          `• Cliente: ${formData.customerName}`,
+          `• Teléfono: ${formData.phone}`,
+          `• Vehículo: ${formData.vehicle}`,
+          `• Placa: ${formData.plate.toUpperCase()}`,
+          `• Daño: ${formData.damageDescription}`,
+          `• Fotos adjuntas: ${formData.photos.length}`
+        ].join("\n")
+      );
+
+      const waLinks = [
+        { number: "7043-9248", url: `https://wa.me/50670439248?text=${waText}` },
+        { number: "8689-8157", url: `https://wa.me/50686898157?text=${waText}` }
+      ];
+
+      setStatus({
+        type: "success",
+        message: "Solicitud enviada correctamente. Notificación enviada al correo y lista para WhatsApp:",
+        waLinks
+      });
       setFormData({
         customerName: "",
         phone: "",
@@ -255,7 +276,28 @@ export default function Home() {
         throw new Error(errorPayload.error || "No se pudo registrar la cita.");
       }
 
-      setAppointmentStatus({ type: "success", message: "Cita registrada correctamente." });
+      const waText = encodeURIComponent(
+        [
+          "📅 *NUEVA CITA DE ATENCIÓN - TALLER DAYANA*",
+          `• Cliente: ${appointmentForm.customerName}`,
+          `• Teléfono: ${appointmentForm.phone}`,
+          `• Vehículo: ${appointmentForm.vehicle}`,
+          `• Placa: ${appointmentForm.plate.toUpperCase()}`,
+          `• Fecha: ${appointmentForm.appointmentDate}`,
+          `• Hora: ${appointmentForm.appointmentTime}`
+        ].join("\n")
+      );
+
+      const waLinks = [
+        { number: "7043-9248", url: `https://wa.me/50670439248?text=${waText}` },
+        { number: "8689-8157", url: `https://wa.me/50686898157?text=${waText}` }
+      ];
+
+      setAppointmentStatus({
+        type: "success",
+        message: "Cita registrada correctamente en el calendario y lista para WhatsApp:",
+        waLinks
+      });
       setAppointmentForm({
         customerName: "",
         phone: "",
@@ -487,13 +529,30 @@ export default function Home() {
             Enviar solicitud
           </button>
           {status.type !== "idle" ? (
-            <p
-              className={`md:col-span-2 ${
-                status.type === "error" ? "text-red-400" : status.type === "success" ? "text-green-400" : "text-zinc-300"
-              }`}
-            >
-              {status.message}
-            </p>
+            <div className="md:col-span-2 space-y-3">
+              <p
+                className={
+                  status.type === "error" ? "text-red-400" : status.type === "success" ? "text-green-400" : "text-zinc-300"
+                }
+              >
+                {status.message}
+              </p>
+              {status.type === "success" && Array.isArray(status.waLinks) ? (
+                <div className="flex flex-wrap gap-3">
+                  {status.waLinks.map((item) => (
+                    <a
+                      key={item.number}
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-500"
+                    >
+                      Enviar presupuesto por WhatsApp ({item.number})
+                    </a>
+                  ))}
+                </div>
+              ) : null}
+            </div>
           ) : null}
         </form>
       </section>
@@ -591,17 +650,34 @@ export default function Home() {
           </button>
 
           {appointmentStatus.type !== "idle" ? (
-            <p
-              className={`md:col-span-2 ${
-                appointmentStatus.type === "error"
-                  ? "text-red-400"
-                  : appointmentStatus.type === "success"
-                    ? "text-green-400"
-                    : "text-zinc-300"
-              }`}
-            >
-              {appointmentStatus.message}
-            </p>
+            <div className="md:col-span-2 space-y-3">
+              <p
+                className={
+                  appointmentStatus.type === "error"
+                    ? "text-red-400"
+                    : appointmentStatus.type === "success"
+                      ? "text-green-400"
+                      : "text-zinc-300"
+                }
+              >
+                {appointmentStatus.message}
+              </p>
+              {appointmentStatus.type === "success" && Array.isArray(appointmentStatus.waLinks) ? (
+                <div className="flex flex-wrap gap-3">
+                  {appointmentStatus.waLinks.map((item) => (
+                    <a
+                      key={item.number}
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-500"
+                    >
+                      Confirmar cita por WhatsApp ({item.number})
+                    </a>
+                  ))}
+                </div>
+              ) : null}
+            </div>
           ) : null}
         </form>
       </section>

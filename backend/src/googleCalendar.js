@@ -76,6 +76,27 @@ function buildEventPayload({
   };
 }
 
+function parseCostaRicaDateTime(rawValue) {
+  if (!rawValue) {
+    return new Date();
+  }
+
+  const str = String(rawValue).trim();
+  // Si viene como "YYYY-MM-DDTHH:mm" sin zona horaria, interpretarlo en hora de Costa Rica (UTC-6)
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(str)) {
+    return new Date(`${str}:00-06:00`);
+  }
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(str)) {
+    return new Date(`${str}-06:00`);
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    return new Date(`${str}T09:00:00-06:00`);
+  }
+
+  const parsed = new Date(str);
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
 async function createQuoteCalendarAlert(quote) {
   const config = getCalendarConfig();
   const validation = validateConfig(config);
@@ -93,33 +114,35 @@ async function createQuoteCalendarAlert(quote) {
 
     const calendar = google.calendar({ version: "v3", auth });
 
-    // Si es una cita, usar appointmentDate; si no, usar createdAt
+    // Si es una cita, usar appointmentDate en zona horaria de Costa Rica; si no, usar createdAt
     let eventStart;
     let eventEnd;
     let summary;
     let description;
 
     if (quote.status === "appointment" && quote.appointmentDate) {
-      eventStart = new Date(quote.appointmentDate);
-      eventEnd = new Date(eventStart.getTime() + 30 * 60 * 1000);
-      summary = `Cita de atención - ${quote.plate}`;
+      eventStart = parseCostaRicaDateTime(quote.appointmentDate);
+      eventEnd = new Date(eventStart.getTime() + 60 * 60 * 1000);
+      summary = `Cita Taller Dayana - ${quote.plate} (${quote.customerName})`;
       description = [
+        "=== CITA DE ATENCION - TALLER DAYANA ===",
         `Cliente: ${quote.customerName}`,
         `Telefono: ${quote.phone}`,
         `Vehiculo: ${quote.vehicle}`,
         `Placa: ${quote.plate}`,
-        `Hora programada: ${eventStart.toLocaleString("es-CR", { timeZone: config.timezone })}`
+        `Fecha y hora programada: ${eventStart.toLocaleString("es-CR", { timeZone: config.timezone })}`
       ].join("\n");
     } else {
       eventStart = quote.createdAt ? new Date(quote.createdAt) : new Date();
       eventEnd = new Date(eventStart.getTime() + 30 * 60 * 1000);
-      summary = `Nuevo presupuesto - ${quote.plate}`;
+      summary = `Nuevo presupuesto - ${quote.plate} (${quote.customerName})`;
       description = [
+        "=== SOLICITUD DE PRESUPUESTO - TALLER DAYANA ===",
         `Cliente: ${quote.customerName}`,
         `Telefono: ${quote.phone}`,
         `Vehiculo: ${quote.vehicle}`,
         `Placa: ${quote.plate}`,
-        `Detalle: ${quote.damageDescription}`
+        `Detalle del dano: ${quote.damageDescription}`
       ].join("\n");
     }
 

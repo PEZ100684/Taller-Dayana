@@ -9,6 +9,7 @@ const { getPool } = require("./db");
 const { sendQuoteNotification, sendAppointmentNotification } = require("./emailNotifier");
 const { appendQuoteToSheet } = require("./googleSheets");
 const { createQuoteCalendarAlert } = require("./googleCalendar");
+const { sendQuoteWhatsAppAlerts, sendAppointmentWhatsAppAlerts } = require("./whatsappNotifier");
 const { initializeDatabase } = require("./initDb");
 const { getVehiclePhotosDir, toPublicPhotoUrl, normalizeIncomingPhotoUrl, deleteManagedPhotoFile } = require("./photoStorage");
 const {
@@ -218,11 +219,19 @@ app.post("/api/quotes", async (req, res) => {
       console.error("No se pudo crear aviso en Google Calendar:", calendarError.message);
     }
 
+    let whatsappStatus = { sent: false, links: [] };
+    try {
+      whatsappStatus = await sendQuoteWhatsAppAlerts(quote);
+    } catch (waError) {
+      whatsappStatus = { sent: false, reason: waError.message, links: [] };
+    }
+
     return res.status(201).json({
       ...quote,
       emailStatus,
       sheetsStatus,
-      calendarStatus
+      calendarStatus,
+      whatsappStatus
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -272,10 +281,18 @@ app.post("/api/appointments", async (req, res) => {
       console.error("No se pudo crear aviso en Google Calendar:", calendarError.message);
     }
 
+    let whatsappStatus = { sent: false, links: [] };
+    try {
+      whatsappStatus = await sendAppointmentWhatsAppAlerts(appointment);
+    } catch (waError) {
+      whatsappStatus = { sent: false, reason: waError.message, links: [] };
+    }
+
     return res.status(201).json({
       ...appointment,
       emailStatus,
-      calendarStatus
+      calendarStatus,
+      whatsappStatus
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });

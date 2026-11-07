@@ -3,45 +3,111 @@ const https = require("https");
 const DEFAULT_NUMBERS = ["50670439248", "50686898157"];
 
 function getConfiguredTargets() {
+  const sharedTextMeBotKey =
+    process.env.TEXTMEBOT_API_KEY ||
+    process.env.WHATSAPP_TEXTMEBOT_KEY ||
+    "";
+
   return [
     {
       phone: "50670439248",
       label: "7043-9248",
-      apiKey: process.env.WHATSAPP_CALLMEBOT_KEY_70439248 || ""
+      textMeBotKey:
+        process.env.TEXTMEBOT_KEY_70439248 ||
+        process.env.WHATSAPP_TEXTMEBOT_KEY_70439248 ||
+        sharedTextMeBotKey,
+      callMeBotKey: process.env.WHATSAPP_CALLMEBOT_KEY_70439248 || ""
     },
     {
       phone: "50686898157",
       label: "8689-8157",
-      apiKey: process.env.WHATSAPP_CALLMEBOT_KEY_86898157 || ""
+      textMeBotKey:
+        process.env.TEXTMEBOT_KEY_86898157 ||
+        process.env.WHATSAPP_TEXTMEBOT_KEY_86898157 ||
+        sharedTextMeBotKey,
+      callMeBotKey: process.env.WHATSAPP_CALLMEBOT_KEY_86898157 || ""
     }
   ];
 }
 
-function sendCallMeBotMessage(phone, text, apiKey) {
+function sendHttpGet(url, phone, provider) {
   return new Promise((resolve) => {
-    if (!apiKey) {
-      return resolve({ phone, sent: false, reason: "missing_callmebot_apikey" });
-    }
-
-    const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(
-      text
-    )}&apikey=${encodeURIComponent(apiKey)}`;
-
     https
       .get(url, (res) => {
-        res.on("data", () => {});
+        let body = "";
+        res.on("data", (chunk) => {
+          body += chunk;
+        });
         res.on("end", () => {
           resolve({
             phone,
+            provider,
             sent: res.statusCode >= 200 && res.statusCode < 300,
-            statusCode: res.statusCode
+            statusCode: res.statusCode,
+            response: body.slice(0, 200)
           });
         });
       })
       .on("error", (err) => {
-        resolve({ phone, sent: false, reason: err.message });
+        resolve({ phone, provider, sent: false, reason: err.message });
       });
   });
+}
+
+function sendTextMeBotMessage(phone, text, apiKey) {
+  const recipient = phone.startsWith("+") ? phone : `+${phone}`;
+  const url = `https://api.textmebot.com/send.php?recipient=${encodeURIComponent(
+    recipient
+  )}&apikey=${encodeURIComponent(apiKey)}&text=${encodeURIComponent(text)}&json=yes`;
+  return sendHttpGet(url, phone, "textmebot");
+}
+
+function sendCallMeBotMessage(phone, text, apiKey) {
+  const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(
+    text
+  )}&apikey=${encodeURIComponent(apiKey)}`;
+  return sendHttpGet(url, phone, "callmebot");
+}
+
+async function dispatchWhatsAppAlerts(message) {
+  const targets = getConfiguredTargets();
+  const sharedKey =
+    targets.length === 2 &&
+    targets[0].textMeBotKey &&
+    targets[0].textMeBotKey === targets[1].textMeBotKey;
+
+  if (sharedKey) {
+    const firstResult = await sendTextMeBotMessage(targets[0].phone, message, targets[0].textMeBotKey);
+    setTimeout(() => {
+      sendTextMeBotMessage(targets[1].phone, message, targets[1].textMeBotKey).catch(() => {});
+    }, 6000);
+
+    return [
+      firstResult,
+      {
+        phone: targets[1].phone,
+        provider: "textmebot",
+        sent: true,
+        scheduledAfterMs: 6000
+      }
+    ];
+  }
+
+  return Promise.all(
+    targets.map((target) => {
+      if (target.textMeBotKey) {
+        return sendTextMeBotMessage(target.phone, message, target.textMeBotKey);
+      }
+      if (target.callMeBotKey) {
+        return sendCallMeBotMessage(target.phone, message, target.callMeBotKey);
+      }
+      return Promise.resolve({
+        phone: target.phone,
+        sent: false,
+        reason: "missing_whatsapp_apikey"
+      });
+    })
+  );
 }
 
 function buildQuoteWhatsAppMessage(quote) {
@@ -79,10 +145,7 @@ function buildDirectLinks(message) {
 
 async function sendQuoteWhatsAppAlerts(quote) {
   const message = buildQuoteWhatsAppMessage(quote);
-  const targets = getConfiguredTargets();
-  const results = await Promise.all(
-    targets.map((target) => sendCallMeBotMessage(target.phone, message, target.apiKey))
-  );
+  const results = await dispatchWhatsAppAlerts(message);
 
   return {
     sent: results.some((r) => r.sent),
@@ -93,10 +156,7 @@ async function sendQuoteWhatsAppAlerts(quote) {
 
 async function sendAppointmentWhatsAppAlerts(appointment) {
   const message = buildAppointmentWhatsAppMessage(appointment);
-  const targets = getConfiguredTargets();
-  const results = await Promise.all(
-    targets.map((target) => sendCallMeBotMessage(target.phone, message, target.apiKey))
-  );
+  const results = await dispatchWhatsAppAlerts(message);
 
   return {
     sent: results.some((r) => r.sent),

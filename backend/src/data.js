@@ -112,7 +112,7 @@ const DRIVE_PHOTO_IDS = [
 
 const gallery = DRIVE_PHOTO_IDS.map((id, index) => ({
   id,
-  title: `Trabajo realizado #${index + 1}`,
+  title: `Caso atendido #${index + 1}`,
   image: `https://drive.google.com/thumbnail?id=${id}&sz=w1000`,
   fullImage: `https://drive.google.com/thumbnail?id=${id}&sz=w1600`
 }));

@@ -45,7 +45,7 @@ const mapsLink =
 
 const navigationTabs = [
   { id: "servicios", label: "Servicios" },
-  { id: "galeria-trabajos", label: "Galeria de trabajos" },
+  { id: "galeria-trabajos", label: "Proyectos y casos atendidos" },
   { id: "seguimiento-reparacion", label: "Seguimiento de reparacion" },
   { id: "solicitar-presupuesto", label: "Solicitar presupuesto" },
   { id: "solicitar-cita-visita", label: "Solicitar cita para visita" }
@@ -452,9 +452,10 @@ export default function Home() {
       <section id="galeria-trabajos" className="section-card scroll-mt-28">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-2xl font-semibold">Galeria de trabajos realizados</h2>
-            <p className="mt-1 text-sm text-zinc-300">
-              Trabajos reales de enderezado, pintura y restauracion en Taller Dayana ({galleryItems.length} fotos sincronizadas de Google Drive).
+            <h2 className="text-2xl font-semibold">Galeria de proyectos y casos atendidos</h2>
+            <p className="mt-1 max-w-4xl text-sm text-zinc-300">
+              Asi llegan y se trabajan los vehiculos que han pasado por nuestras manos: atendemos carros antiguos y
+              modernos, aros, golpes pequenos, danos fuertes por colision y proyectos de restauracion.
             </p>
           </div>
         </div>

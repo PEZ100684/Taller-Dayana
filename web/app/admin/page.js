@@ -92,7 +92,35 @@ export default function AdminPage() {
   const fileToDataUrl = (file) =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onload = () => {
+        const rawDataUrl = String(reader.result || "");
+        if (!rawDataUrl.startsWith("data:image/")) {
+          resolve(rawDataUrl);
+          return;
+        }
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const maxDim = 1600;
+            let { width, height } = img;
+            if (width > maxDim || height > maxDim) {
+              const ratio = Math.min(maxDim / width, maxDim / height);
+              width = Math.round(width * ratio);
+              height = Math.round(height * ratio);
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL("image/jpeg", 0.82));
+          } catch {
+            resolve(rawDataUrl);
+          }
+        };
+        img.onerror = () => resolve(rawDataUrl);
+        img.src = rawDataUrl;
+      };
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });

@@ -123,27 +123,27 @@ async function createQuoteCalendarAlert(quote) {
     if (quote.status === "appointment" && quote.appointmentDate) {
       eventStart = parseCostaRicaDateTime(quote.appointmentDate);
       eventEnd = new Date(eventStart.getTime() + 60 * 60 * 1000);
-      summary = `Cita Taller Dayana - ${quote.plate} (${quote.customerName})`;
+      summary = `Cita Taller Dayana - ${quote.vehicle} (${quote.customerName})`;
       description = [
         "=== CITA DE ATENCION - TALLER DAYANA ===",
         `Cliente: ${quote.customerName}`,
         `Telefono: ${quote.phone}`,
+        quote.email ? `Correo: ${quote.email}` : null,
         `Vehiculo: ${quote.vehicle}`,
-        `Placa: ${quote.plate}`,
         `Fecha y hora programada: ${eventStart.toLocaleString("es-CR", { timeZone: config.timezone })}`
-      ].join("\n");
+      ].filter(Boolean).join("\n");
     } else {
       eventStart = quote.createdAt ? new Date(quote.createdAt) : new Date();
       eventEnd = new Date(eventStart.getTime() + 30 * 60 * 1000);
-      summary = `Nuevo presupuesto - ${quote.plate} (${quote.customerName})`;
+      summary = `Nuevo presupuesto - ${quote.vehicle} (${quote.customerName})`;
       description = [
         "=== SOLICITUD DE PRESUPUESTO - TALLER DAYANA ===",
         `Cliente: ${quote.customerName}`,
         `Telefono: ${quote.phone}`,
+        quote.email ? `Correo: ${quote.email}` : null,
         `Vehiculo: ${quote.vehicle}`,
-        `Placa: ${quote.plate}`,
         `Detalle del dano: ${quote.damageDescription}`
-      ].join("\n");
+      ].filter(Boolean).join("\n");
     }
 
     const attendees = config.addAttendees

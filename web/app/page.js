@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cleanGalleryOverrides, defaultBeforeAfterCases, defaultDriveGallery, ownerPhotos } from "./driveGalleryData";
@@ -61,6 +61,25 @@ const navigationTabs = [
   { id: "ubicacion-contacto", label: "Ubicación y contacto" }
 ];
 
+const VEHICLE_PARTS = [
+  "Bumper delantero",
+  "Bumper trasero",
+  "Bonete / Capó",
+  "Puerta delantera izq.",
+  "Puerta delantera der.",
+  "Puerta trasera izq.",
+  "Puerta trasera der.",
+  "Guardabarro izq.",
+  "Guardabarro der.",
+  "Costado izq.",
+  "Costado der.",
+  "Tapa cajuela / baúl",
+  "Techo",
+  "Estribos / Faldones",
+  "Pulido y abrillantado",
+  "Pintura general completa"
+];
+
 export default function Home() {
   const appointmentDateInputRef = useRef(null);
   const photoInputRef = useRef(null);
@@ -68,7 +87,9 @@ export default function Home() {
     customerName: "",
     phone: "",
     vehicle: "",
-    plate: "",
+    contactChannel: "whatsapp",
+    email: "",
+    selectedParts: [],
     damageDescription: "",
     photos: []
   });
@@ -77,7 +98,8 @@ export default function Home() {
     customerName: "",
     phone: "",
     vehicle: "",
-    plate: "",
+    contactChannel: "whatsapp",
+    email: "",
     appointmentDate: "",
     appointmentTime: ""
   });
@@ -92,7 +114,7 @@ export default function Home() {
       customerName: "Macaco",
       verified: true,
       comment: "Excelente trabajo de pintura y entrega puntual. El carro quedó como salido de agencia.",
-      ratings: { servicio: 5, trato: 5, calidad: 5, precio: 5, puntualidad: 5 },
+      ratings: { servicio: 5, trato: 5, calidad: 5, precio: 5 },
       average: 5,
       date: "Reciente"
     }
@@ -104,8 +126,7 @@ export default function Home() {
     servicio: 5,
     trato: 5,
     calidad: 5,
-    precio: 5,
-    puntualidad: 5
+    precio: 5
   });
   const [reviewStatus, setReviewStatus] = useState({ type: "idle", message: "" });
 
@@ -253,7 +274,16 @@ export default function Home() {
 
   const onSubmit = async (event) => {
     event.preventDefault();
-    setStatus({ type: "loading", message: "Enviando solicitud..." });
+
+    if (formData.contactChannel === "email" && !formData.email.trim()) {
+      setStatus({
+        type: "error",
+        message: "Por favor ingrese su correo electrónico para poder enviarle la respuesta del presupuesto."
+      });
+      return;
+    }
+
+    setStatus({ type: "loading", message: "Enviando solicitud de presupuesto..." });
 
     try {
       const apiBase =
@@ -265,7 +295,16 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          customerName: formData.customerName,
+          phone: formData.phone,
+          vehicle: formData.vehicle,
+          damageDescription: formData.damageDescription,
+          contactChannel: formData.contactChannel,
+          email: formData.email,
+          selectedParts: formData.selectedParts,
+          photos: formData.photos
+        })
       });
 
       if (!response.ok) {
@@ -273,16 +312,21 @@ export default function Home() {
         throw new Error(errorPayload.error || "No se pudo enviar la solicitud.");
       }
 
+      const partsText = formData.selectedParts.length > 0 ? formData.selectedParts.join(", ") : "Por evaluar según fotos";
+      const channelText = formData.contactChannel === "email" ? `Correo electrónico (${formData.email})` : `WhatsApp (${formData.phone})`;
+
       const waText = encodeURIComponent(
         [
           "🚗 *SOLICITUD DE PRESUPUESTO - TALLER DAYANA*",
           `• Cliente: ${formData.customerName}`,
           `• Teléfono: ${formData.phone}`,
+          formData.email ? `• Correo: ${formData.email}` : null,
+          `• Responder por: ${channelText}`,
           `• Vehículo: ${formData.vehicle}`,
-          `• Placa: ${formData.plate.toUpperCase()}`,
-          `• Daño: ${formData.damageDescription}`,
+          `• Piezas a cotizar: ${partsText}`,
+          `• Daño reportado: ${formData.damageDescription}`,
           `• Fotos adjuntas: ${formData.photos.length}`
-        ].join("\n")
+        ].filter(Boolean).join("\n")
       );
 
       const waLinks = [
@@ -290,19 +334,27 @@ export default function Home() {
         { number: "8869-8157", url: `https://wa.me/50688698157?text=${waText}` }
       ];
 
+      const successMsg = formData.contactChannel === "email"
+        ? `¡Solicitud recibida! Le hemos enviado confirmación a su correo (${formData.email}). Don Randy evaluará las fotos y detalles para enviarle la cotización estimada directamente a su correo.`
+        : "¡Solicitud enviada! Se ha preparado el mensaje en WhatsApp para coordinar directamente con Don Randy:";
+
       setStatus({
         type: "success",
-        message: "Solicitud enviada correctamente. Notificación enviada al correo y lista para WhatsApp:",
-        waLinks
+        message: successMsg,
+        waLinks: formData.contactChannel === "whatsapp" ? waLinks : []
       });
-      if (typeof window !== "undefined" && waLinks[0]?.url) {
+
+      if (formData.contactChannel === "whatsapp" && typeof window !== "undefined" && waLinks[0]?.url) {
         window.open(waLinks[0].url, "_blank", "noopener,noreferrer");
       }
+
       setFormData({
         customerName: "",
         phone: "",
         vehicle: "",
-        plate: "",
+        contactChannel: "whatsapp",
+        email: "",
+        selectedParts: [],
         damageDescription: "",
         photos: []
       });
@@ -330,7 +382,15 @@ export default function Home() {
       return;
     }
 
-    setAppointmentStatus({ type: "loading", message: "Enviando cita..." });
+    if (appointmentForm.contactChannel === "email" && !appointmentForm.email.trim()) {
+      setAppointmentStatus({
+        type: "error",
+        message: "Por favor ingrese su correo electrónico para poder enviarle la confirmación de la cita."
+      });
+      return;
+    }
+
+    setAppointmentStatus({ type: "loading", message: "Registrando cita de atención..." });
 
     try {
       const apiBase =
@@ -346,7 +406,8 @@ export default function Home() {
           customerName: appointmentForm.customerName,
           phone: appointmentForm.phone,
           vehicle: appointmentForm.vehicle,
-          plate: appointmentForm.plate,
+          contactChannel: appointmentForm.contactChannel,
+          email: appointmentForm.email,
           appointmentDate: appointmentDateTime
         })
       });
@@ -356,16 +417,23 @@ export default function Home() {
         throw new Error(errorPayload.error || "No se pudo registrar la cita.");
       }
 
+      const channelText = appointmentForm.contactChannel === "email" ? `Correo electrónico (${appointmentForm.email})` : `WhatsApp (${appointmentForm.phone})`;
+
       const waText = encodeURIComponent(
         [
           "📅 *NUEVA CITA DE ATENCIÓN - TALLER DAYANA*",
           `• Cliente: ${appointmentForm.customerName}`,
           `• Teléfono: ${appointmentForm.phone}`,
+          appointmentForm.email ? `• Correo: ${appointmentForm.email}` : null,
+          `• Confirmar por: ${channelText}`,
           `• Vehículo: ${appointmentForm.vehicle}`,
-          `• Placa: ${appointmentForm.plate.toUpperCase()}`,
           `• Fecha: ${appointmentForm.appointmentDate}`,
-          `• Hora: ${appointmentForm.appointmentTime}`
-        ].join("\n")
+          `• Hora: ${appointmentForm.appointmentTime}`,
+          "",
+          "📍 Ubicación: Barrio San José de Alajuela",
+          `🗺️ Google Maps: ${googleMapsLink}`,
+          `🚗 Waze: ${wazeLink}`
+        ].filter(Boolean).join("\n")
       );
 
       const waLinks = [
@@ -373,19 +441,26 @@ export default function Home() {
         { number: "8869-8157", url: `https://wa.me/50688698157?text=${waText}` }
       ];
 
+      const successMsg = appointmentForm.contactChannel === "email"
+        ? `¡Cita agendada correctamente! Hemos enviado los detalles y enlaces de ubicación (Waze y Google Maps) a: ${appointmentForm.email}`
+        : "¡Cita agendada correctamente! Se ha abierto WhatsApp con los datos de su cita y enlaces de ubicación:";
+
       setAppointmentStatus({
         type: "success",
-        message: "Cita registrada correctamente en el calendario y lista para WhatsApp:",
-        waLinks
+        message: successMsg,
+        waLinks: appointmentForm.contactChannel === "whatsapp" ? waLinks : []
       });
-      if (typeof window !== "undefined" && waLinks[0]?.url) {
+
+      if (appointmentForm.contactChannel === "whatsapp" && typeof window !== "undefined" && waLinks[0]?.url) {
         window.open(waLinks[0].url, "_blank", "noopener,noreferrer");
       }
+
       setAppointmentForm({
         customerName: "",
         phone: "",
         vehicle: "",
-        plate: "",
+        contactChannel: "whatsapp",
+        email: "",
         appointmentDate: "",
         appointmentTime: ""
       });
@@ -401,10 +476,9 @@ export default function Home() {
       trato: Number(reviewForm.trato) || 5,
       calidad: Number(reviewForm.calidad) || 5,
       precio: Number(reviewForm.precio) || 5,
-      puntualidad: Number(reviewForm.puntualidad) || 5
     };
     const average = Number(
-      ((ratings.servicio + ratings.trato + ratings.calidad + ratings.precio + ratings.puntualidad) / 5).toFixed(1)
+      ((ratings.servicio + ratings.trato + ratings.calidad + ratings.precio) / 4).toFixed(1)
     );
     const newEntry = {
       id: `rev-${Date.now()}`,
@@ -444,7 +518,6 @@ export default function Home() {
       trato: 5,
       calidad: 5,
       precio: 5,
-      puntualidad: 5
     });
     setReviewStatus({
       type: "success",
@@ -970,8 +1043,9 @@ export default function Home() {
                     placeholder="Ej. 8888-8888"
                   />
                 </div>
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-zinc-300">Marca y modelo</label>
+
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-xs font-semibold text-zinc-300">Marca y modelo del vehículo</label>
                   <input
                     name="vehicle"
                     value={formData.vehicle}
@@ -981,17 +1055,97 @@ export default function Home() {
                     placeholder="Ej. Toyota Corolla 2019"
                   />
                 </div>
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-zinc-300">Placa del vehículo</label>
-                  <input
-                    name="plate"
-                    value={formData.plate}
-                    onChange={onChange}
-                    required
-                    className="input-modern uppercase"
-                    placeholder="Ej. ABC123"
-                  />
+
+                {/* Preferred response channel */}
+                <div className="sm:col-span-2 rounded-xl border border-zinc-800 bg-zinc-950/60 p-3">
+                  <label className="mb-1.5 block text-xs font-semibold text-zinc-200">
+                    ¿Por cuál medio desea recibir la respuesta de su presupuesto?
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setFormData((prev) => ({ ...prev, contactChannel: "whatsapp" }))}
+                      className={`flex items-center justify-center gap-1.5 rounded-lg border py-2 px-3 text-xs font-bold transition ${
+                        formData.contactChannel === "whatsapp"
+                          ? "border-emerald-500 bg-emerald-500/15 text-emerald-400 shadow-sm shadow-emerald-950"
+                          : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200"
+                      }`}
+                    >
+                      <span>🟢</span> Por WhatsApp
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData((prev) => ({ ...prev, contactChannel: "email" }))}
+                      className={`flex items-center justify-center gap-1.5 rounded-lg border py-2 px-3 text-xs font-bold transition ${
+                        formData.contactChannel === "email"
+                          ? "border-blue-500 bg-blue-500/15 text-blue-400 shadow-sm shadow-blue-950"
+                          : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200"
+                      }`}
+                    >
+                      <span>✉️</span> Por Correo Electrónico
+                    </button>
+                  </div>
+
+                  {formData.contactChannel === "email" ? (
+                    <div className="mt-3">
+                      <label className="mb-1 block text-xs font-semibold text-blue-300">
+                        Correo electrónico para enviarle el presupuesto *
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={onChange}
+                        required
+                        className="input-modern border-blue-500/50 focus:border-blue-500"
+                        placeholder="su-correo@ejemplo.com"
+                      />
+                    </div>
+                  ) : null}
                 </div>
+
+                {/* Vehicle Parts Template for Fast Estimation */}
+                <div className="sm:col-span-2 rounded-xl border border-zinc-800 bg-zinc-950/80 p-3.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-zinc-200">
+                      🧩 Plantilla rápida: Piezas a cotizar (opcional)
+                    </label>
+                    <span className="text-[11px] font-semibold text-brandRed">
+                      {formData.selectedParts.length > 0 ? `${formData.selectedParts.length} seleccionada(s)` : "Opcional"}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[11px] text-zinc-400">
+                    Toque las piezas correspondientes para agilizar la estimación de Don Randy:
+                  </p>
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">
+                    {VEHICLE_PARTS.map((part) => {
+                      const isSelected = formData.selectedParts.includes(part);
+                      return (
+                        <button
+                          key={part}
+                          type="button"
+                          onClick={() => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              selectedParts: isSelected
+                                ? prev.selectedParts.filter((p) => p !== part)
+                                : [...prev.selectedParts, part]
+                            }));
+                          }}
+                          className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${
+                            isSelected
+                              ? "bg-brandRed text-white shadow-sm shadow-brandRed/50"
+                              : "border border-zinc-800 bg-zinc-900 text-zinc-300 hover:border-zinc-700 hover:text-white"
+                          }`}
+                        >
+                          {isSelected ? "✓ " : "+ "}
+                          {part}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <div className="sm:col-span-2">
                   <label className="mb-1 block text-xs font-semibold text-zinc-300">Descripción del daño o trabajo</label>
                   <textarea
@@ -1001,7 +1155,7 @@ export default function Home() {
                     required
                     className="input-modern"
                     rows={3}
-                    placeholder="Cuéntenos qué parte del vehículo necesita enderezado, pintura o restauración..."
+                    placeholder="Cuéntenos qué necesita su vehículo (enderezado, pintura, golpes, rayones, etc.)..."
                   />
                 </div>
 
@@ -1060,7 +1214,7 @@ export default function Home() {
                     >
                       {status.message}
                     </p>
-                    {status.type === "success" && Array.isArray(status.waLinks) ? (
+                    {status.type === "success" && Array.isArray(status.waLinks) && status.waLinks.length > 0 ? (
                       <div className="flex flex-wrap gap-2.5">
                         {status.waLinks.map((item) => (
                           <a
@@ -1116,8 +1270,9 @@ export default function Home() {
                     placeholder="Ej. 8888-8888"
                   />
                 </div>
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-zinc-300">Marca y modelo</label>
+
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-xs font-semibold text-zinc-300">Marca y modelo del vehículo</label>
                   <input
                     name="vehicle"
                     value={appointmentForm.vehicle}
@@ -1127,16 +1282,53 @@ export default function Home() {
                     placeholder="Ej. Hyundai Tucson"
                   />
                 </div>
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-zinc-300">Placa del vehículo</label>
-                  <input
-                    name="plate"
-                    value={appointmentForm.plate}
-                    onChange={onAppointmentChange}
-                    required
-                    className="input-modern uppercase"
-                    placeholder="Ej. ABC123"
-                  />
+
+                {/* Preferred response channel for appointment */}
+                <div className="sm:col-span-2 rounded-xl border border-zinc-800 bg-zinc-950/60 p-3">
+                  <label className="mb-1.5 block text-xs font-semibold text-zinc-200">
+                    ¿Por cuál medio desea recibir la confirmación de su cita?
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setAppointmentForm((prev) => ({ ...prev, contactChannel: "whatsapp" }))}
+                      className={`flex items-center justify-center gap-1.5 rounded-lg border py-2 px-3 text-xs font-bold transition ${
+                        appointmentForm.contactChannel === "whatsapp"
+                          ? "border-emerald-500 bg-emerald-500/15 text-emerald-400 shadow-sm shadow-emerald-950"
+                          : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200"
+                      }`}
+                    >
+                      <span>🟢</span> Por WhatsApp
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAppointmentForm((prev) => ({ ...prev, contactChannel: "email" }))}
+                      className={`flex items-center justify-center gap-1.5 rounded-lg border py-2 px-3 text-xs font-bold transition ${
+                        appointmentForm.contactChannel === "email"
+                          ? "border-blue-500 bg-blue-500/15 text-blue-400 shadow-sm shadow-blue-950"
+                          : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200"
+                      }`}
+                    >
+                      <span>✉️</span> Por Correo Electrónico
+                    </button>
+                  </div>
+
+                  {appointmentForm.contactChannel === "email" ? (
+                    <div className="mt-3">
+                      <label className="mb-1 block text-xs font-semibold text-blue-300">
+                        Correo electrónico para confirmación de la cita *
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={appointmentForm.email}
+                        onChange={onAppointmentChange}
+                        required
+                        className="input-modern border-blue-500/50 focus:border-blue-500"
+                        placeholder="su-correo@ejemplo.com"
+                      />
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="sm:col-span-2">
@@ -1209,21 +1401,43 @@ export default function Home() {
                     >
                       {appointmentStatus.message}
                     </p>
-                    {appointmentStatus.type === "success" && Array.isArray(appointmentStatus.waLinks) ? (
-                      <div className="flex flex-wrap gap-2.5">
-                        {appointmentStatus.waLinks.map((item) => (
+                    {appointmentStatus.type === "success" && (
+                      <div className="mt-2 space-y-2">
+                        {Array.isArray(appointmentStatus.waLinks) && appointmentStatus.waLinks.length > 0 ? (
+                          <div className="flex flex-wrap gap-2.5">
+                            {appointmentStatus.waLinks.map((item) => (
+                              <a
+                                key={item.number}
+                                href={item.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex rounded-xl bg-green-600 px-3.5 py-2 text-xs font-bold text-white transition hover:bg-green-500"
+                              >
+                                Confirmar por WhatsApp ({item.number})
+                              </a>
+                            ))}
+                          </div>
+                        ) : null}
+                        <div className="flex flex-wrap gap-2 pt-1">
                           <a
-                            key={item.number}
-                            href={item.url}
+                            href={googleMapsLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex rounded-xl bg-green-600 px-3.5 py-2 text-xs font-bold text-white transition hover:bg-green-500"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:border-brandRed hover:text-white"
                           >
-                            Confirmar por WhatsApp ({item.number})
+                            🗺️ Ver ubicación en Google Maps
                           </a>
-                        ))}
+                          <a
+                            href={wazeLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-sky-400 transition hover:border-sky-500 hover:text-white"
+                          >
+                            🚗 Navegar con Waze
+                          </a>
+                        </div>
                       </div>
-                    ) : null}
+                    )}
                   </div>
                 ) : null}
               </form>
@@ -1434,7 +1648,7 @@ export default function Home() {
               <p className="text-xs font-bold uppercase tracking-[0.25em] text-brandRed">Confianza</p>
               <h2 className="mt-1 text-2xl font-bold text-white">Lo que dicen nuestros clientes</h2>
               <p className="mt-1 text-xs text-zinc-400">
-                Calificaciones reales sobre servicio, trato, calidad, precio y puntualidad.
+                Calificaciones reales sobre servicio, trato, calidad y precio.
               </p>
 
               <div className="mt-4 max-h-80 space-y-3 overflow-y-auto pr-1">
@@ -1455,7 +1669,6 @@ export default function Home() {
                         <span className="rounded bg-zinc-900 px-2 py-0.5">Trato: {rev.ratings.trato}★</span>
                         <span className="rounded bg-zinc-900 px-2 py-0.5">Calidad: {rev.ratings.calidad}★</span>
                         <span className="rounded bg-zinc-900 px-2 py-0.5">Precio: {rev.ratings.precio}★</span>
-                        <span className="rounded bg-zinc-900 px-2 py-0.5">Puntualidad: {rev.ratings.puntualidad}★</span>
                       </div>
                     ) : null}
                   </div>
@@ -1481,13 +1694,12 @@ export default function Home() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {[
                     { key: "servicio", label: "Servicio" },
                     { key: "trato", label: "Trato" },
                     { key: "calidad", label: "Calidad" },
                     { key: "precio", label: "Precio" },
-                    { key: "puntualidad", label: "Puntualidad" }
                   ].map((cat) => (
                     <label key={cat.key} className="block rounded-lg border border-zinc-800 bg-zinc-900 p-2 text-center">
                       <span className="block text-[11px] font-semibold text-zinc-300">{cat.label}</span>

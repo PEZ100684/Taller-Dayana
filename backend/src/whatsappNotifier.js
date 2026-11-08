@@ -117,26 +117,40 @@ async function dispatchWhatsAppAlerts(message) {
 
 function buildQuoteWhatsAppMessage(quote) {
   const photoCount = Array.isArray(quote.photos) ? quote.photos.length : 0;
+  const parts = Array.isArray(quote.selectedParts) && quote.selectedParts.length > 0
+    ? quote.selectedParts.join(", ")
+    : "Por evaluar";
+  const channel = quote.contactChannel === "email"
+    ? `✉️ Correo electrónico (${quote.email || "No indicado"})`
+    : `🟢 WhatsApp (${quote.phone})`;
+
   return [
     "🚗 *NUEVA SOLICITUD DE PRESUPUESTO - TALLER DAYANA*",
     `• *Cliente:* ${quote.customerName}`,
     `• *Teléfono:* ${quote.phone}`,
+    quote.email ? `• *Correo:* ${quote.email}` : null,
+    `• *Responder por:* ${channel}`,
     `• *Vehículo:* ${quote.vehicle}`,
-    `• *Placa:* ${quote.plate}`,
+    `• *Piezas a cotizar:* ${parts}`,
     `• *Daño:* ${quote.damageDescription}`,
     `• *Fotos adjuntas:* ${photoCount}`
-  ].join("\n");
+  ].filter(Boolean).join("\n");
 }
 
 function buildAppointmentWhatsAppMessage(appointment) {
+  const channel = appointment.contactChannel === "email"
+    ? `✉️ Correo (${appointment.email || "No indicado"})`
+    : `🟢 WhatsApp (${appointment.phone})`;
+
   return [
     "📅 *NUEVA CITA DE ATENCIÓN - TALLER DAYANA*",
     `• *Cliente:* ${appointment.customerName}`,
     `• *Teléfono:* ${appointment.phone}`,
+    appointment.email ? `• *Correo:* ${appointment.email}` : null,
+    `• *Confirmación por:* ${channel}`,
     `• *Vehículo:* ${appointment.vehicle}`,
-    `• *Placa:* ${appointment.plate}`,
     `• *Fecha y hora:* ${appointment.appointmentDate}`
-  ].join("\n");
+  ].filter(Boolean).join("\n");
 }
 
 function buildDirectLinks(message) {

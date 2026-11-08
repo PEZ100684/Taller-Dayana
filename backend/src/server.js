@@ -220,11 +220,20 @@ app.get("/api/gallery", async (_req, res) => {
 });
 
 app.post("/api/quotes", async (req, res) => {
-  const { customerName, phone, vehicle, plate, damageDescription, photos } = req.body;
+  const { customerName, phone, vehicle, plate, damageDescription, photos, contactChannel, email, selectedParts } = req.body;
 
-  if (!customerName || !phone || !vehicle || !plate || !damageDescription) {
+  if (!customerName || !phone || !vehicle || !damageDescription) {
     return res.status(400).json({ error: "Faltan campos requeridos" });
   }
+
+  const cleanChannel = contactChannel === "email" ? "email" : "whatsapp";
+  const cleanEmail = email ? String(email).trim() : "";
+  if (cleanChannel === "email" && !cleanEmail) {
+    return res.status(400).json({ error: "Debe ingresar su correo electrónico para responderle por ese medio" });
+  }
+
+  const cleanPlate = (plate && String(plate).trim()) ? String(plate).trim().toUpperCase() : `SP-${Date.now().toString().slice(-6)}`;
+  const cleanParts = Array.isArray(selectedParts) ? selectedParts : [];
 
   const normalizedPhotos = Array.isArray(photos) ? photos : [];
   if (normalizedPhotos.length > 5) {
@@ -240,7 +249,17 @@ app.post("/api/quotes", async (req, res) => {
   }
 
   try {
-    const quote = await createQuote({ customerName, phone, vehicle, plate, damageDescription, photos: normalizedPhotos });
+    const quote = await createQuote({
+      customerName,
+      phone,
+      vehicle,
+      plate: cleanPlate,
+      damageDescription,
+      photos: normalizedPhotos,
+      contactChannel: cleanChannel,
+      email: cleanEmail,
+      selectedParts: cleanParts
+    });
     let emailStatus = { sent: false, reason: "unknown" };
     let sheetsStatus = { sent: false, reason: "unknown" };
     let calendarStatus = { sent: false, reason: "unknown" };
@@ -286,11 +305,19 @@ app.post("/api/quotes", async (req, res) => {
 });
 
 app.post("/api/appointments", async (req, res) => {
-  const { customerName, phone, vehicle, plate, appointmentDate } = req.body;
+  const { customerName, phone, vehicle, plate, appointmentDate, contactChannel, email } = req.body;
 
-  if (!customerName || !phone || !vehicle || !plate || !appointmentDate) {
+  if (!customerName || !phone || !vehicle || !appointmentDate) {
     return res.status(400).json({ error: "Faltan campos requeridos" });
   }
+
+  const cleanChannel = contactChannel === "email" ? "email" : "whatsapp";
+  const cleanEmail = email ? String(email).trim() : "";
+  if (cleanChannel === "email" && !cleanEmail) {
+    return res.status(400).json({ error: "Debe ingresar su correo electrónico para recibir la confirmación de la cita" });
+  }
+
+  const cleanPlate = (plate && String(plate).trim()) ? String(plate).trim().toUpperCase() : `SP-${Date.now().toString().slice(-6)}`;
 
   if (!isValidAppointmentDateTime(appointmentDate)) {
     return res
@@ -299,7 +326,15 @@ app.post("/api/appointments", async (req, res) => {
   }
 
   try {
-    const appointment = await createAppointment({ customerName, phone, vehicle, plate, appointmentDate });
+    const appointment = await createAppointment({
+      customerName,
+      phone,
+      vehicle,
+      plate: cleanPlate,
+      appointmentDate,
+      contactChannel: cleanChannel,
+      email: cleanEmail
+    });
     let emailStatus = { sent: false, reason: "unknown" };
     let calendarStatus = { sent: false, reason: "unknown" };
 
@@ -316,8 +351,8 @@ app.post("/api/appointments", async (req, res) => {
         customerName,
         phone,
         vehicle,
-        plate,
-        damageDescription: `Cita de atención para ${vehicle} (${plate})`,
+        plate: cleanPlate,
+        damageDescription: `Cita de atención para ${vehicle}`,
         photos: [],
         status: "appointment",
         createdAt: appointment.createdAt,
@@ -507,7 +542,7 @@ app.post("/api/admin/workshop-vehicles", requireAdmin, async (req, res) => {
 
   try {
     const item = await registerWorkshopVehicle({
-      plate: plate.trim().toUpperCase(),
+      plate: cleanPlate,
       customerName: customerName.trim(),
       workType,
       entryDate,

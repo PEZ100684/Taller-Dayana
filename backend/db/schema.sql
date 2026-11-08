@@ -26,6 +26,15 @@ CREATE TABLE IF NOT EXISTS quotes (
 ALTER TABLE quotes
 ADD COLUMN IF NOT EXISTS photos_json JSONB NOT NULL DEFAULT '[]'::jsonb;
 
+ALTER TABLE quotes
+ADD COLUMN IF NOT EXISTS contact_channel VARCHAR(30) DEFAULT 'whatsapp';
+
+ALTER TABLE quotes
+ADD COLUMN IF NOT EXISTS email VARCHAR(120);
+
+ALTER TABLE quotes
+ADD COLUMN IF NOT EXISTS selected_parts JSONB DEFAULT '[]'::jsonb;
+
 CREATE TABLE IF NOT EXISTS appointments (
   id SERIAL PRIMARY KEY,
   client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
@@ -37,6 +46,12 @@ CREATE TABLE IF NOT EXISTS appointments (
 
 ALTER TABLE appointments
 ALTER COLUMN appointment_date TYPE TIMESTAMP USING appointment_date::timestamp;
+
+ALTER TABLE appointments
+ADD COLUMN IF NOT EXISTS contact_channel VARCHAR(30) DEFAULT 'whatsapp';
+
+ALTER TABLE appointments
+ADD COLUMN IF NOT EXISTS email VARCHAR(120);
 
 CREATE TABLE IF NOT EXISTS notifications (
   id SERIAL PRIMARY KEY,

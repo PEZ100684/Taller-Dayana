@@ -48,7 +48,7 @@ function buildQuoteRow(quote) {
     quote.customerName,
     quote.phone,
     quote.vehicle,
-    quote.plate,
+    (quote.plate && !quote.plate.startsWith("SP-")) ? quote.plate : "Sin placa",
     quote.status || "received",
     Array.isArray(quote.photos) ? quote.photos.length : 0,
     quote.damageDescription

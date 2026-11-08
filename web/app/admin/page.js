@@ -46,6 +46,7 @@ export default function AdminPage() {
   const [loadingPhotos, setLoadingPhotos] = useState(false);
   const [deletingRecordKey, setDeletingRecordKey] = useState("");
   const [activePhotosPlate, setActivePhotosPlate] = useState("");
+  const displayPlate = (p) => (!p || String(p).startsWith("SP-") || p === "SIN PLACA" ? "Sin placa" : p);
   const [status, setStatus] = useState("");
 
   const apiBase =
@@ -922,7 +923,7 @@ export default function AdminPage() {
           {filteredUnifiedRecords.map((item) => (
             <article key={item.recordKey} className="rounded-md border border-zinc-700 bg-zinc-950 p-3">
               <p>
-                [{labelByRecordType[item.type]}] #{item.id} - {item.customerName} - {item.summary} - {item.plate}
+                [{labelByRecordType[item.type]}] #{item.id} - {item.customerName} - {item.summary} - {displayPlate(item.plate)}
               </p>
               <p className="text-sm text-zinc-300">Estado: {item.status}</p>
               <p className="text-sm text-zinc-300">Fecha: {item.date ? new Date(item.date).toLocaleString() : "Sin fecha"}</p>
@@ -949,13 +950,27 @@ export default function AdminPage() {
         <div className="mt-3 space-y-2">
           {appointments.map((item) => (
             <article key={item.id} className="rounded-md border border-zinc-700 bg-zinc-950 p-3">
-              <p>
-                #{item.id} - {item.customerName} - {item.vehicle} - {item.plate}
-              </p>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-bold text-white">
+                  #{item.id} - {item.customerName} - {item.vehicle}
+                </p>
+                <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                  item.contactChannel === "email"
+                    ? "bg-blue-500/20 text-blue-400 border border-blue-500/40"
+                    : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                }`}>
+                  {item.contactChannel === "email" ? "✉️ Correo" : "🟢 WhatsApp"}
+                </span>
+              </div>
+              <p className="text-sm text-zinc-300">Fecha y hora: {item.appointmentDate || "No especificada"}</p>
+              <p className="text-sm text-zinc-300">Teléfono: {item.phone}</p>
+              {item.email ? <p className="text-sm text-blue-400">Correo: {item.email}</p> : null}
               <p className="text-sm text-zinc-300">Estado: {item.status}</p>
-              <button onClick={() => markReady(item.id)} className="mt-2 rounded-md bg-brandRed px-3 py-1 text-sm">
-                Marcar listo
-              </button>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button onClick={() => markReady(item.id)} className="rounded-md bg-brandRed px-3 py-1 text-sm text-white font-medium">
+                  Marcar listo
+                </button>
+              </div>
             </article>
           ))}
           {appointments.length === 0 ? <p className="text-zinc-300">No hay citas registradas.</p> : null}
@@ -1008,39 +1023,127 @@ export default function AdminPage() {
           </p>
         </div>
         <div className="mt-3 space-y-2">
-          {filteredQuotes.map((item) => (
-            <article key={item.id} className="rounded-md border border-zinc-700 bg-zinc-950 p-3">
-              <p>
-                #{item.id} - {item.customerName} - {item.vehicle} - {item.plate}
-              </p>
-              <p className="text-sm text-zinc-300">Estado: {item.status}</p>
-              <p className="text-sm text-zinc-300">Telefono: {item.phone || "No indicado"}</p>
-              <p className="text-sm text-zinc-300">
-                Fecha: {item.createdAt ? new Date(item.createdAt).toLocaleString() : "Sin fecha"}
-              </p>
-              <p className="text-sm text-zinc-300">Fotos: {Array.isArray(item.photos) ? item.photos.length : 0}</p>
-              <p className="text-sm text-zinc-300">Detalle: {item.damageDescription}</p>
-              {Array.isArray(item.photos) && item.photos.length > 0 ? (
-                <div className="mt-3 grid gap-2 sm:grid-cols-3 md:grid-cols-5">
-                  {item.photos.map((photo, idx) => (
-                    <a
-                      key={`${item.id}-photo-${idx}`}
-                      href={photo.dataUrl}
-                      download={photo.name || `presupuesto-${item.plate}-${idx + 1}.jpg`}
-                      className="block overflow-hidden rounded border border-zinc-700 bg-zinc-900 p-1"
-                      title="Clic para descargar foto"
-                    >
-                      <img
-                        src={photo.dataUrl}
-                        alt={photo.name || `Foto ${idx + 1}`}
-                        className="h-24 w-full rounded object-cover"
-                      />
-                    </a>
-                  ))}
+          {filteredQuotes.map((item) => {
+            const cleanDigits = String(item.phone || "").replace(/\D/g, "");
+            const waNumber = cleanDigits.length === 8 ? `506${cleanDigits}` : cleanDigits;
+            const partsList = Array.isArray(item.selectedParts) && item.selectedParts.length > 0
+              ? item.selectedParts.join(", ")
+              : "Por evaluar";
+            const waQuoteTemplate = encodeURIComponent(
+              `Hola ${item.customerName}, le saluda Randy de Taller Dayana 🚗🔧.\n\n` +
+              `Con respecto a su solicitud de presupuesto para su ${item.vehicle}:\n` +
+              `• Piezas indicadas: ${partsList}\n` +
+              `• Detalle: ${item.damageDescription}\n\n` +
+              `📋 ESTIMACIÓN DE PRESUPUESTO:\n` +
+              `- Mano de obra y enderezado: ₡_____\n` +
+              `- Preparación y pintura automotriz: ₡_____\n` +
+              `💰 TOTAL ESTIMADO: ₡_____ (IVA incluido)\n` +
+              `⏱️ Tiempo estimado: ___ días hábiles.\n` +
+              `🛡️ Garantía por escrito en tono y acabado.\n\n` +
+              `¿Gusta que coordinemos un espacio para inspeccionar el vehículo en el taller?`
+            );
+            const emailQuoteTemplate = encodeURIComponent(
+              `Estimado(a) ${item.customerName},\n\n` +
+              `Le saluda Randy de Taller Dayana. En atención a su solicitud de presupuesto para su vehículo ${item.vehicle}:\n\n` +
+              `• Piezas a reparar/pintar: ${partsList}\n` +
+              `• Daño reportado: ${item.damageDescription}\n\n` +
+              `ESTIMACIÓN DE PRESUPUESTO:\n` +
+              `- Mano de obra y enderezado: ₡_____\n` +
+              `- Pintura automotriz y materiales: ₡_____\n` +
+              `TOTAL ESTIMADO: ₡_____\n` +
+              `Tiempo estimado de entrega: ___ días hábiles.\n\n` +
+              `Contamos con garantía de calidad y color por escrito. Quedamos a su orden para coordinar la revisión presencial cuando guste.\n\n` +
+              `Atentamente,\nRandy - Taller Dayana\nAlajuela, Costa Rica`
+            );
+
+            return (
+              <article key={item.id} className="rounded-md border border-zinc-700 bg-zinc-950 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-2">
+                  <p className="font-bold text-white text-base">
+                    #{item.id} - {item.customerName} • {item.vehicle}
+                  </p>
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                    item.contactChannel === "email"
+                      ? "bg-blue-500/20 text-blue-400 border border-blue-500/40"
+                      : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                  }`}>
+                    {item.contactChannel === "email" ? "✉️ Responder por Correo" : "🟢 Responder por WhatsApp"}
+                  </span>
                 </div>
-              ) : null}
-            </article>
-          ))}
+
+                <div className="mt-2.5 grid gap-1.5 text-xs sm:grid-cols-2">
+                  <p className="text-zinc-300"><strong>Teléfono:</strong> {item.phone || "No indicado"}</p>
+                  {item.email ? <p className="text-blue-400"><strong>Correo:</strong> {item.email}</p> : null}
+                  <p className="text-zinc-300"><strong>Fecha:</strong> {item.createdAt ? new Date(item.createdAt).toLocaleString("es-CR") : "Sin fecha"}</p>
+                  <p className="text-zinc-300"><strong>Estado:</strong> {item.status}</p>
+                </div>
+
+                {Array.isArray(item.selectedParts) && item.selectedParts.length > 0 ? (
+                  <div className="mt-2 rounded bg-zinc-900/90 p-2">
+                    <p className="text-xs font-semibold text-brandRed">🧩 Piezas seleccionadas en la plantilla:</p>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {item.selectedParts.map((p) => (
+                        <span key={p} className="rounded bg-zinc-800 px-2 py-0.5 text-[11px] text-zinc-200">
+                          {p}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                <p className="mt-2 text-xs text-zinc-300">
+                  <strong>Detalle del daño:</strong> {item.damageDescription}
+                </p>
+
+                {Array.isArray(item.photos) && item.photos.length > 0 ? (
+                  <div className="mt-3">
+                    <p className="text-xs text-zinc-400 mb-1">Fotos adjuntas ({item.photos.length}):</p>
+                    <div className="grid gap-2 grid-cols-3 sm:grid-cols-5">
+                      {item.photos.map((photo, idx) => (
+                        <a
+                          key={`${item.id}-photo-${idx}`}
+                          href={photo.dataUrl}
+                          download={photo.name || `presupuesto-${idx + 1}.jpg`}
+                          className="block overflow-hidden rounded border border-zinc-700 bg-zinc-900 p-1"
+                          title="Clic para ver/descargar foto"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <img
+                            src={photo.dataUrl}
+                            alt={photo.name || `Foto ${idx + 1}`}
+                            className="h-20 w-full rounded object-cover"
+                          />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* Fast Response Action Buttons for Don Randy */}
+                <div className="mt-3.5 flex flex-wrap gap-2 border-t border-zinc-800 pt-3">
+                  {waNumber ? (
+                    <a
+                      href={`https://wa.me/${waNumber}?text=${waQuoteTemplate}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-green-600 px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-green-500 shadow-sm"
+                    >
+                      📲 Responder por WhatsApp (Plantilla)
+                    </a>
+                  ) : null}
+                  {item.email ? (
+                    <a
+                      href={`mailto:${item.email}?subject=${encodeURIComponent(`Presupuesto Estimado - Taller Dayana (${item.vehicle})`)}&body=${emailQuoteTemplate}`}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-blue-500 shadow-sm"
+                    >
+                      ✉️ Responder por Correo (Plantilla)
+                    </a>
+                  ) : null}
+                </div>
+              </article>
+            );
+          })}
           {quotes.length === 0 ? <p className="text-zinc-300">No hay presupuestos registrados.</p> : null}
           {quotes.length > 0 && filteredQuotes.length === 0 ? (
             <p className="text-zinc-300">No hay resultados con esos filtros.</p>

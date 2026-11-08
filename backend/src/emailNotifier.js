@@ -46,8 +46,8 @@ function buildIcsCalendarInvite(appointment, startDate) {
   const nowStamp = formatIcsDate(new Date());
   const dtStart = formatIcsDate(startDate);
   const dtEnd = formatIcsDate(endDate);
-  const summary = `Cita Taller Dayana - ${appointment.plate} (${appointment.customerName})`;
-  const description = `Cliente: ${appointment.customerName}\\nTelefono: ${appointment.phone}\\nVehiculo: ${appointment.vehicle}\\nPlaca: ${appointment.plate}`;
+  const summary = `Cita Taller Dayana - ${appointment.vehicle} (${appointment.customerName})`;
+  const description = `Cliente: ${appointment.customerName}\\nTelefono: ${appointment.phone}\\nVehiculo: ${appointment.vehicle}`;
 
   return [
     "BEGIN:VCALENDAR",
@@ -149,25 +149,93 @@ async function sendQuoteNotification(quote) {
   const transporter = nodemailer.createTransport(transportConfig);
   const from = process.env.SMTP_FROM || process.env.SMTP_USER;
   const photoCount = Array.isArray(quote.photos) ? quote.photos.length : 0;
+  const partsText = Array.isArray(quote.selectedParts) && quote.selectedParts.length > 0
+    ? quote.selectedParts.join(", ")
+    : "Por evaluar";
+  const channelText = quote.contactChannel === "email"
+    ? `Correo electrónico (${quote.email || "No especificado"})`
+    : `WhatsApp (${quote.phone})`;
 
-  const subject = `Nuevo presupuesto solicitado - ${quote.plate}`;
+  const cleanPhoneDigits = String(quote.phone || "").replace(/\D/g, "");
+  const waPhone = cleanPhoneDigits.length === 8 ? `506${cleanPhoneDigits}` : cleanPhoneDigits;
+  const waReplyMsg = encodeURIComponent(
+    `Hola ${quote.customerName}, le saluda Randy de Taller Dayana 🚗🔧.\n\n` +
+    `Con respecto a su solicitud de presupuesto para su ${quote.vehicle}:\n` +
+    `• Piezas indicadas: ${partsText}\n` +
+    `• Detalle: ${quote.damageDescription}\n\n` +
+    `📋 ESTIMACIÓN DE PRESUPUESTO:\n` +
+    `- Mano de obra y enderezado: ₡_____\n` +
+    `- Preparación y pintura automotriz: ₡_____\n` +
+    `💰 TOTAL ESTIMADO: ₡_____ (IVA incluido)\n` +
+    `⏱️ Tiempo estimado: ___ días hábiles.\n` +
+    `🛡️ Garantía en tono y acabado.\n\n` +
+    `¿Gusta que coordinemos un espacio para inspeccionar el vehículo sin compromiso?`
+  );
+  const waReplyUrl = waPhone ? `https://wa.me/${waPhone}?text=${waReplyMsg}` : null;
+
+  const emailReplySubject = encodeURIComponent(`Presupuesto Estimado - Taller Dayana (${quote.vehicle})`);
+  const emailReplyBody = encodeURIComponent(
+    `Estimado(a) ${quote.customerName},\n\n` +
+    `Le saluda Randy de Taller Dayana. En atención a su solicitud de presupuesto para su vehículo ${quote.vehicle}:\n\n` +
+    `• Piezas a reparar/pintar: ${partsText}\n` +
+    `• Daño reportado: ${quote.damageDescription}\n\n` +
+    `ESTIMACIÓN DE PRESUPUESTO:\n` +
+    `- Mano de obra y enderezado: ₡_____\n` +
+    `- Pintura automotriz y materiales: ₡_____\n` +
+    `TOTAL ESTIMADO: ₡_____\n` +
+    `Tiempo estimado de entrega: ___ días hábiles.\n\n` +
+    `Contamos con garantía de calidad y color por escrito. Si desea coordinar la revisión presencial, puede responder a este correo o escribirnos al WhatsApp 7043-9248.\n\n` +
+    `Atentamente,\nRandy - Taller Dayana\nAlajuela, Costa Rica`
+  );
+  const emailReplyUrl = quote.email ? `mailto:${quote.email}?subject=${emailReplySubject}&body=${emailReplyBody}` : null;
+
+  const subject = `Nuevo presupuesto solicitado - ${quote.vehicle} (${quote.customerName})`;
   const text = [
-    "Se registro una nueva solicitud de presupuesto en Taller Dayana.",
+    "Se registró una nueva solicitud de presupuesto en Taller Dayana.",
     "",
     `Cliente: ${quote.customerName}`,
-    `Telefono: ${quote.phone}`,
-    `Vehiculo: ${quote.vehicle}`,
-    `Placa: ${quote.plate}`,
-    `Descripcion: ${quote.damageDescription}`,
+    `Teléfono: ${quote.phone}`,
+    quote.email ? `Correo: ${quote.email}` : null,
+    `Medio preferido de respuesta: ${channelText}`,
+    `Vehículo: ${quote.vehicle}`,
+    `Piezas a cotizar: ${partsText}`,
+    `Descripción: ${quote.damageDescription}`,
     `Fotos adjuntas: ${photoCount}`,
-    `Fecha: ${quote.createdAt}`
-  ].join("\n");
+    `Fecha: ${quote.createdAt}`,
+    "",
+    waReplyUrl ? `Responder por WhatsApp: ${waReplyUrl}` : null,
+    emailReplyUrl ? `Responder por Correo: ${emailReplyUrl}` : null
+  ].filter(Boolean).join("\n");
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e4e4e7; border-radius: 12px; background: #ffffff;">
+      <h2 style="color: #dc2626; margin-top: 0;">🚗 Nueva Solicitud de Presupuesto</h2>
+      <p style="font-size: 15px; color: #18181b;">Se ha recibido una nueva solicitud en el sitio web de Taller Dayana.</p>
+      
+      <div style="background: #f4f4f5; padding: 15px; border-radius: 8px; margin: 15px 0; line-height: 1.6;">
+        <p style="margin: 4px 0;"><strong>Cliente:</strong> ${quote.customerName}</p>
+        <p style="margin: 4px 0;"><strong>Teléfono:</strong> ${quote.phone}</p>
+        ${quote.email ? `<p style="margin: 4px 0;"><strong>Correo:</strong> ${quote.email}</p>` : ""}
+        <p style="margin: 4px 0; color: #dc2626;"><strong>Medio preferido de respuesta:</strong> ${channelText}</p>
+        <p style="margin: 4px 0;"><strong>Vehículo:</strong> ${quote.vehicle}</p>
+        <p style="margin: 4px 0;"><strong>Piezas indicadas:</strong> ${partsText}</p>
+        <p style="margin: 4px 0;"><strong>Descripción:</strong> ${quote.damageDescription}</p>
+        <p style="margin: 4px 0;"><strong>Fotos adjuntas:</strong> ${photoCount}</p>
+      </div>
+
+      <p style="font-weight: bold; margin-bottom: 10px;">Plantilla de Respuesta Rápida para Don Randy:</p>
+      <div style="margin: 15px 0;">
+        ${waReplyUrl ? `<a href="${waReplyUrl}" style="display: inline-block; background: #16a34a; color: #ffffff; padding: 10px 18px; border-radius: 6px; text-decoration: none; font-weight: bold; margin-right: 10px; margin-bottom: 8px;">📲 Responder por WhatsApp con Plantilla</a>` : ""}
+        ${emailReplyUrl ? `<a href="${emailReplyUrl}" style="display: inline-block; background: #0284c7; color: #ffffff; padding: 10px 18px; border-radius: 6px; text-decoration: none; font-weight: bold; margin-bottom: 8px;">✉️ Responder por Correo con Plantilla</a>` : ""}
+      </div>
+    </div>
+  `;
 
   const attachments = Array.isArray(quote.photos)
     ? quote.photos
         .filter((photo) => photo && typeof photo.dataUrl === "string" && photo.dataUrl.startsWith("data:image/"))
         .map((photo, index) => ({
-          filename: photo.name || `vehiculo-${quote.plate}-${index + 1}.jpg`,
+          filename: photo.name || `vehiculo-${index + 1}.jpg`,
           path: photo.dataUrl
         }))
     : [];
@@ -177,8 +245,40 @@ async function sendQuoteNotification(quote) {
     to: recipients,
     subject,
     text,
+    html,
     attachments
   });
+
+  // Si el cliente indicó correo y prefiere correo, enviarle acuse de recibo automático
+  if (quote.email && quote.contactChannel === "email") {
+    try {
+      await transporter.sendMail({
+        from,
+        to: quote.email,
+        subject: `Hemos recibido su solicitud de presupuesto - Taller Dayana`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e4e4e7; border-radius: 12px; background: #ffffff;">
+            <h2 style="color: #dc2626; margin-top: 0;">¡Solicitud de Presupuesto Recibida! 🚗🔧</h2>
+            <p>Estimado(a) <strong>${quote.customerName}</strong>,</p>
+            <p>Hemos recibido correctamente su solicitud de valoración para su vehículo <strong>${quote.vehicle}</strong>.</p>
+            
+            <div style="background: #f4f4f5; padding: 15px; border-radius: 8px; margin: 15px 0; line-height: 1.6;">
+              <p style="margin: 4px 0;"><strong>Piezas indicadas:</strong> ${partsText}</p>
+              <p style="margin: 4px 0;"><strong>Detalle:</strong> ${quote.damageDescription}</p>
+            </div>
+
+            <p>Don Randy y nuestro equipo técnico evaluarán las fotos y detalles para enviarle la estimación formal directamente a este correo electrónico.</p>
+            <p style="font-size: 13px; color: #71717a;">
+              Taller Dayana • Alajuela, Costa Rica<br>
+              Teléfonos: 7043-9248 / 8869-8157
+            </p>
+          </div>
+        `
+      });
+    } catch (clientMailError) {
+      console.error("No se pudo enviar acuse al cliente:", clientMailError.message);
+    }
+  }
 
   return {
     sent: true,
@@ -230,17 +330,20 @@ async function sendAppointmentNotification(appointment) {
       })
     : "Fecha no especificada";
 
-  const subject = `Nueva cita de atención - ${appointment.plate} (${appointment.customerName})`;
+  const googleMapsUrl = "https://www.google.com/maps/place/Taller+Dayana/@10.0189955,-84.2360667,20.5z";
+  const wazeUrl = "https://waze.com/ul?ll=10.0188372,-84.2361356&navigate=yes";
+
+  const subject = `Nueva cita de atención - ${appointment.vehicle} (${appointment.customerName})`;
   const text = [
-    "Se registro una nueva cita de atención en Taller Dayana.",
+    "Se registró una nueva cita de atención en Taller Dayana.",
     "",
     `Cliente: ${appointment.customerName}`,
-    `Telefono: ${appointment.phone}`,
-    `Vehiculo: ${appointment.vehicle}`,
-    `Placa: ${appointment.plate}`,
+    `Teléfono: ${appointment.phone}`,
+    appointment.email ? `Correo: ${appointment.email}` : null,
+    `Vehículo: ${appointment.vehicle}`,
     `Fecha y hora programada: ${appointmentTime}`,
     `Fecha de registro: ${appointment.createdAt}`
-  ].join("\n");
+  ].filter(Boolean).join("\n");
 
   const icsContent = buildIcsCalendarInvite(appointment, parsedStart);
 
@@ -250,11 +353,53 @@ async function sendAppointmentNotification(appointment) {
     subject,
     text,
     icalEvent: {
-      filename: `cita-${appointment.plate}.ics`,
+      filename: `cita-taller-dayana.ics`,
       method: "REQUEST",
       content: icsContent
     }
   });
+
+  // Si el cliente indicó correo, enviarle confirmación con los datos y enlaces de Waze / Google Maps
+  if (appointment.email) {
+    try {
+      await transporter.sendMail({
+        from,
+        to: appointment.email,
+        subject: `Confirmación de Cita de Atención - Taller Dayana`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e4e4e7; border-radius: 12px; background: #ffffff;">
+            <h2 style="color: #dc2626; margin-top: 0;">¡Cita Agendada en Taller Dayana! 🚗🔧</h2>
+            <p>Estimado(a) <strong>${appointment.customerName}</strong>,</p>
+            <p>Su cita para valoración y revisión presencial de su vehículo ha sido confirmada:</p>
+            
+            <div style="background: #f4f4f5; padding: 15px; border-radius: 8px; margin: 15px 0; line-height: 1.6;">
+              <p style="margin: 4px 0;"><strong>Vehículo:</strong> ${appointment.vehicle}</p>
+              <p style="margin: 4px 0;"><strong>Fecha y hora:</strong> ${appointmentTime}</p>
+              <p style="margin: 4px 0;"><strong>Lugar:</strong> Barrio San José de Alajuela, Costa Rica</p>
+            </div>
+
+            <p style="font-weight: bold; margin-bottom: 10px;">¿Cómo llegar al taller?</p>
+            <div style="margin: 15px 0;">
+              <a href="${googleMapsUrl}" style="display: inline-block; background: #dc2626; color: #ffffff; padding: 10px 18px; border-radius: 6px; text-decoration: none; font-weight: bold; margin-right: 10px; margin-bottom: 8px;">🗺️ Abrir en Google Maps</a>
+              <a href="${wazeUrl}" style="display: inline-block; background: #0284c7; color: #ffffff; padding: 10px 18px; border-radius: 6px; text-decoration: none; font-weight: bold; margin-bottom: 8px;">🚗 Abrir en Waze</a>
+            </div>
+
+            <p style="font-size: 13px; color: #71717a;">
+              Si necesita reprogramar o tiene alguna consulta, comuníquese con Don Randy al <strong>7043-9248</strong> o <strong>8869-8157</strong>.<br>
+              ¡Le esperamos puntualmente!
+            </p>
+          </div>
+        `,
+        icalEvent: {
+          filename: `cita-taller-dayana.ics`,
+          method: "REQUEST",
+          content: icsContent
+        }
+      });
+    } catch (clientMailError) {
+      console.error("No se pudo enviar confirmación al cliente por correo:", clientMailError.message);
+    }
+  }
 
   return {
     sent: true,

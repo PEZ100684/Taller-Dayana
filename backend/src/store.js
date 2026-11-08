@@ -61,8 +61,11 @@ function buildQuoteRow(input, id = nextId(quotes)) {
     id,
     customerName: input.customerName,
     phone: input.phone,
+    email: input.email || "",
+    contactChannel: input.contactChannel || (input.email ? "email" : "whatsapp"),
+    selectedParts: Array.isArray(input.selectedParts) ? input.selectedParts : [],
     vehicle: input.vehicle,
-    plate: String(input.plate || "").trim().toUpperCase(),
+    plate: String(input.plate || "").trim().toUpperCase() || ("SP-" + Date.now().toString().slice(-6)),
     damageDescription: input.damageDescription,
     photos: Array.isArray(input.photos) ? input.photos : [],
     status: input.status || "received",
@@ -75,8 +78,10 @@ function buildAppointmentRow(input, id = nextId(appointments)) {
     id,
     customerName: input.customerName,
     phone: input.phone,
+    email: input.email || "",
+    contactChannel: input.contactChannel || (input.email ? "email" : "whatsapp"),
     vehicle: input.vehicle,
-    plate: String(input.plate || "").trim().toUpperCase(),
+    plate: String(input.plate || "").trim().toUpperCase() || ("SP-" + Date.now().toString().slice(-6)),
     appointmentDate: input.appointmentDate || null,
     status: input.status || "scheduled",
     createdAt: input.createdAt || new Date().toISOString()
@@ -126,7 +131,7 @@ async function runInTransaction(pool, callback) {
 
 async function createQuote(input) {
   const pool = getPool();
-  const normalizedPlate = String(input.plate || "").trim().toUpperCase();
+  const normalizedPlate = String(input.plate || "").trim().toUpperCase() || `SP-${Date.now().toString().slice(-6)}`;
 
   if (!pool) {
     const quote = buildQuoteRow({ ...input, plate: normalizedPlate });
@@ -153,10 +158,18 @@ async function createQuote(input) {
     );
     const vehicleId = vehicleResult.rows[0].id;
 
-    const quoteResult = await client.query(
-      "INSERT INTO quotes (client_id, vehicle_id, damage_description, photos_json, status) VALUES ($1, $2, $3, $4::jsonb, $5) RETURNING id, created_at",
-      [clientId, vehicleId, input.damageDescription, JSON.stringify(input.photos || []), "received"]
-    );
+    let quoteResult;
+    try {
+      quoteResult = await client.query(
+        "INSERT INTO quotes (client_id, vehicle_id, damage_description, photos_json, status, contact_channel, email, selected_parts) VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8::jsonb) RETURNING id, created_at",
+        [clientId, vehicleId, input.damageDescription, JSON.stringify(input.photos || []), "received", input.contactChannel || "whatsapp", input.email || "", JSON.stringify(input.selectedParts || [])]
+      );
+    } catch {
+      quoteResult = await client.query(
+        "INSERT INTO quotes (client_id, vehicle_id, damage_description, photos_json, status) VALUES ($1, $2, $3, $4::jsonb, $5) RETURNING id, created_at",
+        [clientId, vehicleId, input.damageDescription, JSON.stringify(input.photos || []), "received"]
+      );
+    }
 
     return buildQuoteRow(
       {
@@ -173,7 +186,7 @@ async function createQuote(input) {
 
 async function createAppointment(input) {
   const pool = getPool();
-  const normalizedPlate = String(input.plate || "").trim().toUpperCase();
+  const normalizedPlate = String(input.plate || "").trim().toUpperCase() || `SP-${Date.now().toString().slice(-6)}`;
 
   if (!pool) {
     const appointment = buildAppointmentRow({ ...input, plate: normalizedPlate });
@@ -200,10 +213,18 @@ async function createAppointment(input) {
     );
     const vehicleId = vehicleResult.rows[0].id;
 
-    const appointmentResult = await client.query(
-      "INSERT INTO appointments (client_id, vehicle_id, appointment_date, status) VALUES ($1, $2, $3, $4) RETURNING id, created_at, appointment_date",
-      [clientId, vehicleId, input.appointmentDate || null, "scheduled"]
-    );
+    let appointmentResult;
+    try {
+      appointmentResult = await client.query(
+        "INSERT INTO appointments (client_id, vehicle_id, appointment_date, status, contact_channel, email) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, created_at, appointment_date",
+        [clientId, vehicleId, input.appointmentDate || null, "scheduled", input.contactChannel || "whatsapp", input.email || ""]
+      );
+    } catch {
+      appointmentResult = await client.query(
+        "INSERT INTO appointments (client_id, vehicle_id, appointment_date, status) VALUES ($1, $2, $3, $4) RETURNING id, created_at, appointment_date",
+        [clientId, vehicleId, input.appointmentDate || null, "scheduled"]
+      );
+    }
 
     return buildAppointmentRow(
       {
@@ -225,24 +246,47 @@ async function listAppointments() {
     return appointments;
   }
 
-  const result = await pool.query(
-    `SELECT
-      a.id,
-      c.name AS "customerName",
-      c.phone,
-      v.make_model AS "vehicle",
-      v.plate,
-      a.appointment_date AS "appointmentDate",
-      a.status,
-      a.created_at AS "createdAt"
-    FROM appointments a
-    JOIN clients c ON c.id = a.client_id
-    JOIN vehicles v ON v.id = a.vehicle_id
-    ORDER BY a.id ASC`
-  );
+  let result;
+  try {
+    result = await pool.query(
+      `SELECT
+        a.id,
+        c.name AS "customerName",
+        c.phone,
+        COALESCE(a.email, '') AS "email",
+        COALESCE(a.contact_channel, 'whatsapp') AS "contactChannel",
+        v.make_model AS "vehicle",
+        v.plate,
+        a.appointment_date AS "appointmentDate",
+        a.status,
+        a.created_at AS "createdAt"
+      FROM appointments a
+      JOIN clients c ON c.id = a.client_id
+      JOIN vehicles v ON v.id = a.vehicle_id
+      ORDER BY a.id ASC`
+    );
+  } catch {
+    result = await pool.query(
+      `SELECT
+        a.id,
+        c.name AS "customerName",
+        c.phone,
+        v.make_model AS "vehicle",
+        v.plate,
+        a.appointment_date AS "appointmentDate",
+        a.status,
+        a.created_at AS "createdAt"
+      FROM appointments a
+      JOIN clients c ON c.id = a.client_id
+      JOIN vehicles v ON v.id = a.vehicle_id
+      ORDER BY a.id ASC`
+    );
+  }
 
   return result.rows.map((row) => ({
     ...row,
+    contactChannel: row.contactChannel || "whatsapp",
+    email: row.email || "",
     appointmentDate: formatDateTime(row.appointmentDate),
     createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt
   }));
@@ -255,25 +299,51 @@ async function listQuotes() {
     return quotes;
   }
 
-  const result = await pool.query(
-    `SELECT
-      q.id,
-      c.name AS "customerName",
-      c.phone,
-      v.make_model AS "vehicle",
-      v.plate,
-      q.damage_description AS "damageDescription",
-      q.photos_json AS photos,
-      q.status,
-      q.created_at AS "createdAt"
-    FROM quotes q
-    JOIN clients c ON c.id = q.client_id
-    JOIN vehicles v ON v.id = q.vehicle_id
-    ORDER BY q.id ASC`
-  );
+  let result;
+  try {
+    result = await pool.query(
+      `SELECT
+        q.id,
+        c.name AS "customerName",
+        c.phone,
+        COALESCE(q.email, '') AS "email",
+        COALESCE(q.contact_channel, 'whatsapp') AS "contactChannel",
+        COALESCE(q.selected_parts, '[]'::jsonb) AS "selectedParts",
+        v.make_model AS "vehicle",
+        v.plate,
+        q.damage_description AS "damageDescription",
+        q.photos_json AS photos,
+        q.status,
+        q.created_at AS "createdAt"
+      FROM quotes q
+      JOIN clients c ON c.id = q.client_id
+      JOIN vehicles v ON v.id = q.vehicle_id
+      ORDER BY q.id ASC`
+    );
+  } catch {
+    result = await pool.query(
+      `SELECT
+        q.id,
+        c.name AS "customerName",
+        c.phone,
+        v.make_model AS "vehicle",
+        v.plate,
+        q.damage_description AS "damageDescription",
+        q.photos_json AS photos,
+        q.status,
+        q.created_at AS "createdAt"
+      FROM quotes q
+      JOIN clients c ON c.id = q.client_id
+      JOIN vehicles v ON v.id = q.vehicle_id
+      ORDER BY q.id ASC`
+    );
+  }
 
   return result.rows.map((row) => ({
     ...row,
+    contactChannel: row.contactChannel || "whatsapp",
+    email: row.email || "",
+    selectedParts: Array.isArray(row.selectedParts) ? row.selectedParts : [],
     photos: Array.isArray(row.photos) ? row.photos : [],
     createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt
   }));
@@ -894,7 +964,7 @@ async function listReviews() {
       customerName: "Macaco",
       plate: "ADT564",
       comment: "Excelente trabajo de pintura y entrega puntual. El carro quedó como salido de agencia.",
-      ratings: { servicio: 5, trato: 5, calidad: 5, precio: 5, puntualidad: 5 },
+      ratings: { servicio: 5, trato: 5, calidad: 5, precio: 5 },
       average: 5,
       date: "Reciente"
     }
@@ -916,7 +986,7 @@ async function listReviews() {
       customerName: row.customer_name,
       plate: row.plate || "",
       comment: row.comment,
-      ratings: row.ratings_json || { servicio: 5, trato: 5, calidad: 5, precio: 5, puntualidad: 5 },
+      ratings: row.ratings_json || { servicio: 5, trato: 5, calidad: 5, precio: 5 },
       average: Number(row.average_rating) || 5,
       date: row.created_at instanceof Date ? row.created_at.toLocaleDateString("es-CR") : "Reciente"
     }));
@@ -928,7 +998,7 @@ async function listReviews() {
 
 async function createReview(input) {
   const pool = getPool();
-  const ratings = input.ratings || { servicio: 5, trato: 5, calidad: 5, precio: 5, puntualidad: 5 };
+  const ratings = input.ratings || { servicio: 5, trato: 5, calidad: 5, precio: 5 };
   const average =
     Number(
       (

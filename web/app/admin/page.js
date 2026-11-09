@@ -48,6 +48,155 @@ export default function AdminPage() {
   const [activePhotosPlate, setActivePhotosPlate] = useState("");
   const displayPlate = (p) => (!p || String(p).startsWith("SP-") || p === "SIN PLACA" ? "Sin placa" : p);
   const [status, setStatus] = useState("");
+  const canvasRef = useRef(null);
+
+  const [socialStudio, setSocialStudio] = useState({
+    vehicle: "Toyota Corolla 2019",
+    workType: "Enderezado de golpe frontal y pintura al horno",
+    beforeImage: "/cases/caso-proceso-1.jpg",
+    afterImage: "/cases/caso-final-1.jpg",
+    notes: "Alineación milimétrica de chasis y acabado espejo en cabina de pintura.",
+    platform: "facebook_instagram",
+    copySuccess: false,
+    generatingImage: false
+  });
+
+  const SOCIAL_PRESETS = [
+    {
+      label: "Toyota Corolla • Golpe Frontal",
+      vehicle: "Toyota Corolla 2019",
+      workType: "Enderezado de chasis y pintura bicapa al horno",
+      beforeImage: "/cases/caso-proceso-1.jpg",
+      afterImage: "/cases/caso-final-1.jpg",
+      notes: "Devolvimos las líneas originales de fábrica y aplicamos transparente de alta gama."
+    },
+    {
+      label: "Suzuki Swift • Horneado y Brillo",
+      vehicle: "Suzuki Swift Sport",
+      workType: "Pintura horneada en cabina y pulido cerámico",
+      beforeImage: "/cases/case-36.jpg",
+      afterImage: "/cases/caso-final-2.jpg",
+      notes: "Igualación computarizada de tono de color y protección de barniz."
+    },
+    {
+      label: "Hyundai Tucson • Restauración Lateral",
+      vehicle: "Hyundai Tucson 2021",
+      workType: "Enderezado de puertas, costado y pintura tricapa",
+      beforeImage: "/cases/case-76.jpg",
+      afterImage: "/cases/caso-final-3.jpg",
+      notes: "Cero masilla innecesaria, ajuste de piezas y acabado impecable."
+    }
+  ];
+
+  const generatedSocialCopy = useMemo(() => {
+    if (socialStudio.platform === "tiktok") {
+      return (
+        `¿Creías que este ${socialStudio.vehicle} no tenía arreglo? 🚗💥\n\n` +
+        `En Taller Dayana realizamos: ${socialStudio.workType}. ${socialStudio.notes}\n\n` +
+        `📍 Barrio San José de Alajuela\n` +
+        `📲 Cotizá tu carro al WhatsApp: 7043-9248 (enlace en el perfil)\n\n` +
+        `#TallerDayana #EnderezadoYPintura #CostaRica #Alajuela #Heredia #AntesYDespues #TikTokAutos #PinturaAutomotriz #AutosCR`
+      );
+    }
+    return (
+      `🚗✨ TRANSFORMACIÓN COMPLETA • TALLER DAYANA\n\n` +
+      `Vehículo: ${socialStudio.vehicle}\n` +
+      `Trabajo realizado: ${socialStudio.workType}\n\n` +
+      `Don Randy Barrantes y nuestro equipo devolvieron este vehículo a su estado original de fábrica. ${socialStudio.notes}\n\n` +
+      `✅ Materiales automotrices de primera gama\n` +
+      `✅ Cabina de pintura y secado al horno\n` +
+      `✅ Garantía por escrito en tono y acabado\n` +
+      `✅ Seguimiento en línea 24/7 de su reparación\n\n` +
+      `📍 Ubicación: Barrio San José de Alajuela, Costa Rica\n` +
+      `📲 Cotizaciones rápidas por WhatsApp: 7043-9248 / 8869-8157\n` +
+      `🌐 Cotice y agende en nuestra web: https://tallerdayana.vercel.app\n\n` +
+      `#TallerDayana #EnderezadoYPintura #Alajuela #Heredia #CostaRica #PinturaAutomotriz #AutosCostaRica #TallerMecanicoCR #AntesYDespues`
+    );
+  }, [socialStudio]);
+
+  const copySocialText = () => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(generatedSocialCopy);
+      setSocialStudio((prev) => ({ ...prev, copySuccess: true }));
+      setTimeout(() => setSocialStudio((prev) => ({ ...prev, copySuccess: false })), 3000);
+    }
+  };
+
+  const generateAndDownloadComposite = async () => {
+    setSocialStudio((prev) => ({ ...prev, generatingImage: true }));
+    try {
+      const canvas = canvasRef.current || document.createElement("canvas");
+      canvas.width = 1200;
+      canvas.height = 700;
+      const ctx = canvas.getContext("2d");
+
+      const loadImg = (src) =>
+        new Promise((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = src;
+        });
+
+      const [imgBefore, imgAfter] = await Promise.all([
+        loadImg(socialStudio.beforeImage),
+        loadImg(socialStudio.afterImage)
+      ]);
+
+      // Background
+      ctx.fillStyle = "#09090b";
+      ctx.fillRect(0, 0, 1200, 700);
+
+      // Draw Before (left half: 597 width)
+      ctx.drawImage(imgBefore, 0, 0, 597, 620);
+      // Draw After (right half: 597 width)
+      ctx.drawImage(imgAfter, 603, 0, 597, 620);
+
+      // Divider line
+      ctx.fillStyle = "#d62828";
+      ctx.fillRect(597, 0, 6, 620);
+
+      // ANTES Badge
+      ctx.fillStyle = "rgba(220, 38, 38, 0.9)";
+      ctx.fillRect(20, 20, 140, 42);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 20px sans-serif";
+      ctx.fillText("ANTES", 55, 48);
+
+      // DESPUES Badge
+      ctx.fillStyle = "rgba(22, 163, 74, 0.9)";
+      ctx.fillRect(625, 20, 160, 42);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 20px sans-serif";
+      ctx.fillText("DESPUÉS", 655, 48);
+
+      // Bottom Bar
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 620, 1200, 80);
+      ctx.fillStyle = "#d62828";
+      ctx.font = "bold 24px sans-serif";
+      ctx.fillText("TALLER DAYANA", 30, 668);
+      ctx.fillStyle = "#a1a1aa";
+      ctx.font = "bold 18px sans-serif";
+      ctx.fillText("• Enderezado y Pintura Automotriz • Alajuela, CR", 240, 668);
+      ctx.fillStyle = "#22c55e";
+      ctx.font = "bold 20px sans-serif";
+      ctx.fillText("WhatsApp: 7043-9248", 960, 668);
+
+      const dataUrl = canvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = `taller-dayana-${socialStudio.vehicle.toLowerCase().replace(/\\s+/g, "-")}-antes-despues.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (err) {
+      alert("No se pudo componer la imagen automáticamente: " + err.message);
+    } finally {
+      setSocialStudio((prev) => ({ ...prev, generatingImage: false }));
+    }
+  };
 
   const apiBase =
     process.env.NEXT_PUBLIC_API_BASE_URL ||
@@ -1148,6 +1297,207 @@ export default function AdminPage() {
           {quotes.length > 0 && filteredQuotes.length === 0 ? (
             <p className="text-zinc-300">No hay resultados con esos filtros.</p>
           ) : null}
+        </div>
+      </section>
+
+      {/* Social Media Content Generator & Metricool Studio */}
+      <section className="section-card space-y-5 border-emerald-500/40 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between border-b border-zinc-800 pb-4">
+          <div>
+            <span className="inline-block rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-400 border border-emerald-500/30">
+              🚀 Generador de Contenido & Metricool (Social Studio)
+            </span>
+            <h2 className="mt-1 text-2xl font-bold text-white">Generar Publicación y Video "Antes y Después"</h2>
+            <p className="text-xs text-zinc-300">
+              Cree copys profesionales, ensamble imágenes comparativas en HD y guiones de video listos para programar en Metricool hacia Facebook, Instagram y TikTok.
+            </p>
+          </div>
+          <a
+            href="https://app.metricool.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-xs font-bold text-white shadow-md transition hover:opacity-90"
+          >
+            📅 Abrir Metricool (Programador) ↗
+          </a>
+        </div>
+
+        {/* Presets Bar */}
+        <div>
+          <label className="block text-xs font-bold text-zinc-300 mb-2">Seleccionar Caso Rápido o Personalizar:</label>
+          <div className="flex flex-wrap gap-2">
+            {SOCIAL_PRESETS.map((preset, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() =>
+                  setSocialStudio((prev) => ({
+                    ...prev,
+                    vehicle: preset.vehicle,
+                    workType: preset.workType,
+                    beforeImage: preset.beforeImage,
+                    afterImage: preset.afterImage,
+                    notes: preset.notes
+                  }))
+                }
+                className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-200 transition hover:border-emerald-500 hover:text-white"
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Inputs */}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-zinc-300">Vehículo</label>
+            <input
+              value={socialStudio.vehicle}
+              onChange={(e) => setSocialStudio((prev) => ({ ...prev, vehicle: e.target.value }))}
+              className="rounded-md border border-zinc-700 bg-zinc-950 p-2.5 text-xs text-white w-full"
+              placeholder="Ej. Toyota Corolla 2019"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-zinc-300">Trabajo realizado</label>
+            <input
+              value={socialStudio.workType}
+              onChange={(e) => setSocialStudio((prev) => ({ ...prev, workType: e.target.value }))}
+              className="rounded-md border border-zinc-700 bg-zinc-950 p-2.5 text-xs text-white w-full"
+              placeholder="Ej. Enderezado de chasis y pintura bicapa"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-zinc-300">Ruta / URL Foto Antes</label>
+            <input
+              value={socialStudio.beforeImage}
+              onChange={(e) => setSocialStudio((prev) => ({ ...prev, beforeImage: e.target.value }))}
+              className="rounded-md border border-zinc-700 bg-zinc-950 p-2.5 text-xs text-white w-full"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-zinc-300">Ruta / URL Foto Después</label>
+            <input
+              value={socialStudio.afterImage}
+              onChange={(e) => setSocialStudio((prev) => ({ ...prev, afterImage: e.target.value }))}
+              className="rounded-md border border-zinc-700 bg-zinc-950 p-2.5 text-xs text-white w-full"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="mb-1 block text-xs font-semibold text-zinc-300">Detalles de calidad / Notas</label>
+            <input
+              value={socialStudio.notes}
+              onChange={(e) => setSocialStudio((prev) => ({ ...prev, notes: e.target.value }))}
+              className="rounded-md border border-zinc-700 bg-zinc-950 p-2.5 text-xs text-white w-full"
+              placeholder="Ej. Alineación milimétrica y garantía de color por escrito."
+            />
+          </div>
+        </div>
+
+        {/* Visual Preview & Canvas Generator */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
+            <p className="text-xs font-bold text-white">Previsualización de Imagen "Antes y Después":</p>
+            <button
+              type="button"
+              onClick={generateAndDownloadComposite}
+              disabled={socialStudio.generatingImage}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-500 disabled:opacity-50"
+            >
+              {socialStudio.generatingImage ? "Generando..." : "🖼️ Descargar Imagen Combinada en HD"}
+            </button>
+          </div>
+
+          <div className="relative overflow-hidden rounded-lg border border-zinc-700 grid grid-cols-2 gap-1 bg-black p-1 max-h-72">
+            <div className="relative overflow-hidden rounded">
+              <img src={socialStudio.beforeImage} alt="Antes" className="h-48 w-full object-cover" />
+              <span className="absolute top-2 left-2 rounded bg-red-600/90 px-2.5 py-0.5 text-[10px] font-black text-white">
+                ANTES
+              </span>
+            </div>
+            <div className="relative overflow-hidden rounded">
+              <img src={socialStudio.afterImage} alt="Después" className="h-48 w-full object-cover" />
+              <span className="absolute top-2 left-2 rounded bg-green-600/90 px-2.5 py-0.5 text-[10px] font-black text-white">
+                DESPUÉS
+              </span>
+            </div>
+          </div>
+          <canvas ref={canvasRef} className="hidden" />
+        </div>
+
+        {/* Social Copy Generator */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setSocialStudio((prev) => ({ ...prev, platform: "facebook_instagram" }))}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                  socialStudio.platform === "facebook_instagram"
+                    ? "bg-blue-600 text-white"
+                    : "bg-zinc-800 text-zinc-400 hover:text-white"
+                }`}
+              >
+                Facebook & Instagram
+              </button>
+              <button
+                type="button"
+                onClick={() => setSocialStudio((prev) => ({ ...prev, platform: "tiktok" }))}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                  socialStudio.platform === "tiktok"
+                    ? "bg-cyan-600 text-white"
+                    : "bg-zinc-800 text-zinc-400 hover:text-white"
+                }`}
+              >
+                TikTok & Reels
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={copySocialText}
+              className="rounded-lg bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 text-xs font-semibold text-emerald-400 transition"
+            >
+              {socialStudio.copySuccess ? "✓ ¡Copiado al portapapeles!" : "📋 Copiar Texto"}
+            </button>
+          </div>
+
+          <pre className="whitespace-pre-wrap rounded-lg bg-zinc-900/90 p-3 text-xs leading-relaxed text-zinc-200 font-sans border border-zinc-800">
+            {generatedSocialCopy}
+          </pre>
+        </div>
+
+        {/* 15-Second Video Reel Script Template */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+          <p className="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2">
+            🎬 Plantilla de Guión de Video (15 Segundos para CapCut / TikTok / Reels)
+          </p>
+          <div className="grid gap-2 text-xs sm:grid-cols-4">
+            <div className="rounded bg-zinc-900 p-2.5 border border-zinc-800">
+              <span className="font-bold text-brandRed">0-3 seg (Hook)</span>
+              <p className="mt-1 text-zinc-300">Mostrar foto/clip del golpe severo.</p>
+              <p className="text-[11px] text-zinc-400 italic mt-1">Texto en pantalla: "¿Creían que no tenía arreglo? 😱"</p>
+            </div>
+            <div className="rounded bg-zinc-900 p-2.5 border border-zinc-800">
+              <span className="font-bold text-amber-400">3-7 seg (Proceso)</span>
+              <p className="mt-1 text-zinc-300">Banco de enderezado y lija.</p>
+              <p className="text-[11px] text-zinc-400 italic mt-1">Texto en pantalla: "Alineación de chasis milimétrica 🔧"</p>
+            </div>
+            <div className="rounded bg-zinc-900 p-2.5 border border-zinc-800">
+              <span className="font-bold text-emerald-400">7-12 seg (El Brillo)</span>
+              <p className="mt-1 text-zinc-300">Transición al auto listo en cabina.</p>
+              <p className="text-[11px] text-zinc-400 italic mt-1">Texto en pantalla: "¡Como de agencia! Pintura al horno ✨"</p>
+            </div>
+            <div className="rounded bg-zinc-900 p-2.5 border border-zinc-800">
+              <span className="font-bold text-blue-400">12-15 seg (CTA)</span>
+              <p className="mt-1 text-zinc-300">Logo Taller Dayana y WhatsApp.</p>
+              <p className="text-[11px] text-zinc-400 italic mt-1">Texto en pantalla: "Cotizá al 7043-9248 • Alajuela 📲"</p>
+            </div>
+          </div>
+          <p className="mt-3 text-[11px] text-zinc-400">
+            💡 <em>Consejo de algoritmo:</em> En CapCut use un audio trending de "transformación" o sonido de golpe seguido de beat drop para maximizar reproducciones en Costa Rica.
+          </p>
         </div>
       </section>
     </main>

@@ -50,12 +50,19 @@ const mapsLink =
   "https://www.google.com/maps/place/Taller+Dayana/@10.0189955,-84.2360667,20.5z/data=!4m11!1m4!7m3!1m1!1s116661075415157394462!2e2!3m5!1s0x8fa0f9604b8acd11:0xe3eb01ff61086c8b!8m2!3d10.0188372!4d-84.2361356!16s%2Fg%2F11hdkshc7w?entry=ttu&g_ep=EgoyMDI2MDQxNS4wIKXMDSoASAFQAw%3D%3D";
 const wazeLink = "https://waze.com/ul?ll=10.0188372,-84.2361356&navigate=yes";
 
+const SOCIAL_LINKS = {
+  facebook: "https://facebook.com/tallerdayana",
+  instagram: "https://instagram.com/tallerdayana",
+  tiktok: "https://tiktok.com/@tallerdayana"
+};
+
 const navigationTabs = [
   { id: "servicios", label: "Servicios" },
   { id: "trabajos-listos", label: "Antes y después" },
   { id: "galeria-trabajos", label: "Proyectos y casos atendidos" },
   { id: "solicitar-presupuesto", label: "Solicitar presupuesto" },
   { id: "solicitar-cita-visita", label: "Agendar cita" },
+  { id: "redes-sociales", label: "Redes sociales" },
   { id: "seguimiento-reparacion", label: "Seguimiento 24/7" },
   { id: "nuestra-historia", label: "Nuestra historia" },
   { id: "ubicacion-contacto", label: "Ubicación y contacto" }
@@ -312,6 +319,19 @@ export default function Home() {
         throw new Error(errorPayload.error || "No se pudo enviar la solicitud.");
       }
 
+      if (typeof window !== "undefined" && window.fbq) {
+        window.fbq("track", "Lead", {
+          content_name: "Solicitud de Presupuesto",
+          vehicle: formData.vehicle,
+          channel: formData.contactChannel
+        });
+      }
+      if (typeof window !== "undefined" && window.ttq) {
+        window.ttq.track("SubmitForm", {
+          content_name: "Solicitud de Presupuesto"
+        });
+      }
+
       const partsText = formData.selectedParts.length > 0 ? formData.selectedParts.join(", ") : "Por evaluar según fotos";
       const channelText = formData.contactChannel === "email" ? `Correo electrónico (${formData.email})` : `WhatsApp (${formData.phone})`;
 
@@ -415,6 +435,19 @@ export default function Home() {
       if (!response.ok) {
         const errorPayload = await response.json().catch(() => ({}));
         throw new Error(errorPayload.error || "No se pudo registrar la cita.");
+      }
+
+      if (typeof window !== "undefined" && window.fbq) {
+        window.fbq("track", "Schedule", {
+          content_name: "Cita de Atención",
+          vehicle: appointmentForm.vehicle,
+          date: appointmentForm.appointmentDate
+        });
+      }
+      if (typeof window !== "undefined" && window.ttq) {
+        window.ttq.track("CompleteRegistration", {
+          content_name: "Cita de Atención"
+        });
       }
 
       const channelText = appointmentForm.contactChannel === "email" ? `Correo electrónico (${appointmentForm.email})` : `WhatsApp (${appointmentForm.phone})`;
@@ -651,6 +684,16 @@ export default function Home() {
                     <span>🚗 Ir con Waze</span>
                     <span>Abrir →</span>
                   </a>
+                </div>
+
+                {/* Social Media Quick Bar */}
+                <div className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900/60 p-2.5 text-xs">
+                  <span className="text-zinc-400 font-medium pl-1">Redes:</span>
+                  <div className="flex items-center gap-1.5">
+                    <a href={SOCIAL_LINKS.facebook} target="_blank" rel="noopener noreferrer" className="rounded-lg bg-blue-600/20 px-2.5 py-1 font-bold text-blue-400 hover:bg-blue-600 hover:text-white transition">Facebook</a>
+                    <a href={SOCIAL_LINKS.instagram} target="_blank" rel="noopener noreferrer" className="rounded-lg bg-pink-600/20 px-2.5 py-1 font-bold text-pink-400 hover:bg-pink-600 hover:text-white transition">Instagram</a>
+                    <a href={SOCIAL_LINKS.tiktok} target="_blank" rel="noopener noreferrer" className="rounded-lg bg-zinc-800 px-2.5 py-1 font-bold text-zinc-200 hover:bg-white hover:text-black transition">TikTok</a>
+                  </div>
                 </div>
               </div>
 
@@ -976,7 +1019,7 @@ export default function Home() {
                 />
               </div>
 
-              <div className="mt-3 flex items-center justify-between gap-3">
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                 <button
                   type="button"
                   onClick={() =>
@@ -986,13 +1029,35 @@ export default function Home() {
                 >
                   ← Anterior
                 </button>
-                <a
-                  href="#solicitar-presupuesto"
-                  onClick={() => setSelectedIndex(null)}
-                  className="rounded-xl bg-brandRed px-4 py-2 text-xs font-bold text-white transition hover:opacity-90"
-                >
-                  Cotizar un trabajo similar
-                </a>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <a
+                    href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://tallerdayana.vercel.app")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-xs font-semibold text-blue-400 transition hover:bg-blue-600 hover:text-white"
+                    title="Compartir en Facebook"
+                  >
+                    f Compartir
+                  </a>
+                  <a
+                    href={`https://api.whatsapp.com/send?text=${encodeURIComponent("Mire este trabajo de enderezado y pintura en Taller Dayana: https://tallerdayana.vercel.app")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-400 transition hover:bg-emerald-600 hover:text-white"
+                    title="Compartir por WhatsApp"
+                  >
+                    WhatsApp
+                  </a>
+                  <a
+                    href="#solicitar-presupuesto"
+                    onClick={() => setSelectedIndex(null)}
+                    className="rounded-xl bg-brandRed px-4 py-2 text-xs font-bold text-white transition hover:opacity-90"
+                  >
+                    Cotizar un trabajo similar
+                  </a>
+                </div>
+
                 <button
                   type="button"
                   onClick={() =>
@@ -1445,6 +1510,158 @@ export default function Home() {
           </section>
         </div>
 
+        {/* Social Media & Multimedia Hub Section */}
+        <section id="redes-sociales" className="section-card scroll-mt-24 border-brandRed/30 bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950">
+          <div>
+            <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+              <div>
+                <span className="inline-block rounded-lg bg-brandRed/15 px-3 py-1 text-xs font-bold uppercase tracking-wider text-brandRed">
+                  Comunidad y Contenido en Vivo
+                </span>
+                <h2 className="mt-2 text-2xl font-bold text-white md:text-3xl">Conéctese con Taller Dayana en Redes Sociales</h2>
+                <p className="mt-1 max-w-2xl text-sm text-zinc-300">
+                  Síganos en nuestras plataformas oficiales para ver el detrás de cámaras, transformaciones de antes y después, acabados en cabina y consejos de cuidado automotriz.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 pt-2 md:pt-0">
+                <span className="text-xs text-zinc-400 font-medium">Canal oficial:</span>
+                <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs font-bold text-white">@tallerdayana</span>
+              </div>
+            </div>
+
+            {/* 3 Social Media Platform Cards */}
+            <div className="mt-6 grid gap-4 md:grid-cols-3">
+              {/* Facebook Card */}
+              <div className="flex flex-col justify-between rounded-2xl border border-blue-500/30 bg-gradient-to-b from-blue-950/20 to-zinc-950 p-5 transition hover:border-blue-500/60 hover:shadow-lg hover:shadow-blue-950/40">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md shadow-blue-600/30 font-black text-xl">
+                      f
+                    </div>
+                    <span className="rounded-full bg-blue-500/10 px-2.5 py-0.5 text-[11px] font-bold text-blue-400 border border-blue-500/20">
+                      Facebook
+                    </span>
+                  </div>
+                  <h3 className="mt-4 text-lg font-bold text-white">Taller Dayana en Facebook</h3>
+                  <p className="mt-1 text-xs leading-relaxed text-zinc-300">
+                    Proyectos finalizados, álbumes de fotos de entregas a clientes satisfechos, noticias del taller y atención directa por Messenger.
+                  </p>
+                </div>
+                <a
+                  href={SOCIAL_LINKS.facebook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-blue-500"
+                >
+                  Seguir en Facebook →
+                </a>
+              </div>
+
+              {/* Instagram Card */}
+              <div className="flex flex-col justify-between rounded-2xl border border-pink-500/30 bg-gradient-to-b from-pink-950/20 to-zinc-950 p-5 transition hover:border-pink-500/60 hover:shadow-lg hover:shadow-pink-950/40">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white shadow-md shadow-rose-600/30">
+                      <svg className="h-6 w-6 fill-current" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                    </div>
+                    <span className="rounded-full bg-pink-500/10 px-2.5 py-0.5 text-[11px] font-bold text-pink-400 border border-pink-500/20">
+                      Instagram
+                    </span>
+                  </div>
+                  <h3 className="mt-4 text-lg font-bold text-white">Reels & Procesos HD</h3>
+                  <p className="mt-1 text-xs leading-relaxed text-zinc-300">
+                    Reels diarios de antes y después, igualación de tono de pintura, perleados, tricapas y detalles de pulido cerámico.
+                  </p>
+                </div>
+                <a
+                  href={SOCIAL_LINKS.instagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-rose-600 to-amber-600 px-4 py-2.5 text-xs font-bold text-white transition hover:opacity-90"
+                >
+                  Ver Reels en Instagram →
+                </a>
+              </div>
+
+              {/* TikTok Card */}
+              <div className="flex flex-col justify-between rounded-2xl border border-zinc-700 bg-gradient-to-b from-zinc-900 to-black p-5 transition hover:border-zinc-500 hover:shadow-lg hover:shadow-zinc-900/50">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-black border border-zinc-700 text-white shadow-md">
+                      <svg className="h-6 w-6 fill-current text-cyan-400" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.24 1.07-.14 1.61.24 1.64 1.82 2.89 3.5 2.77 1.81-.02 3.25-1.47 3.3-3.29.04-3.58.01-7.16.02-10.74V.02z"/></svg>
+                    </div>
+                    <span className="rounded-full bg-cyan-500/10 px-2.5 py-0.5 text-[11px] font-bold text-cyan-400 border border-cyan-500/20">
+                      TikTok
+                    </span>
+                  </div>
+                  <h3 className="mt-4 text-lg font-bold text-white">TikTok @tallerdayana</h3>
+                  <p className="mt-1 text-xs leading-relaxed text-zinc-300">
+                    Transformaciones rápidas de carrocería, procesos en horno de secado, enderezado estructural y tips automotrices con Don Randy.
+                  </p>
+                </div>
+                <a
+                  href={SOCIAL_LINKS.tiktok}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-zinc-800"
+                >
+                  Seguir en TikTok →
+                </a>
+              </div>
+            </div>
+
+            {/* Featured Transformation Reels Grid */}
+            <div className="mt-8 rounded-2xl border border-zinc-800 bg-zinc-950/70 p-5">
+              <p className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                Videos y Transformaciones Destacadas
+              </p>
+              <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                <a
+                  href={SOCIAL_LINKS.tiktok}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group relative overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 p-3 transition hover:border-brandRed"
+                >
+                  <div className="aspect-video w-full rounded-lg overflow-hidden bg-zinc-950 relative">
+                    <img src="/cases/case-6.jpg" alt="Transformación Toyota" className="h-full w-full object-cover transition group-hover:scale-105" />
+                    <span className="absolute bottom-2 right-2 rounded bg-black/80 px-2 py-0.5 text-[10px] font-bold text-white">▶ Ver Video</span>
+                  </div>
+                  <p className="mt-2 text-xs font-bold text-white group-hover:text-brandRed">Restauración de Golpe Frontal y Pintura</p>
+                  <p className="text-[11px] text-zinc-400">Toyota Corolla • Enderezado de chasis y cabina</p>
+                </a>
+
+                <a
+                  href={SOCIAL_LINKS.instagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group relative overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 p-3 transition hover:border-pink-500"
+                >
+                  <div className="aspect-video w-full rounded-lg overflow-hidden bg-zinc-950 relative">
+                    <img src="/cases/case-36.jpg" alt="Acabado en cabina" className="h-full w-full object-cover transition group-hover:scale-105" />
+                    <span className="absolute bottom-2 right-2 rounded bg-black/80 px-2 py-0.5 text-[10px] font-bold text-white">▶ Ver Reel</span>
+                  </div>
+                  <p className="mt-2 text-xs font-bold text-white group-hover:text-pink-400">Pintura Bicapa y Horneado de Cabina</p>
+                  <p className="text-[11px] text-zinc-400">Suzuki Swift • Acabado espejo de alta durabilidad</p>
+                </a>
+
+                <a
+                  href={SOCIAL_LINKS.facebook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group relative overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 p-3 transition hover:border-blue-500"
+                >
+                  <div className="aspect-video w-full rounded-lg overflow-hidden bg-zinc-950 relative">
+                    <img src="/cases/case-76.jpg" alt="Entrega a cliente" className="h-full w-full object-cover transition group-hover:scale-105" />
+                    <span className="absolute bottom-2 right-2 rounded bg-black/80 px-2 py-0.5 text-[10px] font-bold text-white">▶ Ver Post</span>
+                  </div>
+                  <p className="mt-2 text-xs font-bold text-white group-hover:text-blue-400">Entrega de Vehículo y Prueba de Color</p>
+                  <p className="text-[11px] text-zinc-400">Hyundai Tucson • Garantía de color por escrito</p>
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* 24/7 Repair Tracking Banner */}
         <section
           id="seguimiento-reparacion"
@@ -1741,11 +1958,19 @@ export default function Home() {
               </form>
             </div>
 
-            <div className="mt-6 flex items-center justify-between border-t border-zinc-800 pt-4 text-xs text-zinc-400">
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-t border-zinc-800 pt-4 text-xs text-zinc-400">
               <span>© {new Date().getFullYear()} Taller Dayana • Alajuela, Costa Rica</span>
-              <a href="/admin" className="text-zinc-500 transition hover:text-zinc-300">
-                Acceso Taller
-              </a>
+              <div className="flex flex-wrap items-center gap-3">
+                <a href={SOCIAL_LINKS.facebook} target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-blue-400 transition">Facebook</a>
+                <span className="text-zinc-600">•</span>
+                <a href={SOCIAL_LINKS.instagram} target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-pink-400 transition">Instagram</a>
+                <span className="text-zinc-600">•</span>
+                <a href={SOCIAL_LINKS.tiktok} target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-white transition">TikTok</a>
+                <span className="text-zinc-600">•</span>
+                <a href="/admin" className="text-zinc-500 transition hover:text-zinc-300">
+                  Acceso Taller
+                </a>
+              </div>
             </div>
           </article>
         </section>

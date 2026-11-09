@@ -781,34 +781,32 @@ async function getRepairStatus(plate, tenantId) {
     };
   }
 
-  const appointmentResult = await pool.query(
-    `SELECT a.status
-     FROM appointments a
-     JOIN vehicles v ON v.id = a.vehicle_id
-     WHERE LOWER(v.plate) = $1
-     ORDER BY a.created_at DESC
-     LIMIT 1`,
-    [normalized]
-  );
+  const appParams = [normalized];
+  let appQuery = `SELECT a.status FROM appointments a JOIN vehicles v ON v.id = a.vehicle_id WHERE LOWER(v.plate) = $1`;
+  if (numericTenantId) {
+    appParams.push(numericTenantId);
+    appQuery += ` AND (a.tenant_id = $2 OR a.tenant_id IS NULL)`;
+  }
+  appQuery += ` ORDER BY a.created_at DESC LIMIT 1`;
+  const appointmentResult = await pool.query(appQuery, appParams);
 
-  const quoteResult = await pool.query(
-    `SELECT q.status
-     FROM quotes q
-     JOIN vehicles v ON v.id = q.vehicle_id
-     WHERE LOWER(v.plate) = $1
-     ORDER BY q.created_at DESC
-     LIMIT 1`,
-    [normalized]
-  );
+  const quoteParams = [normalized];
+  let quoteQuery = `SELECT q.status FROM quotes q JOIN vehicles v ON v.id = q.vehicle_id WHERE LOWER(v.plate) = $1`;
+  if (numericTenantId) {
+    quoteParams.push(numericTenantId);
+    quoteQuery += ` AND (q.tenant_id = $2 OR q.tenant_id IS NULL)`;
+  }
+  quoteQuery += ` ORDER BY q.created_at DESC LIMIT 1`;
+  const quoteResult = await pool.query(quoteQuery, quoteParams);
 
-  const workshopResult = await pool.query(
-    `SELECT status
-     FROM workshop_vehicles
-     WHERE LOWER(plate) = $1
-     ORDER BY created_at DESC
-     LIMIT 1`,
-    [normalized]
-  );
+  const wsParams = [normalized];
+  let wsQuery = `SELECT status FROM workshop_vehicles WHERE LOWER(plate) = $1`;
+  if (numericTenantId) {
+    wsParams.push(numericTenantId);
+    wsQuery += ` AND (tenant_id = $2 OR tenant_id IS NULL)`;
+  }
+  wsQuery += ` ORDER BY created_at DESC LIMIT 1`;
+  const workshopResult = await pool.query(wsQuery, wsParams);
 
   return {
     appointment:

@@ -151,6 +151,77 @@ app.use(
 app.use(express.json({ limit: "50mb" }));
 app.use("/api/uploads", express.static(getVehiclePhotosDir()));
 
+// ==================== CABECERAS DE SEGURIDAD (SECURITY HEADERS) ====================
+app.use((_req, res, next) => {
+  res.removeHeader("X-Powered-By");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
+  next();
+});
+
+// ==================== RATE LIMITING (ANTI-FUERZA BRUTA & ANTI-DDOS) ====================
+const rateLimitMap = new Map();
+
+function createRateLimiter(options) {
+  const windowMs = options.windowMs || 60000;
+  const max = options.max || 100;
+  const message = options.message || "Demasiadas peticiones. Por favor intente más tarde.";
+
+  return (req, res, next) => {
+    const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
+    const key = `${options.name || "default"}_${ip}`;
+    const now = Date.now();
+
+    let record = rateLimitMap.get(key);
+    if (!record || now - record.startTime > windowMs) {
+      record = { count: 1, startTime: now };
+      rateLimitMap.set(key, record);
+    } else {
+      record.count += 1;
+    }
+
+    if (rateLimitMap.size > 10000) {
+      for (const [k, v] of rateLimitMap.entries()) {
+        if (now - v.startTime > windowMs) {
+          rateLimitMap.delete(k);
+        }
+      }
+    }
+
+    if (record.count > max) {
+      return res.status(429).json({ error: message });
+    }
+
+    res.setHeader("X-RateLimit-Limit", max);
+    res.setHeader("X-RateLimit-Remaining", Math.max(0, max - record.count));
+    next();
+  };
+}
+
+const loginLimiter = createRateLimiter({
+  name: "login",
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: "Demasiados intentos de acceso fallidos. Por seguridad de la plataforma, intente nuevamente en 15 minutos."
+});
+
+const submitLimiter = createRateLimiter({
+  name: "submit",
+  windowMs: 10 * 60 * 1000,
+  max: 20,
+  message: "Ha alcanzado el límite de envíos continuos. Por favor espere unos minutos antes de volver a intentar."
+});
+
+const searchLimiter = createRateLimiter({
+  name: "search",
+  windowMs: 60 * 1000,
+  max: 45,
+  message: "Demasiadas consultas de placa continuas. Por favor espere un momento antes de volver a consultar."
+});
+
 async function resolveTenant(req, _res, next) {
   const rawSlug = req.headers["x-tenant-slug"] || req.query.tenant || req.query.tenantSlug;
   const slug = rawSlug ? String(rawSlug).trim().toLowerCase() : "taller-dayana";
@@ -270,7 +341,7 @@ app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
-app.post("/api/auth/login", (req, res) => {
+app.post("/api/auth/login", loginLimiter, (req, res) => {
   const { username, password } = req.body;
   const expectedUser = process.env.ADMIN_USER || "admin";
   const expectedPass = process.env.ADMIN_PASSWORD || "admin123";
@@ -333,7 +404,7 @@ app.get("/api/gallery", async (_req, res) => {
   return res.json(gallery);
 });
 
-app.post("/api/quotes", async (req, res) => {
+app.post("/api/quotes", submitLimiter, async (req, res) => {
   const { customerName, phone, vehicle, plate, damageDescription, photos, contactChannel, email, selectedParts } = req.body;
 
   if (!customerName || !phone || !vehicle || !damageDescription) {
@@ -420,7 +491,7 @@ app.post("/api/quotes", async (req, res) => {
   }
 });
 
-app.post("/api/appointments", async (req, res) => {
+app.post("/api/appointments", submitLimiter, async (req, res) => {
   const { customerName, phone, vehicle, plate, appointmentDate, contactChannel, email } = req.body;
 
   if (!customerName || !phone || !vehicle || !appointmentDate) {
@@ -499,7 +570,7 @@ app.post("/api/appointments", async (req, res) => {
   }
 });
 
-app.get("/api/repairs/status/:plate", async (req, res) => {
+app.get("/api/repairs/status/:plate", searchLimiter, async (req, res) => {
   const { plate } = req.params;
   const normalizedPlate = String(plate || "").trim().toUpperCase();
   const tenantId = req.query.tenantId || (req.tenant ? req.tenant.id : null);

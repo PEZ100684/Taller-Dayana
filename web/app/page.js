@@ -1442,6 +1442,17 @@ export default function Home() {
                   Enviar solicitud de presupuesto
                 </button>
 
+                <div className="flex flex-wrap items-center justify-center gap-2 pt-1 text-[11px] text-zinc-400 sm:col-span-2">
+                  <span className="flex items-center gap-1 text-emerald-400">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    🔒 Cifrado SSL 256-bit
+                  </span>
+                  <span className="text-zinc-600">•</span>
+                  <span>🛡️ Protección de datos (Ley N° 8968 Costa Rica)</span>
+                  <span className="text-zinc-600">•</span>
+                  <span>Confidencialidad garantizada</span>
+                </div>
+
                 {status.type !== "idle" ? (
                   <div className="space-y-3 rounded-xl border border-zinc-800 bg-zinc-950 p-4 sm:col-span-2">
                     <p
@@ -1628,6 +1639,17 @@ export default function Home() {
                 >
                   Confirmar cita de atención
                 </button>
+
+                <div className="flex flex-wrap items-center justify-center gap-2 pt-1 text-[11px] text-zinc-400 sm:col-span-2">
+                  <span className="flex items-center gap-1 text-emerald-400">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    🔒 Cita Segura y Cifrada
+                  </span>
+                  <span className="text-zinc-600">•</span>
+                  <span>🛡️ Cero spam ni divulgación a terceros</span>
+                  <span className="text-zinc-600">•</span>
+                  <span>Confirmación directa por WhatsApp / Correo</span>
+                </div>
 
                 {appointmentStatus.type !== "idle" ? (
                   <div className="space-y-3 rounded-xl border border-zinc-800 bg-zinc-950 p-4 sm:col-span-2">
@@ -2135,7 +2157,12 @@ export default function Home() {
             </div>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-t border-zinc-800 pt-4 text-xs text-zinc-400">
-              <span>© {new Date().getFullYear()} {currentTenant.name} • {currentTenant.province}, Costa Rica</span>
+              <div className="space-y-1">
+                <p>© {new Date().getFullYear()} {currentTenant.name} • {currentTenant.province}, Costa Rica</p>
+                <p className="text-[11px] text-zinc-500">
+                  🔒 Cifrado SSL 256-bit • 🛡️ Protección de Datos Ley N° 8968 (CR) • Software propietario protegido contra copia no autorizada.
+                </p>
+              </div>
               <div className="flex flex-wrap items-center gap-3">
                 <a href={SOCIAL_LINKS.facebook} target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-blue-400 transition">Facebook</a>
                 <span className="text-zinc-600">•</span>

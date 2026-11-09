@@ -1,6 +1,8 @@
 const { getPool } = require("./db");
 const { discoverPhotosFromFilesystem } = require("./photoStorage");
 const {
+  tenants,
+  defaultTenants,
   quotes,
   appointments,
   notifications,
@@ -11,6 +13,7 @@ const {
 
 function persistIfLocal() {
   persistLocalData({
+    tenants,
     quotes,
     appointments,
     notifications,
@@ -56,9 +59,43 @@ function nextId(collection) {
   return Math.max(0, ...collection.map((item) => Number(item?.id) || 0)) + 1;
 }
 
+function buildTenantRow(input, id = nextId(tenants)) {
+  const rawSlug = input.slug || input.name || `taller-${id}`;
+  const slug = String(rawSlug)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  return {
+    id,
+    slug,
+    name: input.name || "Nuevo Taller",
+    legalName: input.legalName || input.name || "",
+    ownerName: input.ownerName || "",
+    phone: input.phone || "",
+    whatsapp: String(input.whatsapp || input.phone || "").replace(/[^0-9]/g, ""),
+    email: input.email || "",
+    province: input.province || "Alajuela",
+    canton: input.canton || "Alajuela",
+    address: input.address || "",
+    mapsUrl: input.mapsUrl || "",
+    wazeUrl: input.wazeUrl || "",
+    brandColor: input.brandColor || "#d62828",
+    secondaryColor: input.secondaryColor || "#18181b",
+    logoUrl: input.logoUrl || "",
+    customDomain: input.customDomain || "",
+    plan: input.plan || "pro",
+    monthlyFee: Number(input.monthlyFee !== undefined ? input.monthlyFee : 45000),
+    isActive: input.isActive !== undefined ? Boolean(input.isActive) : true,
+    createdAt: input.createdAt || new Date().toISOString()
+  };
+}
+
 function buildQuoteRow(input, id = nextId(quotes)) {
   return {
     id,
+    tenantId: Number(input.tenantId || input.tenant_id || 1),
     customerName: input.customerName,
     phone: input.phone,
     email: input.email || "",
@@ -76,6 +113,7 @@ function buildQuoteRow(input, id = nextId(quotes)) {
 function buildAppointmentRow(input, id = nextId(appointments)) {
   return {
     id,
+    tenantId: Number(input.tenantId || input.tenant_id || 1),
     customerName: input.customerName,
     phone: input.phone,
     email: input.email || "",
@@ -91,6 +129,7 @@ function buildAppointmentRow(input, id = nextId(appointments)) {
 function buildWorkshopVehicleRow(input, id = nextId(workshopVehicles)) {
   return {
     id,
+    tenantId: Number(input.tenantId || input.tenant_id || 1),
     plate: String(input.plate || "").trim().toUpperCase(),
     customerName: input.customerName,
     workType: input.workType,
@@ -105,6 +144,7 @@ function buildWorkshopVehicleRow(input, id = nextId(workshopVehicles)) {
 function buildProgressPhotoRow(input, id = nextId(workshopProgressPhotos)) {
   return {
     id,
+    tenantId: Number(input.tenantId || input.tenant_id || 1),
     workshopVehicleId: input.workshopVehicleId,
     plate: String(input.plate || "").trim().toUpperCase(),
     photoUrl: input.photoUrl,
@@ -127,6 +167,377 @@ async function runInTransaction(pool, callback) {
   } finally {
     client.release();
   }
+}
+
+async function listTenants() {
+  const pool = getPool();
+  if (!pool) {
+    return tenants;
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT
+        id,
+        slug,
+        name,
+        legal_name AS "legalName",
+        owner_name AS "ownerName",
+        phone,
+        whatsapp,
+        email,
+        province,
+        canton,
+        address,
+        maps_url AS "mapsUrl",
+        waze_url AS "wazeUrl",
+        brand_color AS "brandColor",
+        secondary_color AS "secondaryColor",
+        logo_url AS "logoUrl",
+        custom_domain AS "customDomain",
+        plan,
+        monthly_fee AS "monthlyFee",
+        is_active AS "isActive",
+        created_at AS "createdAt"
+      FROM tenants
+      ORDER BY id ASC`
+    );
+    return result.rows.map((row) => ({
+      ...row,
+      createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt
+    }));
+  } catch (_e) {
+    return tenants;
+  }
+}
+
+async function getTenantBySlug(slug) {
+  const normalized = String(slug || "").trim().toLowerCase();
+  const pool = getPool();
+
+  if (!pool) {
+    return (
+      tenants.find((t) => t.slug.toLowerCase() === normalized) ||
+      tenants[0] ||
+      null
+    );
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT
+        id,
+        slug,
+        name,
+        legal_name AS "legalName",
+        owner_name AS "ownerName",
+        phone,
+        whatsapp,
+        email,
+        province,
+        canton,
+        address,
+        maps_url AS "mapsUrl",
+        waze_url AS "wazeUrl",
+        brand_color AS "brandColor",
+        secondary_color AS "secondaryColor",
+        logo_url AS "logoUrl",
+        custom_domain AS "customDomain",
+        plan,
+        monthly_fee AS "monthlyFee",
+        is_active AS "isActive",
+        created_at AS "createdAt"
+      FROM tenants
+      WHERE LOWER(slug) = $1
+      LIMIT 1`,
+      [normalized]
+    );
+
+    if (result.rows[0]) {
+      const row = result.rows[0];
+      return {
+        ...row,
+        createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt
+      };
+    }
+
+    const fallback = await pool.query("SELECT * FROM tenants WHERE id = 1 LIMIT 1");
+    if (fallback.rows[0]) {
+      const row = fallback.rows[0];
+      return {
+        id: row.id,
+        slug: row.slug,
+        name: row.name,
+        legalName: row.legal_name,
+        ownerName: row.owner_name,
+        phone: row.phone,
+        whatsapp: row.whatsapp,
+        email: row.email,
+        province: row.province,
+        canton: row.canton,
+        address: row.address,
+        mapsUrl: row.maps_url,
+        wazeUrl: row.waze_url,
+        brandColor: row.brand_color,
+        secondaryColor: row.secondary_color,
+        logoUrl: row.logo_url,
+        customDomain: row.custom_domain,
+        plan: row.plan,
+        monthlyFee: row.monthly_fee,
+        isActive: row.is_active,
+        createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at
+      };
+    }
+  } catch (_e) {
+    return tenants.find((t) => t.slug.toLowerCase() === normalized) || tenants[0] || null;
+  }
+}
+
+async function getTenantById(id) {
+  const numericId = Number(id);
+  const pool = getPool();
+  if (!pool) {
+    return tenants.find((t) => t.id === numericId) || null;
+  }
+  try {
+    const result = await pool.query("SELECT * FROM tenants WHERE id = $1 LIMIT 1", [numericId]);
+    if (!result.rows[0]) return null;
+    const row = result.rows[0];
+    return {
+      id: row.id,
+      slug: row.slug,
+      name: row.name,
+      legalName: row.legal_name,
+      ownerName: row.owner_name,
+      phone: row.phone,
+      whatsapp: row.whatsapp,
+      email: row.email,
+      province: row.province,
+      canton: row.canton,
+      address: row.address,
+      mapsUrl: row.maps_url,
+      wazeUrl: row.waze_url,
+      brandColor: row.brand_color,
+      secondaryColor: row.secondary_color,
+      logoUrl: row.logo_url,
+      customDomain: row.custom_domain,
+      plan: row.plan,
+      monthlyFee: row.monthly_fee,
+      isActive: row.is_active,
+      createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at
+    };
+  } catch (_e) {
+    return tenants.find((t) => t.id === numericId) || null;
+  }
+}
+
+async function createTenant(input) {
+  const pool = getPool();
+  const rowData = buildTenantRow(input);
+
+  if (!pool) {
+    tenants.push(rowData);
+    persistIfLocal();
+    return rowData;
+  }
+
+  const result = await pool.query(
+    `INSERT INTO tenants (
+      slug, name, legal_name, owner_name, phone, whatsapp, email,
+      province, canton, address, maps_url, waze_url, brand_color,
+      secondary_color, logo_url, custom_domain, plan, monthly_fee, is_active
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+    RETURNING *`,
+    [
+      rowData.slug,
+      rowData.name,
+      rowData.legalName,
+      rowData.ownerName,
+      rowData.phone,
+      rowData.whatsapp,
+      rowData.email,
+      rowData.province,
+      rowData.canton,
+      rowData.address,
+      rowData.mapsUrl,
+      rowData.wazeUrl,
+      rowData.brandColor,
+      rowData.secondaryColor,
+      rowData.logoUrl,
+      rowData.customDomain,
+      rowData.plan,
+      rowData.monthlyFee,
+      rowData.isActive
+    ]
+  );
+
+  const row = result.rows[0];
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    legalName: row.legal_name,
+    ownerName: row.owner_name,
+    phone: row.phone,
+    whatsapp: row.whatsapp,
+    email: row.email,
+    province: row.province,
+    canton: row.canton,
+    address: row.address,
+    mapsUrl: row.maps_url,
+    wazeUrl: row.waze_url,
+    brandColor: row.brand_color,
+    secondaryColor: row.secondary_color,
+    logoUrl: row.logo_url,
+    customDomain: row.custom_domain,
+    plan: row.plan,
+    monthlyFee: row.monthly_fee,
+    isActive: row.is_active,
+    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at
+  };
+}
+
+async function updateTenant(id, input) {
+  const numericId = Number(id);
+  const pool = getPool();
+
+  if (!pool) {
+    const target = tenants.find((t) => t.id === numericId);
+    if (!target) return null;
+    Object.assign(target, input);
+    persistIfLocal();
+    return target;
+  }
+
+  const existing = await getTenantById(numericId);
+  if (!existing) return null;
+
+  const merged = { ...existing, ...input };
+  const result = await pool.query(
+    `UPDATE tenants
+     SET name = $1,
+         legal_name = $2,
+         owner_name = $3,
+         phone = $4,
+         whatsapp = $5,
+         email = $6,
+         province = $7,
+         canton = $8,
+         address = $9,
+         maps_url = $10,
+         waze_url = $11,
+         brand_color = $12,
+         secondary_color = $13,
+         logo_url = $14,
+         custom_domain = $15,
+         plan = $16,
+         monthly_fee = $17,
+         is_active = $18
+     WHERE id = $19
+     RETURNING *`,
+    [
+      merged.name,
+      merged.legalName,
+      merged.ownerName,
+      merged.phone,
+      merged.whatsapp,
+      merged.email,
+      merged.province,
+      merged.canton,
+      merged.address,
+      merged.mapsUrl,
+      merged.wazeUrl,
+      merged.brandColor,
+      merged.secondaryColor,
+      merged.logoUrl,
+      merged.customDomain,
+      merged.plan,
+      merged.monthlyFee,
+      merged.isActive,
+      numericId
+    ]
+  );
+
+  const row = result.rows[0];
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    legalName: row.legal_name,
+    ownerName: row.owner_name,
+    phone: row.phone,
+    whatsapp: row.whatsapp,
+    email: row.email,
+    province: row.province,
+    canton: row.canton,
+    address: row.address,
+    mapsUrl: row.maps_url,
+    wazeUrl: row.waze_url,
+    brandColor: row.brand_color,
+    secondaryColor: row.secondary_color,
+    logoUrl: row.logo_url,
+    customDomain: row.custom_domain,
+    plan: row.plan,
+    monthlyFee: row.monthly_fee,
+    isActive: row.is_active,
+    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at
+  };
+}
+
+async function deleteTenant(id) {
+  const numericId = Number(id);
+  if (numericId === 1) {
+    throw new Error("No se puede eliminar el taller principal de la plataforma");
+  }
+
+  const pool = getPool();
+  if (!pool) {
+    const idx = tenants.findIndex((t) => t.id === numericId);
+    if (idx < 0) return null;
+    const [deleted] = tenants.splice(idx, 1);
+    persistIfLocal();
+    return deleted;
+  }
+
+  const result = await pool.query("DELETE FROM tenants WHERE id = $1 RETURNING id, slug, name", [numericId]);
+  return result.rows[0] || null;
+}
+
+async function getSaaSMetrics() {
+  const allTenants = await listTenants();
+  const activeTenants = allTenants.filter((t) => t.isActive);
+  const totalMrr = activeTenants.reduce((sum, t) => sum + (Number(t.monthlyFee) || 0), 0);
+
+  const allVehicles = await listWorkshopVehicles();
+  const allQuotes = await listQuotes();
+  const allAppointments = await listAppointments();
+
+  const workshopsByProvince = allTenants.reduce((acc, t) => {
+    const prov = t.province || "Alajuela";
+    acc[prov] = (acc[prov] || 0) + 1;
+    return acc;
+  }, {});
+
+  return {
+    totalTenants: allTenants.length,
+    activeTenants: activeTenants.length,
+    totalMrrColones: totalMrr,
+    totalVehiclesTracked: allVehicles.length,
+    totalQuotesGenerated: allQuotes.length,
+    totalAppointmentsScheduled: allAppointments.length,
+    workshopsByProvince,
+    tenantsSummary: allTenants.map((t) => ({
+      id: t.id,
+      name: t.name,
+      slug: t.slug,
+      province: t.province,
+      canton: t.canton,
+      plan: t.plan,
+      monthlyFee: t.monthlyFee,
+      isActive: t.isActive,
+      phone: t.phone
+    }))
+  };
 }
 
 async function createQuote(input) {
@@ -349,14 +760,21 @@ async function listQuotes() {
   }));
 }
 
-async function getRepairStatus(plate) {
+async function getRepairStatus(plate, tenantId) {
   const pool = getPool();
   const normalized = plate.trim().toLowerCase();
+  const numericTenantId = tenantId ? Number(tenantId) : null;
 
   if (!pool) {
-    const appointment = [...appointments].reverse().find((item) => item.plate.toLowerCase() === normalized);
-    const quote = [...quotes].reverse().find((item) => item.plate.toLowerCase() === normalized);
-    const workshopVehicle = [...workshopVehicles].reverse().find((item) => item.plate.toLowerCase() === normalized);
+    const appointment = [...appointments]
+      .reverse()
+      .find((item) => item.plate.toLowerCase() === normalized && (!numericTenantId || Number(item.tenantId || 1) === numericTenantId));
+    const quote = [...quotes]
+      .reverse()
+      .find((item) => item.plate.toLowerCase() === normalized && (!numericTenantId || Number(item.tenantId || 1) === numericTenantId));
+    const workshopVehicle = [...workshopVehicles]
+      .reverse()
+      .find((item) => item.plate.toLowerCase() === normalized && (!numericTenantId || Number(item.tenantId || 1) === numericTenantId));
     return {
       appointment: appointment || (workshopVehicle ? { status: workshopVehicle.status } : null),
       quote
@@ -1049,6 +1467,13 @@ async function createReview(input) {
 }
 
 module.exports = {
+  listTenants,
+  getTenantBySlug,
+  getTenantById,
+  createTenant,
+  updateTenant,
+  deleteTenant,
+  getSaaSMetrics,
   createQuote,
   createAppointment,
   listAppointments,

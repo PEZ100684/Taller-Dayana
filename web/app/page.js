@@ -87,6 +87,70 @@ const VEHICLE_PARTS = [
   "Pintura general completa"
 ];
 
+const TENANT_PRESETS = {
+  "taller-dayana": {
+    id: 1,
+    slug: "taller-dayana",
+    initials: "TD",
+    name: "Taller Dayana",
+    tagline: "Enderezado y Pintura",
+    ownerName: "Randy Barrantes",
+    phone: "7043-9248",
+    whatsapp: "50670439248",
+    whatsappContacts: [
+      { number: "7043-9248", label: "Randy / Taller", link: "https://wa.me/50670439248" },
+      { number: "8869-8157", label: "Atención Taller", link: "https://wa.me/50688698157" }
+    ],
+    province: "Alajuela",
+    canton: "Barrio San José",
+    address: "Barrio San José, Alajuela, Costa Rica (Costado norte de la plaza de deportes)",
+    mapsLink: mapsLink,
+    wazeLink: wazeLink,
+    brandColor: "#d62828",
+    isSaasDemo: false
+  },
+  "autofix-heredia": {
+    id: 2,
+    slug: "autofix-heredia",
+    initials: "AH",
+    name: "AutoFix Heredia",
+    tagline: "Carrocería y Pintura Automotriz",
+    ownerName: "Carlos Méndez",
+    phone: "8312-4455",
+    whatsapp: "50683124455",
+    whatsappContacts: [
+      { number: "8312-4455", label: "Atención WhatsApp", link: "https://wa.me/50683124455" }
+    ],
+    province: "Heredia",
+    canton: "San Pablo",
+    address: "300m Norte del Masxmenos, San Pablo de Heredia, Costa Rica",
+    mapsLink: "https://maps.google.com/?q=San+Pablo+Heredia",
+    wazeLink: "https://waze.com/ul?q=San+Pablo+Heredia",
+    brandColor: "#2563eb",
+    isSaasDemo: true
+  },
+  "enderezado-coyol": {
+    id: 3,
+    slug: "enderezado-coyol",
+    initials: "EC",
+    name: "Enderezado El Coyol",
+    tagline: "Enderezado de Chasis y Pintura Express",
+    ownerName: "Esteban Rojas",
+    phone: "8765-1122",
+    whatsapp: "50687651122",
+    whatsappContacts: [
+      { number: "8765-1122", label: "Recepción Taller", link: "https://wa.me/50687651122" }
+    ],
+    province: "Alajuela",
+    canton: "El Coyol",
+    address: "Frente a Parque Industrial Zona Franca, El Coyol de Alajuela, Costa Rica",
+    mapsLink: "https://maps.google.com/?q=El+Coyol+Alajuela",
+    wazeLink: "https://waze.com/ul?q=El+Coyol+Alajuela",
+    brandColor: "#059669",
+    isSaasDemo: true
+  }
+};
+
 export default function Home() {
   const appointmentDateInputRef = useRef(null);
   const photoInputRef = useRef(null);
@@ -111,6 +175,62 @@ export default function Home() {
     appointmentTime: ""
   });
   const [appointmentStatus, setAppointmentStatus] = useState({ type: "idle", message: "" });
+  const [currentTenant, setCurrentTenant] = useState(TENANT_PRESETS["taller-dayana"]);
+  const [isSaasPreview, setIsSaasPreview] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const queryTenant = params.get("tenant") || params.get("taller");
+      const hasDemoParam = params.get("demo") === "saas" || Boolean(queryTenant);
+      if (hasDemoParam) {
+        setIsSaasPreview(true);
+      }
+      if (queryTenant) {
+        const slug = queryTenant.toLowerCase();
+        if (TENANT_PRESETS[slug]) {
+          setCurrentTenant(TENANT_PRESETS[slug]);
+        } else {
+          const apiBase =
+            process.env.NEXT_PUBLIC_API_BASE_URL ||
+            process.env.NEXT_API_BASE_URL ||
+            "https://taller-dayana-api.onrender.com";
+          fetch(`${apiBase}/api/tenants/${slug}`)
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => {
+              if (data && data.name) {
+                setCurrentTenant({
+                  id: data.id,
+                  slug: data.slug,
+                  initials: data.name
+                    .split(" ")
+                    .map((w) => w[0])
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase(),
+                  name: data.name,
+                  tagline: "Enderezado y Pintura Automotriz",
+                  ownerName: data.ownerName || data.name,
+                  phone: data.phone,
+                  whatsapp: data.whatsapp || data.phone,
+                  whatsappContacts: [
+                    { number: data.phone, label: "Recepción", link: `https://wa.me/${data.whatsapp || data.phone}` }
+                  ],
+                  province: data.province || "Alajuela",
+                  canton: data.canton || "Costa Rica",
+                  address: data.address || `${data.province}, Costa Rica`,
+                  mapsLink: data.mapsUrl || "https://maps.google.com",
+                  wazeLink: data.wazeUrl || "https://waze.com",
+                  brandColor: data.brandColor || "#2563eb",
+                  isSaasDemo: true
+                });
+              }
+            })
+            .catch(() => {});
+        }
+      }
+    }
+  }, []);
   const [galleryItems, setGalleryItems] = useState(defaultDriveGallery);
   const [visibleCount, setVisibleCount] = useState(12);
   const [selectedIndex, setSelectedIndex] = useState(null);
@@ -310,7 +430,8 @@ export default function Home() {
           contactChannel: formData.contactChannel,
           email: formData.email,
           selectedParts: formData.selectedParts,
-          photos: formData.photos
+          photos: formData.photos,
+          tenantId: currentTenant.id
         })
       });
 
@@ -337,7 +458,7 @@ export default function Home() {
 
       const waText = encodeURIComponent(
         [
-          "🚗 *SOLICITUD DE PRESUPUESTO - TALLER DAYANA*",
+          `🚗 *SOLICITUD DE PRESUPUESTO - ${currentTenant.name.toUpperCase()}*`,
           `• Cliente: ${formData.customerName}`,
           `• Teléfono: ${formData.phone}`,
           formData.email ? `• Correo: ${formData.email}` : null,
@@ -349,14 +470,18 @@ export default function Home() {
         ].filter(Boolean).join("\n")
       );
 
-      const waLinks = [
-        { number: "7043-9248", url: `https://wa.me/50670439248?text=${waText}` },
-        { number: "8869-8157", url: `https://wa.me/50688698157?text=${waText}` }
-      ];
+      const waLinks = currentTenant.whatsappContacts.map((c) => {
+        const rawDigits = c.number.replace(/[^0-9]/g, "");
+        const cleanNumber = rawDigits.length <= 8 ? `506${rawDigits}` : rawDigits;
+        return {
+          number: c.number,
+          url: `https://wa.me/${cleanNumber}?text=${waText}`
+        };
+      });
 
       const successMsg = formData.contactChannel === "email"
-        ? `¡Solicitud recibida! Le hemos enviado confirmación a su correo (${formData.email}). Don Randy evaluará las fotos y detalles para enviarle la cotización estimada directamente a su correo.`
-        : "¡Solicitud enviada! Se ha preparado el mensaje en WhatsApp para coordinar directamente con Don Randy:";
+        ? `¡Solicitud recibida! Le hemos enviado confirmación a su correo (${formData.email}). ${currentTenant.ownerName} evaluará las fotos y detalles para enviarle la cotización estimada directamente a su correo.`
+        : `¡Solicitud enviada! Se ha preparado el mensaje en WhatsApp para coordinar directamente con ${currentTenant.ownerName}:`;
 
       setStatus({
         type: "success",
@@ -428,7 +553,8 @@ export default function Home() {
           vehicle: appointmentForm.vehicle,
           contactChannel: appointmentForm.contactChannel,
           email: appointmentForm.email,
-          appointmentDate: appointmentDateTime
+          appointmentDate: appointmentDateTime,
+          tenantId: currentTenant.id
         })
       });
 
@@ -454,7 +580,7 @@ export default function Home() {
 
       const waText = encodeURIComponent(
         [
-          "📅 *NUEVA CITA DE ATENCIÓN - TALLER DAYANA*",
+          `📅 *NUEVA CITA DE ATENCIÓN - ${currentTenant.name.toUpperCase()}*`,
           `• Cliente: ${appointmentForm.customerName}`,
           `• Teléfono: ${appointmentForm.phone}`,
           appointmentForm.email ? `• Correo: ${appointmentForm.email}` : null,
@@ -463,16 +589,20 @@ export default function Home() {
           `• Fecha: ${appointmentForm.appointmentDate}`,
           `• Hora: ${appointmentForm.appointmentTime}`,
           "",
-          "📍 Ubicación: Barrio San José de Alajuela",
-          `🗺️ Google Maps: ${googleMapsLink}`,
-          `🚗 Waze: ${wazeLink}`
+          `📍 Ubicación: ${currentTenant.address}`,
+          `🗺️ Google Maps: ${currentTenant.mapsLink}`,
+          `🚗 Waze: ${currentTenant.wazeLink}`
         ].filter(Boolean).join("\n")
       );
 
-      const waLinks = [
-        { number: "7043-9248", url: `https://wa.me/50670439248?text=${waText}` },
-        { number: "8869-8157", url: `https://wa.me/50688698157?text=${waText}` }
-      ];
+      const waLinks = currentTenant.whatsappContacts.map((c) => {
+        const rawDigits = c.number.replace(/[^0-9]/g, "");
+        const cleanNumber = rawDigits.length <= 8 ? `506${rawDigits}` : rawDigits;
+        return {
+          number: c.number,
+          url: `https://wa.me/${cleanNumber}?text=${waText}`
+        };
+      });
 
       const successMsg = appointmentForm.contactChannel === "email"
         ? `¡Cita agendada correctamente! Hemos enviado los detalles y enlaces de ubicación (Waze y Google Maps) a: ${appointmentForm.email}`
@@ -562,16 +692,59 @@ export default function Home() {
 
   return (
     <div id="inicio" className="min-h-screen pb-16">
+      {/* SaaS Multi-Taller Demo Bar */}
+      {isSaasPreview && (
+        <aside aria-label="Demo SaaS Multi-Taller" className="sticky top-0 z-50 flex flex-wrap items-center justify-between gap-3 border-b border-amber-500/30 bg-zinc-950/95 px-4 py-2 text-xs text-zinc-300 backdrop-blur-md">
+          <div className="flex items-center gap-2">
+            <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="font-bold text-white">Plataforma SaaS Multi-Taller</span>
+            <span className="hidden rounded bg-amber-500/20 px-2 py-0.5 text-[11px] font-medium text-amber-300 sm:inline-block">
+              Demostración para Talleres de Alajuela & Heredia
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-zinc-400">Ver como:</span>
+            <button
+              onClick={() => {
+                if (typeof window !== "undefined") window.location.href = window.location.pathname;
+              }}
+              className={`rounded px-2.5 py-1 text-xs font-semibold transition ${currentTenant.slug === "taller-dayana" ? "bg-brandRed text-white" : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"}`}
+            >
+              Taller Dayana (Alajuela)
+            </button>
+            <button
+              onClick={() => {
+                if (typeof window !== "undefined") window.location.href = `${window.location.pathname}?tenant=autofix-heredia`;
+              }}
+              className={`rounded px-2.5 py-1 text-xs font-semibold transition ${currentTenant.slug === "autofix-heredia" ? "bg-blue-600 text-white" : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"}`}
+            >
+              AutoFix (Heredia)
+            </button>
+            <button
+              onClick={() => {
+                if (typeof window !== "undefined") window.location.href = `${window.location.pathname}?tenant=enderezado-coyol`;
+              }}
+              className={`rounded px-2.5 py-1 text-xs font-semibold transition ${currentTenant.slug === "enderezado-coyol" ? "bg-emerald-600 text-white" : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"}`}
+            >
+              El Coyol (Alajuela)
+            </button>
+          </div>
+        </aside>
+      )}
+
       {/* Top Sticky Navbar */}
       <header className="sticky top-0 z-40 border-b border-zinc-800/80 bg-zinc-950/85 backdrop-blur-lg">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 md:px-8">
           <a href="#inicio" className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brandRed font-extrabold text-white shadow-md shadow-brandRed/30">
-              TD
+            <span
+              className="flex h-10 w-10 items-center justify-center rounded-xl font-extrabold text-white shadow-md shadow-brandRed/30"
+              style={{ backgroundColor: currentTenant.brandColor }}
+            >
+              {currentTenant.initials}
             </span>
             <div>
-              <p className="text-base font-bold leading-tight text-white">Taller Dayana</p>
-              <p className="text-xs text-zinc-400">Alajuela, Costa Rica</p>
+              <p className="text-base font-bold leading-tight text-white">{currentTenant.name}</p>
+              <p className="text-xs text-zinc-400">{currentTenant.province}, Costa Rica</p>
             </div>
           </a>
 
@@ -609,15 +782,18 @@ export default function Home() {
         <section className="relative overflow-hidden rounded-3xl border border-zinc-800 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black p-6 shadow-2xl md:p-12">
           <div className="grid items-center gap-8 lg:grid-cols-[1.25fr_0.75fr]">
             <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-brandRed/40 bg-brandRed/10 px-3.5 py-1 text-xs font-semibold uppercase tracking-widest text-red-300">
-                <span className="h-2 w-2 rounded-full bg-brandRed" />
-                Más de 60 años de tradición en Alajuela
+              <span
+                className="inline-flex items-center gap-2 rounded-full border px-3.5 py-1 text-xs font-semibold uppercase tracking-widest text-zinc-200"
+                style={{ borderColor: `${currentTenant.brandColor}55`, backgroundColor: `${currentTenant.brandColor}22` }}
+              >
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: currentTenant.brandColor }} />
+                {currentTenant.isSaasDemo ? `Taller Afiliado • ${currentTenant.province}, Costa Rica` : "Más de 60 años de tradición en Alajuela"}
               </span>
               <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-white sm:text-5xl md:text-6xl">
-                Enderezado y Pintura <span className="text-brandRed">Taller Dayana</span>
+                {currentTenant.tagline} <span style={{ color: currentTenant.brandColor }}>{currentTenant.name}</span>
               </h1>
               <p className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-300 md:text-lg">
-                Dirigido por <span className="font-semibold text-white">Randy Barrantes</span>. Devolvemos la línea,
+                Dirigido por <span className="font-semibold text-white">{currentTenant.ownerName}</span>. Devolvemos la línea,
                 el brillo y la seguridad original a su vehículo con atención honesta, materiales de primera y
                 seguimiento en línea 24/7.
               </p>
@@ -649,11 +825,11 @@ export default function Home() {
               <p className="text-xs font-bold uppercase tracking-widest text-brandRed">Atención directa</p>
               <h2 className="mt-1 text-xl font-bold text-white">¿Necesita ayuda rápida?</h2>
               <p className="mt-1 text-sm text-zinc-300">
-                Escríbanos por WhatsApp o visite nuestro taller en Barrio San José de Alajuela.
+                Escríbanos por WhatsApp o visite nuestro taller en {currentTenant.address}.
               </p>
 
               <div className="mt-4 grid gap-2.5">
-                {whatsappContacts.map((contact) => (
+                {currentTenant.whatsappContacts.map((contact) => (
                   <a
                     key={contact.number}
                     href={contact.link}
@@ -667,7 +843,7 @@ export default function Home() {
                 ))}
                 <div className="grid grid-cols-2 gap-2">
                   <a
-                    href={mapsLink}
+                    href={currentTenant.mapsLink}
                     target="_blank"
                     rel="noreferrer"
                     className="flex items-center justify-between rounded-xl border border-zinc-700 bg-zinc-900 px-3.5 py-3 text-xs font-semibold text-zinc-200 transition hover:border-white hover:text-white"
@@ -676,7 +852,7 @@ export default function Home() {
                     <span className="text-brandRed">Ir →</span>
                   </a>
                   <a
-                    href={wazeLink}
+                    href={currentTenant.wazeLink}
                     target="_blank"
                     rel="noreferrer"
                     className="flex items-center justify-between rounded-xl border border-sky-500/40 bg-sky-500/15 px-3.5 py-3 text-xs font-semibold text-sky-300 transition hover:bg-sky-500 hover:text-white"
@@ -1959,7 +2135,7 @@ export default function Home() {
             </div>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-t border-zinc-800 pt-4 text-xs text-zinc-400">
-              <span>© {new Date().getFullYear()} Taller Dayana • Alajuela, Costa Rica</span>
+              <span>© {new Date().getFullYear()} {currentTenant.name} • {currentTenant.province}, Costa Rica</span>
               <div className="flex flex-wrap items-center gap-3">
                 <a href={SOCIAL_LINKS.facebook} target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-blue-400 transition">Facebook</a>
                 <span className="text-zinc-600">•</span>

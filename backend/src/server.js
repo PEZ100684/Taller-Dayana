@@ -13,6 +13,13 @@ const { sendQuoteWhatsAppAlerts, sendAppointmentWhatsAppAlerts } = require("./wh
 const { initializeDatabase } = require("./initDb");
 const { getVehiclePhotosDir, toPublicPhotoUrl, normalizeIncomingPhotoUrl, deleteManagedPhotoFile } = require("./photoStorage");
 const {
+  listTenants,
+  getTenantBySlug,
+  getTenantById,
+  createTenant,
+  updateTenant,
+  deleteTenant,
+  getSaaSMetrics,
   createQuote,
   createAppointment,
   listAppointments,
@@ -144,6 +151,113 @@ app.use(
 app.use(express.json({ limit: "50mb" }));
 app.use("/api/uploads", express.static(getVehiclePhotosDir()));
 
+async function resolveTenant(req, _res, next) {
+  const rawSlug = req.headers["x-tenant-slug"] || req.query.tenant || req.query.tenantSlug;
+  const slug = rawSlug ? String(rawSlug).trim().toLowerCase() : "taller-dayana";
+  try {
+    const tenant = await getTenantBySlug(slug);
+    req.tenant = tenant || (await getTenantBySlug("taller-dayana"));
+  } catch (_e) {
+    req.tenant = { id: 1, slug: "taller-dayana", name: "Taller Dayana" };
+  }
+  next();
+}
+
+app.use(resolveTenant);
+
+// ==================== RUTAS SAAS MULTI-TALLER (PUBLIC) ====================
+app.get("/api/tenants", async (_req, res) => {
+  try {
+    const all = await listTenants();
+    const active = all.filter((t) => t.isActive);
+    return res.json(active);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/tenants/:slug", async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const tenant = await getTenantBySlug(slug);
+    if (!tenant) {
+      return res.status(404).json({ error: "Taller no encontrado" });
+    }
+    return res.json(tenant);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// ==================== RUTAS SAAS SUPERADMIN (CONTROL CENTER) ====================
+app.get("/api/admin/saas/tenants", requireAdmin, async (_req, res) => {
+  try {
+    const all = await listTenants();
+    return res.json(all);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/admin/saas/metrics", requireAdmin, async (_req, res) => {
+  try {
+    const metrics = await getSaaSMetrics();
+    return res.json(metrics);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/admin/saas/tenants", requireAdmin, async (req, res) => {
+  const { name, slug, ownerName, phone, whatsapp, email, province, canton, address, brandColor, plan, monthlyFee } = req.body || {};
+  if (!name || !phone) {
+    return res.status(400).json({ error: "Nombre del taller y teléfono son requeridos" });
+  }
+  try {
+    const created = await createTenant({
+      name,
+      slug,
+      ownerName,
+      phone,
+      whatsapp: whatsapp || phone,
+      email: email || `${String(slug || name).toLowerCase().replace(/[^a-z0-9]/g, "")}@gmail.com`,
+      province: province || "Alajuela",
+      canton: canton || "Alajuela",
+      address: address || "",
+      brandColor: brandColor || "#2563eb",
+      plan: plan || "pro",
+      monthlyFee: monthlyFee !== undefined ? Number(monthlyFee) : (plan === "basico" ? 25000 : plan === "elite" ? 65000 : 45000)
+    });
+    return res.status(201).json(created);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.patch("/api/admin/saas/tenants/:id", requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!id) return res.status(400).json({ error: "ID inválido" });
+  try {
+    const updated = await updateTenant(id, req.body);
+    if (!updated) return res.status(404).json({ error: "Taller no encontrado" });
+    return res.json(updated);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete("/api/admin/saas/tenants/:id", requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!id) return res.status(400).json({ error: "ID inválido" });
+  try {
+    const deleted = await deleteTenant(id);
+    if (!deleted) return res.status(404).json({ error: "Taller no encontrado" });
+    return res.json({ deleted: true, id });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 app.get("/", (_req, res) => {
   res.json({
     service: "Taller Dayana API",
@@ -249,6 +363,7 @@ app.post("/api/quotes", async (req, res) => {
   }
 
   try {
+    const tenantId = req.body.tenantId || (req.tenant ? req.tenant.id : 1);
     const quote = await createQuote({
       customerName,
       phone,
@@ -258,7 +373,8 @@ app.post("/api/quotes", async (req, res) => {
       photos: normalizedPhotos,
       contactChannel: cleanChannel,
       email: cleanEmail,
-      selectedParts: cleanParts
+      selectedParts: cleanParts,
+      tenantId
     });
     let emailStatus = { sent: false, reason: "unknown" };
     let sheetsStatus = { sent: false, reason: "unknown" };
@@ -326,6 +442,7 @@ app.post("/api/appointments", async (req, res) => {
   }
 
   try {
+    const tenantId = req.body.tenantId || (req.tenant ? req.tenant.id : 1);
     const appointment = await createAppointment({
       customerName,
       phone,
@@ -333,7 +450,8 @@ app.post("/api/appointments", async (req, res) => {
       plate: cleanPlate,
       appointmentDate,
       contactChannel: cleanChannel,
-      email: cleanEmail
+      email: cleanEmail,
+      tenantId
     });
     let emailStatus = { sent: false, reason: "unknown" };
     let calendarStatus = { sent: false, reason: "unknown" };
@@ -384,8 +502,9 @@ app.post("/api/appointments", async (req, res) => {
 app.get("/api/repairs/status/:plate", async (req, res) => {
   const { plate } = req.params;
   const normalizedPlate = String(plate || "").trim().toUpperCase();
+  const tenantId = req.query.tenantId || (req.tenant ? req.tenant.id : null);
   const [{ appointment, quote }, dbProgressPhotos] = await Promise.all([
-    getRepairStatus(normalizedPlate),
+    getRepairStatus(normalizedPlate, tenantId),
     listWorkshopProgressPhotos(normalizedPlate)
   ]);
 

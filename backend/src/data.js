@@ -1,4 +1,4 @@
-﻿const fs = require("fs");
+const fs = require("fs");
 const path = require("path");
 
 const services = [
@@ -176,8 +176,81 @@ const defaultWorkshopProgressPhotos = [
   { id: 14, workshopVehicleId: 4, plate: "514474", photoUrl: "https://drive.google.com/thumbnail?id=16KHqtFTh-h5hyGsaJqA5MHNUfWAUmECB&sz=w1200", description: "Avance de reparación - Foto 2", createdAt: "2026-11-06T18:31:00.000Z" }
 ];
 
+const defaultTenants = [
+  {
+    id: 1,
+    slug: "taller-dayana",
+    name: "Taller Dayana",
+    legalName: "Taller Dayana S.A.",
+    ownerName: "Dagoberto y Randy Barrantes",
+    phone: "7043-9248",
+    whatsapp: "50670439248",
+    email: "tallerdayanacr@gmail.com",
+    province: "Alajuela",
+    canton: "Barrio San José",
+    address: "Barrio San José, Alajuela, Costa Rica (Costado norte de la plaza de deportes)",
+    mapsUrl: "https://www.google.com/maps/place/Taller+Dayana/@10.0189955,-84.2360667,20.5z",
+    wazeUrl: "https://waze.com/ul?ll=10.0188372,-84.2361356&navigate=yes",
+    brandColor: "#d62828",
+    secondaryColor: "#18181b",
+    logoUrl: "/cases/case-6.jpg",
+    customDomain: "tallerdayana.vercel.app",
+    plan: "elite",
+    monthlyFee: 0,
+    isActive: true,
+    createdAt: "2026-01-01T00:00:00.000Z"
+  },
+  {
+    id: 2,
+    slug: "autofix-heredia",
+    name: "AutoFix Heredia",
+    legalName: "AutoFix San Pablo S.R.L.",
+    ownerName: "Carlos Méndez",
+    phone: "8312-4455",
+    whatsapp: "50683124455",
+    email: "contacto@autofixheredia.cr",
+    province: "Heredia",
+    canton: "San Pablo",
+    address: "300m Norte del Masxmenos, San Pablo de Heredia",
+    mapsUrl: "https://maps.google.com/?q=San+Pablo+Heredia",
+    wazeUrl: "https://waze.com/ul?q=San+Pablo+Heredia",
+    brandColor: "#2563eb",
+    secondaryColor: "#0f172a",
+    logoUrl: "",
+    customDomain: "",
+    plan: "pro",
+    monthlyFee: 45000,
+    isActive: true,
+    createdAt: "2026-02-15T10:00:00.000Z"
+  },
+  {
+    id: 3,
+    slug: "enderezado-coyol",
+    name: "Enderezado El Coyol",
+    legalName: "Taller Automotriz El Coyol",
+    ownerName: "Esteban Rojas",
+    phone: "8765-1122",
+    whatsapp: "50687651122",
+    email: "tallerelcoyol@gmail.com",
+    province: "Alajuela",
+    canton: "El Coyol",
+    address: "Frente a Parque Industrial Zona Franca, El Coyol de Alajuela",
+    mapsUrl: "https://maps.google.com/?q=El+Coyol+Alajuela",
+    wazeUrl: "https://waze.com/ul?q=El+Coyol+Alajuela",
+    brandColor: "#059669",
+    secondaryColor: "#064e3b",
+    logoUrl: "",
+    customDomain: "",
+    plan: "basico",
+    monthlyFee: 25000,
+    isActive: true,
+    createdAt: "2026-03-01T14:30:00.000Z"
+  }
+];
+
 function defaultData() {
   return {
+    tenants: [...defaultTenants],
     quotes: [],
     appointments: [],
     notifications: [],
@@ -205,6 +278,7 @@ function loadPersistedData() {
     return {
       ...base,
       ...parsed,
+      tenants: Array.isArray(parsed.tenants) && parsed.tenants.length > 0 ? parsed.tenants : base.tenants,
       quotes: Array.isArray(parsed.quotes) ? parsed.quotes : base.quotes,
       appointments: Array.isArray(parsed.appointments) ? parsed.appointments : base.appointments,
       notifications: Array.isArray(parsed.notifications) ? parsed.notifications : base.notifications,
@@ -228,6 +302,7 @@ function persistLocalData(data) {
 }
 
 const persisted = loadPersistedData();
+const tenants = persisted.tenants;
 const quotes = persisted.quotes;
 const appointments = persisted.appointments;
 const notifications = persisted.notifications;
@@ -237,6 +312,8 @@ const workshopProgressPhotos = persisted.workshopProgressPhotos;
 module.exports = {
   services,
   gallery,
+  tenants,
+  defaultTenants,
   quotes,
   appointments,
   notifications,

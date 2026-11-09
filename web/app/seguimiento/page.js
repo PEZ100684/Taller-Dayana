@@ -72,7 +72,9 @@ export default function SeguimientoPage() {
     setStatus(null);
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/repairs/status/${plate.toUpperCase()}`);
+      const tenantParam = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("tenant") : "";
+      const tenantQuery = tenantParam ? `?tenant=${encodeURIComponent(tenantParam)}` : "";
+      const response = await fetch(`${apiBaseUrl}/api/repairs/status/${plate.toUpperCase()}${tenantQuery}`);
 
       if (!response.ok) {
         if (response.status === 404) {

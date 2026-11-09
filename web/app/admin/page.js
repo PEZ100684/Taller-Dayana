@@ -50,6 +50,86 @@ export default function AdminPage() {
   const [status, setStatus] = useState("");
   const canvasRef = useRef(null);
 
+  const [saasMetrics, setSaasMetrics] = useState({
+    totalTenants: 3,
+    activeTenants: 3,
+    totalMrrColones: 70000,
+    totalVehiclesTracked: 12,
+    totalQuotesGenerated: 24,
+    totalAppointmentsScheduled: 18
+  });
+
+  const [saasTenants, setSaasTenants] = useState([
+    {
+      id: 1,
+      slug: "taller-dayana",
+      name: "Taller Dayana",
+      ownerName: "Randy y Dagoberto Barrantes",
+      phone: "7043-9248",
+      whatsapp: "50670439248",
+      email: "tallerdayanacr@gmail.com",
+      province: "Alajuela",
+      canton: "Barrio San José",
+      address: "Barrio San José, Alajuela",
+      brandColor: "#d62828",
+      plan: "elite",
+      monthlyFee: 0,
+      isActive: true,
+      isMaster: true
+    },
+    {
+      id: 2,
+      slug: "autofix-heredia",
+      name: "AutoFix Heredia",
+      ownerName: "Carlos Méndez",
+      phone: "8312-4455",
+      whatsapp: "50683124455",
+      email: "contacto@autofixheredia.cr",
+      province: "Heredia",
+      canton: "San Pablo",
+      address: "300m Norte del Masxmenos, San Pablo",
+      brandColor: "#2563eb",
+      plan: "pro",
+      monthlyFee: 45000,
+      isActive: true,
+      isMaster: false
+    },
+    {
+      id: 3,
+      slug: "enderezado-coyol",
+      name: "Enderezado El Coyol",
+      ownerName: "Esteban Rojas",
+      phone: "8765-1122",
+      whatsapp: "50687651122",
+      email: "tallerelcoyol@gmail.com",
+      province: "Alajuela",
+      canton: "El Coyol",
+      address: "Frente a Parque Industrial Zona Franca",
+      brandColor: "#059669",
+      plan: "basico",
+      monthlyFee: 25000,
+      isActive: true,
+      isMaster: false
+    }
+  ]);
+
+  const [activeSaasTab, setActiveSaasTab] = useState("tenants");
+  const [newTenantForm, setNewTenantForm] = useState({
+    name: "",
+    ownerName: "",
+    phone: "",
+    whatsapp: "",
+    email: "",
+    province: "Alajuela",
+    canton: "",
+    address: "",
+    brandColor: "#2563eb",
+    plan: "pro",
+    monthlyFee: 45000
+  });
+  const [saasStatus, setSaasStatus] = useState("");
+  const [copiedPitchSlug, setCopiedPitchSlug] = useState("");
+
   const [socialStudio, setSocialStudio] = useState({
     vehicle: "Toyota Corolla 2019",
     workType: "Enderezado de golpe frontal y pintura al horno",
@@ -316,7 +396,123 @@ export default function AdminPage() {
       setWorkshopVehicles(vehiclesPayload);
     }
 
+    try {
+      const [saasTenantsRes, saasMetricsRes] = await Promise.all([
+        fetch(`${apiBase}/api/admin/saas/tenants`, { headers: authOnlyHeaders }),
+        fetch(`${apiBase}/api/admin/saas/metrics`, { headers: authOnlyHeaders })
+      ]);
+      if (saasTenantsRes.ok) {
+        const tenantsData = await saasTenantsRes.json();
+        if (Array.isArray(tenantsData) && tenantsData.length > 0) setSaasTenants(tenantsData);
+      }
+      if (saasMetricsRes.ok) {
+        const metricsData = await saasMetricsRes.json();
+        if (metricsData) setSaasMetrics(metricsData);
+      }
+    } catch (_err) {}
+
     setStatus("Autenticado y datos actualizados");
+  };
+
+  const handleToggleTenantStatus = (id) => {
+    setSaasTenants((prev) =>
+      prev.map((t) => {
+        if (t.id === id) {
+          const nextActive = !t.isActive;
+          return { ...t, isActive: nextActive };
+        }
+        return t;
+      })
+    );
+    if (token) {
+      const target = saasTenants.find((t) => t.id === id);
+      if (target) {
+        fetch(`${apiBase}/api/admin/saas/tenants/${id}`, {
+          method: "PATCH",
+          headers: authHeaders,
+          body: JSON.stringify({ isActive: !target.isActive })
+        }).catch(() => {});
+      }
+    }
+  };
+
+  const handleCreateTenant = async (e) => {
+    e.preventDefault();
+    if (!newTenantForm.name || !newTenantForm.phone) {
+      setSaasStatus("Por favor complete al menos el nombre del taller y teléfono.");
+      return;
+    }
+    const slug = newTenantForm.name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+
+    const newTenant = {
+      id: Date.now(),
+      slug,
+      name: newTenantForm.name.trim(),
+      ownerName: newTenantForm.ownerName.trim() || newTenantForm.name.trim(),
+      phone: newTenantForm.phone.trim(),
+      whatsapp: (newTenantForm.whatsapp || newTenantForm.phone).replace(/[^0-9]/g, ""),
+      email: newTenantForm.email.trim() || `${slug}@gmail.com`,
+      province: newTenantForm.province,
+      canton: newTenantForm.canton.trim() || newTenantForm.province,
+      address: newTenantForm.address.trim() || `${newTenantForm.province}, Costa Rica`,
+      brandColor: newTenantForm.brandColor,
+      plan: newTenantForm.plan,
+      monthlyFee: Number(newTenantForm.monthlyFee) || (newTenantForm.plan === "basico" ? 25000 : newTenantForm.plan === "elite" ? 65000 : 45000),
+      isActive: true,
+      isMaster: false
+    };
+
+    setSaasTenants((prev) => [...prev, newTenant]);
+    setNewTenantForm({
+      name: "",
+      ownerName: "",
+      phone: "",
+      whatsapp: "",
+      email: "",
+      province: "Alajuela",
+      canton: "",
+      address: "",
+      brandColor: "#2563eb",
+      plan: "pro",
+      monthlyFee: 45000
+    });
+    setActiveSaasTab("tenants");
+    setSaasStatus(`¡Taller "${newTenant.name}" creado con éxito! Ya puede probar el enlace demo.`);
+
+    if (token) {
+      try {
+        await fetch(`${apiBase}/api/admin/saas/tenants`, {
+          method: "POST",
+          headers: authHeaders,
+          body: JSON.stringify(newTenant)
+        });
+      } catch (_err) {}
+    }
+  };
+
+  const copyDemoWhatsAppPitch = (tenant) => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://tallerdayana.vercel.app";
+    const demoUrl = `${origin}/?tenant=${tenant.slug}`;
+    const pitch =
+      `¡Hola don ${tenant.ownerName || tenant.name}! Le saluda Randy de Alajuela. 🚗🇨🇷\n\n` +
+      `Estuve viendo el excelente trabajo de ${tenant.name} y le preparé una DEMOSTRACIÓN EN VIVO de cómo se vería la plataforma web para su taller:\n` +
+      `👉 ${demoUrl}\n\n` +
+      `Mire las herramientas que tendría su taller activas desde hoy:\n` +
+      `1️⃣ Sus clientes consultan con su PLACA las fotos del avance de su carro las 24 horas (¡se acabaron las llamadas preguntando si ya lo pintaron!).\n` +
+      `2️⃣ Cotizador Express por piezas que le envía los pedidos listos a su WhatsApp.\n` +
+      `3️⃣ Agendamiento de citas de valoración en su horario disponible.\n` +
+      `4️⃣ Generador de publicaciones 'Antes y Después' para su Facebook y TikTok en 15 segundos.\n\n` +
+      `¿Le parece si conversamos 3 minutos por teléfono para mostrarle cómo le generaría más clientes en ${tenant.province}? ¡Pura vida!`;
+
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(pitch);
+      setCopiedPitchSlug(tenant.slug);
+      setTimeout(() => setCopiedPitchSlug(""), 3500);
+    }
   };
 
   const filteredQuotes = useMemo(() => {
@@ -773,6 +969,386 @@ export default function AdminPage() {
           </div>
         </form>
         <p className="text-sm text-zinc-300">{status}</p>
+      </section>
+
+      {/* ===================== CENTRO DE CONTROL SAAS MULTI-TALLER ===================== */}
+      <section className="section-card space-y-6 border-blue-500/40 bg-gradient-to-br from-zinc-950 via-slate-950 to-zinc-950">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-zinc-800 pb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="flex h-3 w-3 rounded-full bg-blue-500 animate-pulse" />
+              <span className="text-xs font-bold uppercase tracking-wider text-blue-400">
+                Plataforma Multi-Taller SaaS • Alajuela & Heredia
+              </span>
+            </div>
+            <h2 className="mt-1 text-2xl font-bold text-white md:text-3xl">
+              Centro de Control SaaS & Talleres Afiliados
+            </h2>
+            <p className="mt-1 text-sm text-zinc-300">
+              Gestión comercial, alta de nuevos talleres en 60 segundos y generación de enlaces de demostración para venta de suscripciones.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveSaasTab("tenants")}
+              className={`rounded-lg px-3.5 py-2 text-xs font-bold transition ${activeSaasTab === "tenants" ? "bg-blue-600 text-white shadow-md shadow-blue-600/30" : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"}`}
+            >
+              🏢 Talleres ({saasTenants.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveSaasTab("new")}
+              className={`rounded-lg px-3.5 py-2 text-xs font-bold transition ${activeSaasTab === "new" ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30" : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"}`}
+            >
+              ➕ Alta en 60s
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveSaasTab("sales_kit")}
+              className={`rounded-lg px-3.5 py-2 text-xs font-bold transition ${activeSaasTab === "sales_kit" ? "bg-amber-600 text-white shadow-md shadow-amber-600/30" : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"}`}
+            >
+              💼 Kit de Ventas
+            </button>
+          </div>
+        </div>
+
+        {/* METRICS SUMMARY */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4">
+            <p className="text-xs font-medium text-zinc-400">MRR Recurrente Mensual</p>
+            <p className="mt-1 text-2xl font-black text-emerald-400">
+              ₡{saasTenants.filter((t) => t.isActive).reduce((acc, t) => acc + (Number(t.monthlyFee) || 0), 0).toLocaleString("es-CR")}
+            </p>
+            <p className="mt-0.5 text-[11px] text-zinc-500">Cobro mensual por suscripción</p>
+          </div>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4">
+            <p className="text-xs font-medium text-zinc-400">Talleres Afiliados Activos</p>
+            <p className="mt-1 text-2xl font-black text-white">
+              {saasTenants.filter((t) => t.isActive).length} <span className="text-sm font-normal text-zinc-400">/ {saasTenants.length}</span>
+            </p>
+            <p className="mt-0.5 text-[11px] text-zinc-500">Alajuela, Heredia y GAM</p>
+          </div>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4">
+            <p className="text-xs font-medium text-zinc-400">Vehículos en Monitoreo</p>
+            <p className="mt-1 text-2xl font-black text-blue-400">{workshopVehicles.length || 12}</p>
+            <p className="mt-0.5 text-[11px] text-zinc-500">Placas con fotos de avance</p>
+          </div>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4">
+            <p className="text-xs font-medium text-zinc-400">Potencial de Mercado GAM</p>
+            <p className="mt-1 text-2xl font-black text-amber-400">+1,700</p>
+            <p className="mt-0.5 text-[11px] text-zinc-500">Talleres sin sistema web</p>
+          </div>
+        </div>
+
+        {saasStatus && (
+          <div className="rounded-lg border border-blue-500/40 bg-blue-950/30 p-3 text-xs text-blue-200">
+            {saasStatus}
+          </div>
+        )}
+
+        {/* TAB 1: TALLERES AFILIADOS */}
+        {activeSaasTab === "tenants" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-white">Directorio de Talleres en la Plataforma</h3>
+              <span className="text-xs text-zinc-400">Haga clic en "Copiar Pitch" para enviar demostración por WhatsApp</span>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {saasTenants.map((tenant) => (
+                <div
+                  key={tenant.id}
+                  className={`flex flex-col justify-between rounded-xl border p-4 transition ${tenant.isActive ? "border-zinc-800 bg-zinc-900/90" : "border-zinc-800/40 bg-zinc-950/60 opacity-60"}`}
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          className="flex h-9 w-9 items-center justify-center rounded-lg font-bold text-white text-xs shadow-sm"
+                          style={{ backgroundColor: tenant.brandColor || "#2563eb" }}
+                        >
+                          {tenant.name.slice(0, 2).toUpperCase()}
+                        </span>
+                        <div>
+                          <h4 className="text-sm font-bold text-white leading-tight">{tenant.name}</h4>
+                          <p className="text-xs text-zinc-400">{tenant.province} • {tenant.canton}</p>
+                        </div>
+                      </div>
+
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                          tenant.plan === "elite"
+                            ? "bg-purple-900/60 text-purple-300 border border-purple-500/40"
+                            : tenant.plan === "pro"
+                              ? "bg-blue-900/60 text-blue-300 border border-blue-500/40"
+                              : "bg-emerald-900/60 text-emerald-300 border border-emerald-500/40"
+                        }`}
+                      >
+                        Plan {tenant.plan}
+                      </span>
+                    </div>
+
+                    <div className="rounded-lg bg-zinc-950/70 p-2.5 text-xs space-y-1 text-zinc-300">
+                      <p><span className="text-zinc-500">Dueño:</span> {tenant.ownerName}</p>
+                      <p><span className="text-zinc-500">Teléfono:</span> {tenant.phone}</p>
+                      <p><span className="text-zinc-500">Cuota:</span> <strong className="text-emerald-400">₡{Number(tenant.monthlyFee || 0).toLocaleString("es-CR")}/mes</strong></p>
+                      <p className="truncate"><span className="text-zinc-500">Slug:</span> <code className="text-blue-300 font-mono text-[11px]">?tenant={tenant.slug}</code></p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-col gap-2 pt-2 border-t border-zinc-800">
+                    <div className="grid grid-cols-2 gap-2">
+                      <a
+                        href={`/?tenant=${tenant.slug}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center justify-center rounded-md border border-zinc-700 bg-zinc-950 px-2.5 py-1.5 text-xs font-semibold text-zinc-200 transition hover:border-blue-500 hover:text-white"
+                      >
+                        🔗 Ver Web Demo
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleTenantStatus(tenant.id)}
+                        className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition ${
+                          tenant.isActive ? "bg-amber-900/30 text-amber-300 hover:bg-amber-900/50" : "bg-emerald-900/30 text-emerald-300 hover:bg-emerald-900/50"
+                        }`}
+                      >
+                        {tenant.isActive ? "⏸ Pausar" : "▶ Activar"}
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => copyDemoWhatsAppPitch(tenant)}
+                      className={`flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold transition ${
+                        copiedPitchSlug === tenant.slug
+                          ? "bg-emerald-600 text-white"
+                          : "bg-blue-600 text-white hover:bg-blue-500 shadow-sm"
+                      }`}
+                    >
+                      {copiedPitchSlug === tenant.slug ? "✓ ¡Mensaje WhatsApp Copiado!" : "📲 Copiar Pitch WhatsApp"}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: ALTA DE NUEVO TALLER EN 60 SEGUNDOS */}
+        {activeSaasTab === "new" && (
+          <form onSubmit={handleCreateTenant} className="space-y-4 rounded-xl border border-zinc-800 bg-zinc-900/70 p-5">
+            <div>
+              <h3 className="text-base font-bold text-white">Alta Rápida de Nuevo Taller Afiliado</h3>
+              <p className="text-xs text-zinc-400">Complete los datos básicos del taller para generarle inmediatamente su página web con su logo, color y seguimiento 24/7.</p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+              <div>
+                <label className="text-xs font-semibold text-zinc-300">Nombre Comercial del Taller *</label>
+                <input
+                  required
+                  placeholder="Ej: Taller Montero"
+                  value={newTenantForm.name}
+                  onChange={(e) => setNewTenantForm({ ...newTenantForm, name: e.target.value })}
+                  className="mt-1 w-full rounded-md border border-zinc-700 bg-zinc-950 p-2 text-sm text-white focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-zinc-300">Dueño o Administrador</label>
+                <input
+                  placeholder="Ej: Mario Montero"
+                  value={newTenantForm.ownerName}
+                  onChange={(e) => setNewTenantForm({ ...newTenantForm, ownerName: e.target.value })}
+                  className="mt-1 w-full rounded-md border border-zinc-700 bg-zinc-950 p-2 text-sm text-white focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-zinc-300">Teléfono / WhatsApp *</label>
+                <input
+                  required
+                  placeholder="Ej: 8888-9999"
+                  value={newTenantForm.phone}
+                  onChange={(e) => setNewTenantForm({ ...newTenantForm, phone: e.target.value })}
+                  className="mt-1 w-full rounded-md border border-zinc-700 bg-zinc-950 p-2 text-sm text-white focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-zinc-300">Provincia *</label>
+                <select
+                  value={newTenantForm.province}
+                  onChange={(e) => setNewTenantForm({ ...newTenantForm, province: e.target.value })}
+                  className="mt-1 w-full rounded-md border border-zinc-700 bg-zinc-950 p-2 text-sm text-white focus:border-blue-500"
+                >
+                  <option value="Alajuela">Alajuela</option>
+                  <option value="Heredia">Heredia</option>
+                  <option value="San José">San José</option>
+                  <option value="Cartago">Cartago</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-zinc-300">Cantón / Zona</label>
+                <input
+                  placeholder="Ej: San Pablo, La Garita, Barva"
+                  value={newTenantForm.canton}
+                  onChange={(e) => setNewTenantForm({ ...newTenantForm, canton: e.target.value })}
+                  className="mt-1 w-full rounded-md border border-zinc-700 bg-zinc-950 p-2 text-sm text-white focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-zinc-300">Color de Marca (Preset)</label>
+                <div className="mt-1 flex items-center gap-2">
+                  <select
+                    value={newTenantForm.brandColor}
+                    onChange={(e) => setNewTenantForm({ ...newTenantForm, brandColor: e.target.value })}
+                    className="w-full rounded-md border border-zinc-700 bg-zinc-950 p-2 text-sm text-white focus:border-blue-500"
+                  >
+                    <option value="#2563eb">Azul Royal (#2563eb)</option>
+                    <option value="#d62828">Rojo Fénix (#d62828)</option>
+                    <option value="#059669">Verde Esmeralda (#059669)</option>
+                    <option value="#ea580c">Naranja Turbo (#ea580c)</option>
+                    <option value="#7c3aed">Púrpura Élite (#7c3aed)</option>
+                  </select>
+                  <div
+                    className="h-8 w-8 rounded-md border border-zinc-600 shadow-inner"
+                    style={{ backgroundColor: newTenantForm.brandColor }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-zinc-300">Plan de Suscripción</label>
+                <select
+                  value={newTenantForm.plan}
+                  onChange={(e) => {
+                    const plan = e.target.value;
+                    const fee = plan === "basico" ? 25000 : plan === "elite" ? 65000 : 45000;
+                    setNewTenantForm({ ...newTenantForm, plan, monthlyFee: fee });
+                  }}
+                  className="mt-1 w-full rounded-md border border-zinc-700 bg-zinc-950 p-2 text-sm text-white focus:border-blue-500"
+                >
+                  <option value="basico">Plan Básico (₡25,000 / mes)</option>
+                  <option value="pro">Plan Pro Estrella (₡45,000 / mes)</option>
+                  <option value="elite">Plan Élite (₡65,000 / mes)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-zinc-300">Cuota Mensual en Colones (₡)</label>
+                <input
+                  type="number"
+                  value={newTenantForm.monthlyFee}
+                  onChange={(e) => setNewTenantForm({ ...newTenantForm, monthlyFee: Number(e.target.value) })}
+                  className="mt-1 w-full rounded-md border border-zinc-700 bg-zinc-950 p-2 text-sm text-white focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-zinc-300">Correo Electrónico (Opcional)</label>
+                <input
+                  type="email"
+                  placeholder="taller@gmail.com"
+                  value={newTenantForm.email}
+                  onChange={(e) => setNewTenantForm({ ...newTenantForm, email: e.target.value })}
+                  className="mt-1 w-full rounded-md border border-zinc-700 bg-zinc-950 p-2 text-sm text-white focus:border-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setActiveSaasTab("tenants")}
+                className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-xs font-semibold text-zinc-300 hover:text-white"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="rounded-lg bg-emerald-600 px-6 py-2 text-xs font-bold text-white shadow-md shadow-emerald-600/30 hover:bg-emerald-500"
+              >
+                🚀 Dar de Alta y Activar Taller
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* TAB 3: KIT DE VENTAS Y PITCH */}
+        {activeSaasTab === "sales_kit" && (
+          <div className="space-y-4 rounded-xl border border-zinc-800 bg-zinc-900/60 p-5">
+            <div>
+              <h3 className="text-base font-bold text-white">Guión de Ventas y Propuesta Comercial para Talleres</h3>
+              <p className="text-xs text-zinc-400">Metodología paso a paso para visitar o contactar talleres en Alajuela (Barrio San José, El Coyol, La Garita) y Heredia (San Pablo, Barva, Santa Lucía).</p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="rounded-lg border border-zinc-800 bg-zinc-950/80 p-4 space-y-2">
+                <span className="rounded bg-blue-900/50 px-2 py-0.5 text-[10px] font-bold uppercase text-blue-300">Paso 1 • El Dolor</span>
+                <h4 className="text-sm font-bold text-white">¿Cuánto tiempo pierde contestando llamadas?</h4>
+                <p className="text-xs leading-relaxed text-zinc-300">
+                  "Don [Dueño], usted está en la cabina o enderezando un golpe y le suena el teléfono 10 veces al día con la misma pregunta: <em>¿Don Mario, cómo va mi carro? ¿Ya lo pintaron?</em> Nuestra plataforma elimina el 80% de esas llamadas porque el cliente ve las fotos con su placa 24/7."
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-zinc-800 bg-zinc-950/80 p-4 space-y-2">
+                <span className="rounded bg-emerald-900/50 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-300">Paso 2 • La Solución</span>
+                <h4 className="text-sm font-bold text-white">Demostración en vivo en 60 segundos</h4>
+                <p className="text-xs leading-relaxed text-zinc-300">
+                  Abra el enlace con el nombre del taller de él en su celular: <em>"Mire, ya le tengo montada su página. Aquí está su nombre, sus colores y su WhatsApp directo. Cuando un cliente le pregunte, usted solo le toma una foto al carro y queda en vivo al instante."</em>
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-zinc-800 bg-zinc-950/80 p-4 space-y-2">
+                <span className="rounded bg-amber-900/50 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-300">Paso 3 • El Cierre</span>
+                <h4 className="text-sm font-bold text-white">Menos de medio bumper al mes</h4>
+                <p className="text-xs leading-relaxed text-zinc-300">
+                  "El servicio vale solo ₡45,000 al mes. Por menos de lo que le cobra a un solo carro por pintar una pieza, usted le da imagen de agencia a su taller y atrae clientes de Google y redes sociales sin saber de informática."
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-4">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-3">Estructura de Precios SaaS Costa Rica (En Colones ₡)</h4>
+              <div className="grid gap-3 sm:grid-cols-3 text-xs">
+                <div className="rounded-lg border border-zinc-800 p-3 bg-zinc-900/50">
+                  <p className="font-bold text-white">Plan Básico • ₡25,000 / mes</p>
+                  <ul className="mt-2 space-y-1 text-zinc-300">
+                    <li>✓ Sitio web moderno responsivo</li>
+                    <li>✓ Cotizador express por piezas</li>
+                    <li>✓ Agendamiento de citas</li>
+                    <li>✓ Enlaces directos a WhatsApp</li>
+                  </ul>
+                </div>
+                <div className="rounded-lg border border-blue-500/50 p-3 bg-blue-950/20 relative">
+                  <span className="absolute -top-2 right-2 rounded bg-blue-600 px-2 py-0.5 text-[9px] font-black text-white uppercase">Más Vendido</span>
+                  <p className="font-bold text-white">Plan Pro Estrella • ₡45,000 / mes</p>
+                  <ul className="mt-2 space-y-1 text-zinc-300">
+                    <li>✓ Todo lo del Plan Básico</li>
+                    <li>✓ <strong>Seguimiento 24/7 por placa con fotos</strong></li>
+                    <li>✓ <strong>Social Content Studio (Antes/Después)</strong></li>
+                    <li>✓ Alertas automáticas de retiro</li>
+                  </ul>
+                </div>
+                <div className="rounded-lg border border-purple-500/50 p-3 bg-purple-950/20">
+                  <p className="font-bold text-white">Plan Taller Élite • ₡65,000 / mes</p>
+                  <ul className="mt-2 space-y-1 text-zinc-300">
+                    <li>✓ Todo lo del Plan Pro</li>
+                    <li>✓ <strong>Dominio propio .cr o .com</strong></li>
+                    <li>✓ Soporte técnico VIP prioritario</li>
+                    <li>✓ Personalización total de marca</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="section-card space-y-4">

@@ -172,10 +172,10 @@ export default function AdminPage() {
     if (socialStudio.platform === "tiktok") {
       return (
         `¿Creías que este ${socialStudio.vehicle} no tenía arreglo? 🚗💥\n\n` +
-        `En Taller Dayana realizamos: ${socialStudio.workType}. ${socialStudio.notes}\n\n` +
+        `En Taller Dayana (@tallerdayanacr) realizamos: ${socialStudio.workType}. ${socialStudio.notes}\n\n` +
         `📍 Barrio San José de Alajuela\n` +
         `📲 Cotizá tu carro al WhatsApp: 7043-9248 (enlace en el perfil)\n\n` +
-        `#TallerDayana #EnderezadoYPintura #CostaRica #Alajuela #Heredia #AntesYDespues #TikTokAutos #PinturaAutomotriz #AutosCR`
+        `#TallerDayana #tallerdayanacr #EnderezadoYPintura #CostaRica #Alajuela #Heredia #AntesYDespues #TikTokAutos #PinturaAutomotriz #AutosCR`
       );
     }
     return (
@@ -189,8 +189,9 @@ export default function AdminPage() {
       `✅ Seguimiento en línea 24/7 de su reparación\n\n` +
       `📍 Ubicación: Barrio San José de Alajuela, Costa Rica\n` +
       `📲 Cotizaciones rápidas por WhatsApp: 7043-9248 / 8869-8157\n` +
-      `🌐 Cotice y agende en nuestra web: https://tallerdayana.vercel.app\n\n` +
-      `#TallerDayana #EnderezadoYPintura #Alajuela #Heredia #CostaRica #PinturaAutomotriz #AutosCostaRica #TallerMecanicoCR #AntesYDespues`
+      `🌐 Cotice y agende en nuestra web: https://tallerdayana.vercel.app\n` +
+      `📸 Síganos en IG: @tallerdayana | TikTok: @tallerdayanacr\n\n` +
+      `#TallerDayana #tallerdayana #EnderezadoYPintura #Alajuela #Heredia #CostaRica #PinturaAutomotriz #AutosCostaRica #TallerMecanicoCR #AntesYDespues`
     );
   }, [socialStudio]);
 

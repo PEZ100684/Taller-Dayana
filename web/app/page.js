@@ -51,9 +51,9 @@ const mapsLink =
 const wazeLink = "https://waze.com/ul?ll=10.0188372,-84.2361356&navigate=yes";
 
 const SOCIAL_LINKS = {
-  facebook: "https://facebook.com/tallerdayana",
+  facebook: "https://www.facebook.com/profile.php?id=61596264936919#",
   instagram: "https://instagram.com/tallerdayana",
-  tiktok: "https://tiktok.com/@tallerdayana"
+  tiktok: "https://tiktok.com/@tallerdayanacr"
 };
 
 const navigationTabs = [
@@ -1792,7 +1792,7 @@ export default function Home() {
                       TikTok
                     </span>
                   </div>
-                  <h3 className="mt-4 text-lg font-bold text-white">TikTok @tallerdayana</h3>
+                  <h3 className="mt-4 text-lg font-bold text-white">TikTok @tallerdayanacr</h3>
                   <p className="mt-1 text-xs leading-relaxed text-zinc-300">
                     Transformaciones rápidas de carrocería, procesos en horno de secado, enderezado estructural y tips automotrices con Don Randy.
                   </p>

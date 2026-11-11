@@ -154,6 +154,8 @@ export default function AdminPage() {
   const [activeGeminiTab, setActiveGeminiTab] = useState("cotizador");
   const [showPdfProposalModal, setShowPdfProposalModal] = useState(false);
   const [quoteProposalCode, setQuoteProposalCode] = useState("TD-2026-104");
+  const [latestNewQuote, setLatestNewQuote] = useState(null);
+  const [dismissedQuoteIds, setDismissedQuoteIds] = useState([]);
   const [quoteAssistant, setQuoteAssistant] = useState({
     customerName: "",
     customerPhone: "",
@@ -1015,7 +1017,23 @@ export default function AdminPage() {
     const payload = await response.json();
     setQuotes(payload);
     setStatus(`Presupuestos cargados: ${payload.length}`);
+
+    // Detectar solicitudes recientes no descartadas
+    const unread = (Array.isArray(payload) ? payload : []).find(
+      (q) => !dismissedQuoteIds.includes(q.id) && (q.status === "received" || q.status === "pending" || !q.status)
+    );
+    if (unread) {
+      setLatestNewQuote(unread);
+    }
   };
+
+  useEffect(() => {
+    if (!token) return;
+    const interval = setInterval(() => {
+      loadQuotes();
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [token, dismissedQuoteIds]);
 
   const markReady = async (id) => {
     const response = await fetch(`${apiBase}/api/admin/appointments/${id}/status`, {
@@ -1277,7 +1295,84 @@ export default function AdminPage() {
   };
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-8 px-4 py-8 text-white md:px-8">
+        <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-8 px-4 py-8 text-white md:px-8">
+      {/* NOTIFICACIÓN EMERGENTE DE NUEVA SOLICITUD DE PRESUPUESTO */}
+      {latestNewQuote && (
+        <aside aria-label="Alerta de presupuesto" className="fixed bottom-5 right-5 z-50 w-full max-w-md animate-bounce-once rounded-2xl border-2 border-red-500 bg-zinc-950 p-4 text-white shadow-2xl shadow-red-950/80">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="flex h-3 w-3 rounded-full bg-red-500 animate-ping" />
+              <span className="text-xs font-black uppercase tracking-wider text-red-400">
+                🚨 ¡Nueva Solicitud de Presupuesto!
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setDismissedQuoteIds((prev) => [...prev, latestNewQuote.id]);
+                setLatestNewQuote(null);
+              }}
+              className="rounded-md border border-zinc-800 bg-zinc-900 px-2 py-0.5 text-xs font-bold text-zinc-400 hover:text-white"
+            >
+              ✕ Descartar
+            </button>
+          </div>
+
+          <div className="mt-2.5 rounded-xl border border-zinc-800 bg-zinc-900/90 p-3 text-xs space-y-1.5">
+            <p><strong className="text-white">Cliente:</strong> {latestNewQuote.customerName} ({latestNewQuote.phone})</p>
+            <p><strong className="text-white">Vehículo:</strong> {latestNewQuote.vehicle}</p>
+            <p>
+              <strong className="text-white">Medio preferido:</strong>{" "}
+              <span className={latestNewQuote.contactChannel === "email" ? "text-blue-400 font-bold" : "text-emerald-400 font-bold"}>
+                {latestNewQuote.contactChannel === "email" ? "✉️ Correo electrónico" : "🟢 WhatsApp"}
+              </span>
+            </p>
+            {latestNewQuote.damageDescription ? (
+              <p className="text-zinc-300 italic truncate">"{latestNewQuote.damageDescription}"</p>
+            ) : null}
+          </div>
+
+          <div className="mt-3 flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setQuoteAssistant((prev) => ({
+                  ...prev,
+                  customerName: latestNewQuote.customerName || "Cliente",
+                  customerPhone: latestNewQuote.phone || "",
+                  vehicle: latestNewQuote.vehicle || "Vehículo",
+                  selectedParts: Array.isArray(latestNewQuote.selectedParts) && latestNewQuote.selectedParts.length > 0 ? latestNewQuote.selectedParts : ["Bumper delantero"],
+                  customNotes: latestNewQuote.damageDescription || "",
+                  calculated: false
+                }));
+                setDismissedQuoteIds((prev) => [...prev, latestNewQuote.id]);
+                setLatestNewQuote(null);
+                const el = document.getElementById("asistente-gemini");
+                if (el) el.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="flex-1 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 py-2 text-xs font-bold text-white shadow-md shadow-purple-950 hover:opacity-90"
+            >
+              ⚡ Abrir en Cotizador y Responder
+            </button>
+            <a
+              href={`https://wa.me/50670439248?text=${encodeURIComponent(
+                `🚗 *ALERTA TALLER DAYANA • NUEVA COTIZACIÓN*\n\n` +
+                `• Cliente: ${latestNewQuote.customerName}\n` +
+                `• Teléfono: ${latestNewQuote.phone}\n` +
+                `• Vehículo: ${latestNewQuote.vehicle}\n` +
+                `• Responder por: ${latestNewQuote.contactChannel === "email" ? "Correo: " + latestNewQuote.email : "WhatsApp"}\n` +
+                `• Detalle: ${latestNewQuote.damageDescription || "Por evaluar"}`
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center rounded-lg border border-emerald-500/50 bg-emerald-950/60 px-3 py-2 text-xs font-bold text-emerald-300 hover:bg-emerald-900/60"
+              title="Notificar a Randy por WhatsApp"
+            >
+              📲 Randy WA
+            </a>
+          </div>
+        </aside>
+      )}
       <section className="section-card border-brandRed/40 bg-gradient-to-br from-zinc-950 to-zinc-900">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>

@@ -150,15 +150,6 @@ const defaultWorkshopVehicles = [
   },
   {
     id: 4,
-    plate: "514474",
-    customerName: "Vehículo en Taller",
-    workType: "Enderezado y pintura",
-    status: "in_progress",
-    notes: "Proceso de reparación",
-    createdAt: "2026-11-06T18:00:00.000Z"
-  },
-  {
-    id: 5,
     plate: "ADT564",
     customerName: "Vehículo en Taller",
     workType: "Enderezado y pintura",
@@ -181,16 +172,65 @@ const defaultWorkshopProgressPhotos = [
   { id: 10, workshopVehicleId: 2, plate: "537676", photoUrl: "https://drive.google.com/thumbnail?id=1GF9H1-vDtj52liBIFpCAkjt2UOVdXSVX&sz=w1200", description: "Avance de reparación - Foto 6", createdAt: "2026-11-06T18:25:00.000Z" },
   { id: 11, workshopVehicleId: 3, plate: "514471", photoUrl: "https://drive.google.com/thumbnail?id=1jNoctxVXwMGVHZ5gccrKcc_k9TjkRKgF&sz=w1200", description: "Avance de reparación - Foto 1", createdAt: "2026-11-06T18:30:00.000Z" },
   { id: 12, workshopVehicleId: 3, plate: "514471", photoUrl: "https://drive.google.com/thumbnail?id=16KHqtFTh-h5hyGsaJqA5MHNUfWAUmECB&sz=w1200", description: "Avance de reparación - Foto 2", createdAt: "2026-11-06T18:31:00.000Z" },
-  { id: 13, workshopVehicleId: 4, plate: "514474", photoUrl: "https://drive.google.com/thumbnail?id=1jNoctxVXwMGVHZ5gccrKcc_k9TjkRKgF&sz=w1200", description: "Avance de reparación - Foto 1", createdAt: "2026-11-06T18:30:00.000Z" },
-  { id: 14, workshopVehicleId: 4, plate: "514474", photoUrl: "https://drive.google.com/thumbnail?id=16KHqtFTh-h5hyGsaJqA5MHNUfWAUmECB&sz=w1200", description: "Avance de reparación - Foto 2", createdAt: "2026-11-06T18:31:00.000Z" },
-  { id: 15, workshopVehicleId: 5, plate: "ADT564", photoUrl: "https://drive.google.com/thumbnail?id=1FiaohCuvwBZ4TGAiCuwr46SQeicA_vtj&sz=w1200", description: "Avance de reparación - IMG-20261110-WA0011.jpg", createdAt: "2026-11-10T18:26:51.800Z" },
-  { id: 16, workshopVehicleId: 5, plate: "ADT564", photoUrl: "https://drive.google.com/thumbnail?id=1_vZ9maXZrHL1Z0DCFi25SUBlo7YUBXEj&sz=w1200", description: "Avance de reparación - IMG-20261110-WA0012.jpg", createdAt: "2026-11-10T18:26:51.613Z" },
-  { id: 17, workshopVehicleId: 5, plate: "ADT564", photoUrl: "https://drive.google.com/thumbnail?id=1BO_Iga3FzTkveFWuo-K0hp2TNT1blL4Q&sz=w1200", description: "Avance de reparación - IMG-20261110-WA0013.jpg", createdAt: "2026-11-10T18:26:51.730Z" },
-  { id: 18, workshopVehicleId: 5, plate: "ADT564", photoUrl: "https://drive.google.com/thumbnail?id=1kd5dNX5Px6jib1R2WEOC6aBCnEtjcVsh&sz=w1200", description: "Avance de reparación - IMG-20261110-WA0014.jpg", createdAt: "2026-11-10T18:26:51.430Z" },
-  { id: 19, workshopVehicleId: 5, plate: "ADT564", photoUrl: "https://drive.google.com/thumbnail?id=1yBO5tYLBhEYtpeaVN7G4SmkcAWZ-vABD&sz=w1200", description: "Avance de reparación - IMG-20261110-WA0015.jpg", createdAt: "2026-11-10T18:26:51.228Z" },
-  { id: 20, workshopVehicleId: 5, plate: "ADT564", photoUrl: "https://drive.google.com/thumbnail?id=1nDOWLVytWX9jjW0lBwFevCLrwxYn6nH_&sz=w1200", description: "Avance de reparación - IMG-20261110-WA0017.jpg", createdAt: "2026-11-10T18:26:50.693Z" },
-  { id: 21, workshopVehicleId: 5, plate: "ADT564", photoUrl: "https://drive.google.com/thumbnail?id=13U5kTsZk7EjwYpRYmczCdDfeHGBAalat&sz=w1200", description: "Avance de reparación - IMG-20261110-WA0018.jpg", createdAt: "2026-11-10T18:26:50.974Z" },
-  { id: 22, workshopVehicleId: 5, plate: "ADT564", photoUrl: "https://drive.google.com/thumbnail?id=1Rxos354Uu8ZPh-rootRst5Z3AaDAOQB3&sz=w1200", description: "Avance de reparación - IMG-20261110-WA0020.jpg", createdAt: "2026-11-10T19:40:47.791Z" }
+  { id: 13, workshopVehicleId: 4, plate: "ADT564", photoUrl: "https://drive.google.com/thumbnail?id=1FiaohCuvwBZ4TGAiCuwr46SQeicA_vtj&sz=w1200", description: "Avance de reparación - IMG-20261110-WA0011.jpg", createdAt: "2026-11-10T18:26:51.800Z" },
+  { id: 14, workshopVehicleId: 4, plate: "ADT564", photoUrl: "https://drive.google.com/thumbnail?id=1_vZ9maXZrHL1Z0DCFi25SUBlo7YUBXEj&sz=w1200", description: "Avance de reparación - IMG-20261110-WA0012.jpg", createdAt: "2026-11-10T18:26:51.613Z" },
+  { id: 15, workshopVehicleId: 4, plate: "ADT564", photoUrl: "https://drive.google.com/thumbnail?id=1BO_Iga3FzTkveFWuo-K0hp2TNT1blL4Q&sz=w1200", description: "Avance de reparación - IMG-20261110-WA0013.jpg", createdAt: "2026-11-10T18:26:51.730Z" },
+  { id: 16, workshopVehicleId: 4, plate: "ADT564", photoUrl: "https://drive.google.com/thumbnail?id=1kd5dNX5Px6jib1R2WEOC6aBCnEtjcVsh&sz=w1200", description: "Avance de reparación - IMG-20261110-WA0014.jpg", createdAt: "2026-11-10T18:26:51.430Z" },
+  { id: 17, workshopVehicleId: 4, plate: "ADT564", photoUrl: "https://drive.google.com/thumbnail?id=1yBO5tYLBhEYtpeaVN7G4SmkcAWZ-vABD&sz=w1200", description: "Avance de reparación - IMG-20261110-WA0015.jpg", createdAt: "2026-11-10T18:26:51.228Z" },
+  { id: 18, workshopVehicleId: 4, plate: "ADT564", photoUrl: "https://drive.google.com/thumbnail?id=1nDOWLVytWX9jjW0lBwFevCLrwxYn6nH_&sz=w1200", description: "Avance de reparación - IMG-20261110-WA0017.jpg", createdAt: "2026-11-10T18:26:50.693Z" },
+  { id: 19, workshopVehicleId: 4, plate: "ADT564", photoUrl: "https://drive.google.com/thumbnail?id=13U5kTsZk7EjwYpRYmczCdDfeHGBAalat&sz=w1200", description: "Avance de reparación - IMG-20261110-WA0018.jpg", createdAt: "2026-11-10T18:26:50.974Z" },
+  { id: 20, workshopVehicleId: 4, plate: "ADT564", photoUrl: "https://drive.google.com/thumbnail?id=1Rxos354Uu8ZPh-rootRst5Z3AaDAOQB3&sz=w1200", description: "Avance de reparación - IMG-20261110-WA0020.jpg", createdAt: "2026-11-10T19:40:47.791Z" }
+];
+
+const defaultTowTrucks = [
+  {
+    id: 1,
+    name: "Grúas San José & Alajuela",
+    driverName: "Carlos Mora",
+    phone: "8333-4455",
+    whatsapp: "50683334455",
+    zones: ["Alajuela Centro", "Barrio San José", "San Rafael", "Aeropuerto"],
+    type: "Plataforma Hidráulica",
+    rating: 5.0,
+    priceRange: "₡25,000 - ₡35,000",
+    notes: "Rápidos, plataforma para autos bajos y 4x4. Entrega directa a Taller Dayana."
+  },
+  {
+    id: 2,
+    name: "Grúas Hermanos Vargas",
+    driverName: "Esteban Vargas",
+    phone: "8822-1144",
+    whatsapp: "50688221144",
+    zones: ["El Coyol", "Radial Alajuela", "Autopista Bernardo Soto (Ruta 1)"],
+    type: "Plataforma Pesada & Liviana",
+    rating: 4.9,
+    priceRange: "₡30,000 - ₡45,000",
+    notes: "Especialistas en rescates en autopista y zona franca El Coyol."
+  },
+  {
+    id: 3,
+    name: "Grúas del Valle Central",
+    driverName: "Mauricio Alfaro",
+    phone: "8700-1234",
+    whatsapp: "50687001234",
+    zones: ["Heredia Centro", "San Joaquín de Flores", "Barva", "Santa Bárbara"],
+    type: "Plataforma Hidráulica",
+    rating: 4.8,
+    priceRange: "₡28,000 - ₡40,000",
+    notes: "Cobertura completa zona Heredia y traslados hacia Alajuela."
+  },
+  {
+    id: 4,
+    name: "Asistencia Ruta 27 & Orotina",
+    driverName: "Jorge Quesada",
+    phone: "8911-2233",
+    whatsapp: "50689112233",
+    zones: ["Ruta 27", "Turrúcares", "Atenas", "Orotina"],
+    type: "Plataforma doble tracción",
+    rating: 4.9,
+    priceRange: "₡35,000 - ₡50,000",
+    notes: "Respuesta inmediata en Ruta 27 con convenio de llegada a taller."
+  }
 ];
 
 const defaultTenants = [
@@ -272,7 +312,8 @@ function defaultData() {
     appointments: [],
     notifications: [],
     workshopVehicles: [...defaultWorkshopVehicles],
-    workshopProgressPhotos: [...defaultWorkshopProgressPhotos]
+    workshopProgressPhotos: [...defaultWorkshopProgressPhotos],
+    towTrucks: [...defaultTowTrucks]
   };
 }
 
@@ -302,7 +343,8 @@ function loadPersistedData() {
       workshopVehicles: Array.isArray(parsed.workshopVehicles) ? parsed.workshopVehicles : base.workshopVehicles,
       workshopProgressPhotos: Array.isArray(parsed.workshopProgressPhotos)
         ? parsed.workshopProgressPhotos
-        : base.workshopProgressPhotos
+        : base.workshopProgressPhotos,
+      towTrucks: Array.isArray(parsed.towTrucks) && parsed.towTrucks.length > 0 ? parsed.towTrucks : base.towTrucks
     };
   } catch (_error) {
     return defaultData();
@@ -325,6 +367,31 @@ const appointments = persisted.appointments;
 const notifications = persisted.notifications;
 const workshopVehicles = persisted.workshopVehicles;
 const workshopProgressPhotos = persisted.workshopProgressPhotos;
+const towTrucks = persisted.towTrucks || [...defaultTowTrucks];
+
+function reloadLocalData() {
+  if (process.env.DATABASE_URL) {
+    return;
+  }
+  try {
+    const fresh = loadPersistedData();
+    workshopVehicles.length = 0;
+    workshopVehicles.push(...fresh.workshopVehicles);
+    workshopProgressPhotos.length = 0;
+    workshopProgressPhotos.push(...fresh.workshopProgressPhotos);
+    quotes.length = 0;
+    quotes.push(...fresh.quotes);
+    appointments.length = 0;
+    appointments.push(...fresh.appointments);
+    tenants.length = 0;
+    tenants.push(...fresh.tenants);
+    towTrucks.length = 0;
+    towTrucks.push(...(fresh.towTrucks || defaultTowTrucks));
+    return fresh;
+  } catch (_e) {
+    // ignorar error si archivo temporalmente bloqueado
+  }
+}
 
 module.exports = {
   services,
@@ -336,6 +403,9 @@ module.exports = {
   notifications,
   workshopVehicles,
   workshopProgressPhotos,
+  towTrucks,
+  defaultTowTrucks,
   persistLocalData,
+  reloadLocalData,
   dataFilePath
 };

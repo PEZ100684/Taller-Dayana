@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 const statusColors = {
   scheduled: "bg-blue-950/40 border-blue-700 text-blue-100",
@@ -47,25 +47,9 @@ export default function SeguimientoPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const resolvePhotoUrl = (photoUrl) => {
-    if (!photoUrl || typeof photoUrl !== "string") {
-      return "";
-    }
-
-    if (photoUrl.startsWith("/")) {
-      return `${apiBaseUrl}${photoUrl}`;
-    }
-
-    return photoUrl;
-  };
-
-  const handleSearch = async (e) => {
-    e.preventDefault();
-
-    if (!plate.trim()) {
-      setError("Por favor ingresa una placa de vehículo");
-      return;
-    }
+  const fetchStatusForPlate = useCallback(async (targetPlate) => {
+    const clean = String(targetPlate || "").trim().toUpperCase();
+    if (!clean) return;
 
     setLoading(true);
     setError(null);
@@ -74,7 +58,7 @@ export default function SeguimientoPage() {
     try {
       const tenantParam = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("tenant") : "";
       const tenantQuery = tenantParam ? `?tenant=${encodeURIComponent(tenantParam)}` : "";
-      const response = await fetch(`${apiBaseUrl}/api/repairs/status/${plate.toUpperCase()}${tenantQuery}`);
+      const response = await fetch(`${apiBaseUrl}/api/repairs/status/${clean}${tenantQuery}`);
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -93,6 +77,37 @@ export default function SeguimientoPage() {
     } finally {
       setLoading(false);
     }
+  }, [apiBaseUrl]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const paramPlate = new URLSearchParams(window.location.search).get("plate");
+      if (paramPlate) {
+        setPlate(paramPlate.toUpperCase());
+        fetchStatusForPlate(paramPlate);
+      }
+    }
+  }, [fetchStatusForPlate]);
+
+  const resolvePhotoUrl = (photoUrl) => {
+    if (!photoUrl || typeof photoUrl !== "string") {
+      return "";
+    }
+
+    if (photoUrl.startsWith("/")) {
+      return `${apiBaseUrl}${photoUrl}`;
+    }
+
+    return photoUrl;
+  };
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!plate.trim()) {
+      setError("Por favor ingresa una placa de vehículo");
+      return;
+    }
+    await fetchStatusForPlate(plate);
   };
 
   return (

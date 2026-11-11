@@ -130,6 +130,106 @@ export default function AdminPage() {
   const [saasStatus, setSaasStatus] = useState("");
   const [copiedPitchSlug, setCopiedPitchSlug] = useState("");
 
+  const QUOTE_PARTS = [
+    "Bumper delantero",
+    "Bumper trasero",
+    "Bonete / Capó",
+    "Puerta delantera izq.",
+    "Puerta delantera der.",
+    "Puerta trasera izq.",
+    "Puerta trasera der.",
+    "Guardabarro del. izq.",
+    "Guardabarro del. der.",
+    "Costado trasero izq.",
+    "Costado trasero der.",
+    "Techo",
+    "Compuerta trasera",
+    "Tapa de cajón",
+    "Estribo"
+  ];
+
+  const [activeGeminiTab, setActiveGeminiTab] = useState("cotizador");
+  const [quoteAssistant, setQuoteAssistant] = useState({
+    customerName: "",
+    customerPhone: "",
+    vehicle: "",
+    selectedParts: ["Bumper delantero"],
+    damageLevel: "medio",
+    paintType: "bicapa",
+    customNotes: "",
+    minEstimate: 0,
+    maxEstimate: 0,
+    deliveryDays: "",
+    generatedMessage: "",
+    calculated: false,
+    copySuccess: false,
+    loading: false
+  });
+
+  const [towTrucks, setTowTrucks] = useState([
+    {
+      id: 1,
+      name: "Grúas San José & Alajuela",
+      driverName: "Carlos Mora",
+      phone: "8333-4455",
+      whatsapp: "50683334455",
+      zones: ["Alajuela Centro", "Barrio San José", "San Rafael", "Aeropuerto"],
+      type: "Plataforma Hidráulica",
+      rating: 5.0,
+      priceRange: "₡25,000 - ₡35,000",
+      notes: "Rápidos, plataforma para autos bajos y 4x4. Entrega directa a Taller Dayana."
+    },
+    {
+      id: 2,
+      name: "Grúas Hermanos Vargas",
+      driverName: "Esteban Vargas",
+      phone: "8822-1144",
+      whatsapp: "50688221144",
+      zones: ["El Coyol", "Radial Alajuela", "Autopista Bernardo Soto (Ruta 1)"],
+      type: "Plataforma Pesada & Liviana",
+      rating: 4.9,
+      priceRange: "₡30,000 - ₡45,000",
+      notes: "Especialistas en rescates en autopista y zona franca El Coyol."
+    },
+    {
+      id: 3,
+      name: "Grúas del Valle Central",
+      driverName: "Mauricio Alfaro",
+      phone: "8700-1234",
+      whatsapp: "50687001234",
+      zones: ["Heredia Centro", "San Joaquín de Flores", "Barva", "Santa Bárbara"],
+      type: "Plataforma Hidráulica",
+      rating: 4.8,
+      priceRange: "₡28,000 - ₡40,000",
+      notes: "Cobertura completa zona Heredia y traslados hacia Alajuela."
+    },
+    {
+      id: 4,
+      name: "Asistencia Ruta 27 & Orotina",
+      driverName: "Jorge Quesada",
+      phone: "8911-2233",
+      whatsapp: "50689112233",
+      zones: ["Ruta 27", "Turrúcares", "Atenas", "Orotina"],
+      type: "Plataforma doble tracción",
+      rating: 4.9,
+      priceRange: "₡35,000 - ₡50,000",
+      notes: "Respuesta inmediata en Ruta 27 con convenio de llegada a taller."
+    }
+  ]);
+
+  const [showAddTowModal, setShowAddTowModal] = useState(false);
+  const [newTowTruck, setNewTowTruck] = useState({
+    name: "",
+    driverName: "",
+    phone: "",
+    whatsapp: "",
+    zones: "",
+    type: "Plataforma Hidráulica",
+    priceRange: "₡25,000 - ₡35,000",
+    notes: ""
+  });
+  const [copiedTowId, setCopiedTowId] = useState(null);
+
   const [socialStudio, setSocialStudio] = useState({
     vehicle: "Toyota Corolla 2019",
     workType: "Enderezado de golpe frontal y pintura al horno",
@@ -283,6 +383,153 @@ export default function AdminPage() {
     process.env.NEXT_PUBLIC_API_BASE_URL ||
     process.env.NEXT_API_BASE_URL ||
     "https://taller-dayana-api.onrender.com";
+
+  const toggleQuotePart = (part) => {
+    setQuoteAssistant((prev) => {
+      const exists = prev.selectedParts.includes(part);
+      const nextParts = exists
+        ? prev.selectedParts.filter((p) => p !== part)
+        : [...prev.selectedParts, part];
+      return { ...prev, selectedParts: nextParts, calculated: false };
+    });
+  };
+
+  const handleCalculateQuote = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setQuoteAssistant((prev) => ({ ...prev, loading: true }));
+
+    try {
+      const response = await fetch(`${apiBase}/api/admin/quote-assistant`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({
+          customerName: quoteAssistant.customerName || "Estimado cliente",
+          vehicle: quoteAssistant.vehicle || "su vehículo",
+          selectedParts: quoteAssistant.selectedParts,
+          damageLevel: quoteAssistant.damageLevel,
+          paintType: quoteAssistant.paintType,
+          customNotes: quoteAssistant.customNotes
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setQuoteAssistant((prev) => ({
+          ...prev,
+          minEstimate: data.minEstimate,
+          maxEstimate: data.maxEstimate,
+          deliveryDays: data.deliveryDays,
+          generatedMessage: data.message,
+          calculated: true,
+          loading: false
+        }));
+        return;
+      }
+    } catch (_err) {
+      // Fallback local
+    }
+
+    const basePiecePrices = {
+      "Bumper delantero": 45000,
+      "Bumper trasero": 45000,
+      "Bonete / Capó": 65000,
+      "Puerta delantera izq.": 55000,
+      "Puerta delantera der.": 55000,
+      "Puerta trasera izq.": 55000,
+      "Puerta trasera der.": 55000,
+      "Guardabarro del. izq.": 48000,
+      "Guardabarro del. der.": 48000,
+      "Costado trasero izq.": 60000,
+      "Costado trasero der.": 60000,
+      "Techo": 75000,
+      "Compuerta trasera": 58000,
+      "Tapa de cajón": 55000,
+      "Estribo": 40000
+    };
+    const multD = quoteAssistant.damageLevel === "leve" ? 1.0 : quoteAssistant.damageLevel === "medio" ? 1.35 : 1.85;
+    const multP = quoteAssistant.paintType === "monocapa" ? 1.0 : quoteAssistant.paintType === "bicapa" ? 1.15 : 1.30;
+    let sum = 0;
+    (quoteAssistant.selectedParts || []).forEach((p) => { sum += (basePiecePrices[p] || 50000); });
+    const calc = Math.round((sum * multD * multP) / 1000) * 1000;
+    const minEst = Math.round((calc * 0.92) / 1000) * 1000;
+    const maxEst = Math.round((calc * 1.12) / 1000) * 1000;
+    const days = (quoteAssistant.selectedParts || []).length <= 2 ? "3 a 4 días hábiles" : (quoteAssistant.selectedParts || []).length <= 4 ? "4 a 6 días hábiles" : "7 a 10 días hábiles";
+
+    const msg =
+      `🚗 *PRESUPUESTO ESTIMADO • TALLER DAYANA* 🚗\n\n` +
+      `¡Hola ${quoteAssistant.customerName || "Estimado cliente"}! Don Randy y nuestro equipo técnico revisaron la consulta de su *${quoteAssistant.vehicle || "vehículo"}*.\n\n` +
+      `📋 *Piezas a trabajar:*\n` +
+      (quoteAssistant.selectedParts || []).map((p) => `  • ${p}`).join("\n") + "\n\n" +
+      `🛠️ *Alcance del trabajo:*\n` +
+      `  • Daño: ${quoteAssistant.damageLevel === "leve" ? "Leve (raspón / pintura superficial)" : quoteAssistant.damageLevel === "medio" ? "Medio (desabollado de chapa)" : "Fuerte (enderezado estructural y escuadre)"}\n` +
+      `  • Acabado: Pintura en cabina presurizada con secado al horno y garantía de color.\n\n` +
+      `💰 *Rango Estimado:* *₡${minEst.toLocaleString("es-CR")} - ₡${maxEst.toLocaleString("es-CR")} colones*\n` +
+      `_(Sujeto a revisión visual en taller para verificar detalles internos o fijaciones)_\n\n` +
+      `⏱️ *Tiempo estimado de entrega:* ${days}\n` +
+      `🛡️ *Garantía:* Por escrito en tono, brillo y adherencia.\n\n` +
+      (quoteAssistant.customNotes ? `📝 *Nota adicional:* ${quoteAssistant.customNotes}\n\n` : "") +
+      `📍 *Ubicación:* Barrio San José de Alajuela (Waze: Taller Dayana)\n` +
+      `📲 ¿Gusta que le agendemos un espacio para que Don Randy lo valore sin compromiso en el taller?`;
+
+    setQuoteAssistant((prev) => ({
+      ...prev,
+      minEstimate: minEst,
+      maxEstimate: maxEst,
+      deliveryDays: days,
+      generatedMessage: msg,
+      calculated: true,
+      loading: false
+    }));
+  };
+
+  const copyQuoteMessage = () => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(quoteAssistant.generatedMessage);
+      setQuoteAssistant((prev) => ({ ...prev, copySuccess: true }));
+      setTimeout(() => setQuoteAssistant((prev) => ({ ...prev, copySuccess: false })), 3000);
+    }
+  };
+
+  const handleCreateTowTruck = (e) => {
+    e.preventDefault();
+    if (!newTowTruck.name || !newTowTruck.phone) {
+      alert("Por favor ingrese al menos el nombre y el teléfono de la grúa.");
+      return;
+    }
+    const id = Date.now();
+    const item = {
+      id,
+      name: newTowTruck.name,
+      driverName: newTowTruck.driverName || "",
+      phone: newTowTruck.phone,
+      whatsapp: newTowTruck.whatsapp || newTowTruck.phone.replace(/[^0-9]/g, ""),
+      zones: newTowTruck.zones ? newTowTruck.zones.split(",").map((z) => z.trim()) : ["Alajuela / GAM"],
+      type: newTowTruck.type,
+      rating: 5.0,
+      priceRange: newTowTruck.priceRange || "₡25,000 - ₡35,000",
+      notes: newTowTruck.notes || ""
+    };
+    setTowTrucks((prev) => [item, ...prev]);
+    setNewTowTruck({
+      name: "",
+      driverName: "",
+      phone: "",
+      whatsapp: "",
+      zones: "",
+      type: "Plataforma Hidráulica",
+      priceRange: "₡25,000 - ₡35,000",
+      notes: ""
+    });
+    setShowAddTowModal(false);
+    setStatus("Proveedor de grúa guardado");
+  };
+
+  const handleDeleteTowTruck = (id) => {
+    if (window.confirm("¿Desea eliminar esta grúa del directorio?")) {
+      setTowTrucks((prev) => prev.filter((t) => t.id !== id));
+      setStatus("Grúa eliminada del directorio");
+    }
+  };
 
   const openEntryDatePicker = () => {
     const input = entryDateInputRef.current;
@@ -857,6 +1104,34 @@ export default function AdminPage() {
     await loadWorkshopVehicles();
   };
 
+  const movePhotoOrder = async (fromIndex, toIndex) => {
+    if (toIndex < 0 || toIndex >= progressPhotos.length) return;
+    const reordered = [...progressPhotos];
+    const [moved] = reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, moved);
+
+    const baseEpoch = Date.now() - (reordered.length * 60000);
+    const withNewDates = reordered.map((photo, idx) => ({
+      ...photo,
+      createdAt: new Date(baseEpoch + (idx * 60000)).toISOString()
+    }));
+
+    setProgressPhotos(withNewDates);
+
+    try {
+      await fetch(`${apiBase}/api/admin/workshop-photos/reorder`, {
+        method: "PUT",
+        headers: authHeaders,
+        body: JSON.stringify({
+          photosOrder: withNewDates.map((p) => ({ id: p.id, createdAt: p.createdAt }))
+        })
+      });
+      setStatus("Orden de fotos actualizado correctamente");
+    } catch (_err) {
+      // orden en memoria mantenido
+    }
+  };
+
   const deleteUnifiedRecord = async (item) => {
     if (!token) {
       setStatus("Debe autenticarse primero");
@@ -1354,6 +1629,441 @@ export default function AdminPage() {
         )}
       </section>
 
+      {/* ===================== ASISTENTE GEMINI: COTIZADOR & AUTO-RESPUESTAS ===================== */}
+      <section className="section-card space-y-6 border-purple-500/40 bg-gradient-to-br from-zinc-950 via-purple-950/20 to-zinc-950">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between border-b border-zinc-800 pb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="flex h-2.5 w-2.5 rounded-full bg-purple-400 animate-pulse" />
+              <span className="text-xs font-bold uppercase tracking-wider text-purple-400">
+                IA Automotriz • Gemini Pro Assistant
+              </span>
+            </div>
+            <h2 className="mt-1 text-2xl font-bold text-white md:text-3xl">
+              Asistente Gemini: Cotizador Inteligente & Respuestas para WhatsApp
+            </h2>
+            <p className="mt-1 text-xs text-zinc-300">
+              Estime montos según piezas y daño en colones (₡) y genere respuestas técnicas y comerciales automáticas listas para enviar al cliente por WhatsApp.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveGeminiTab("cotizador")}
+              className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${
+                activeGeminiTab === "cotizador"
+                  ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
+                  : "border border-zinc-700 bg-zinc-900 text-zinc-300 hover:text-white"
+              }`}
+            >
+              ⚡ Cotizador Exprés
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveGeminiTab("respuestas")}
+              className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${
+                activeGeminiTab === "respuestas"
+                  ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
+                  : "border border-zinc-700 bg-zinc-900 text-zinc-300 hover:text-white"
+              }`}
+            >
+              💬 Respuestas Rápidas Frecuentes
+            </button>
+          </div>
+        </div>
+
+        {activeGeminiTab === "cotizador" && (
+          <div className="grid gap-6 lg:grid-cols-12">
+            {/* Formulario de Cotización */}
+            <div className="space-y-4 lg:col-span-7 rounded-xl border border-zinc-800 bg-zinc-900/60 p-5">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="text-xs font-bold text-zinc-300">Nombre del Cliente</label>
+                  <input
+                    type="text"
+                    value={quoteAssistant.customerName}
+                    onChange={(e) => setQuoteAssistant({ ...quoteAssistant, customerName: e.target.value })}
+                    placeholder="Ej: Mario Jiménez"
+                    className="mt-1 w-full rounded-md border border-zinc-700 bg-zinc-950 p-2.5 text-sm text-white focus:border-purple-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-zinc-300">Vehículo (Marca, Modelo, Año)</label>
+                  <input
+                    type="text"
+                    value={quoteAssistant.vehicle}
+                    onChange={(e) => setQuoteAssistant({ ...quoteAssistant, vehicle: e.target.value })}
+                    placeholder="Ej: Toyota Corolla 2018"
+                    className="mt-1 w-full rounded-md border border-zinc-700 bg-zinc-950 p-2.5 text-sm text-white focus:border-purple-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="text-xs font-bold text-zinc-300">Nivel de Daño / Golpe</label>
+                  <select
+                    value={quoteAssistant.damageLevel}
+                    onChange={(e) => setQuoteAssistant({ ...quoteAssistant, damageLevel: e.target.value })}
+                    className="mt-1 w-full rounded-md border border-zinc-700 bg-zinc-950 p-2.5 text-sm text-white"
+                  >
+                    <option value="leve">Leve (Rayón / Pintura superficial)</option>
+                    <option value="medio">Medio (Abolladura con desabollado de chapa)</option>
+                    <option value="fuerte">Fuerte (Enderezado estructural / chasis)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-zinc-300">Tipo de Pintura y Acabado</label>
+                  <select
+                    value={quoteAssistant.paintType}
+                    onChange={(e) => setQuoteAssistant({ ...quoteAssistant, paintType: e.target.value })}
+                    className="mt-1 w-full rounded-md border border-zinc-700 bg-zinc-950 p-2.5 text-sm text-white"
+                  >
+                    <option value="monocapa">Monocapa (Color sólido)</option>
+                    <option value="bicapa">Bicapa (Metalizado / Perlado con barniz UHS)</option>
+                    <option value="tricapa">Tricapa Especial (Alta gama / perla profunda)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-zinc-300">
+                  Seleccionar Piezas Afectadas ({quoteAssistant.selectedParts.length} elegidas)
+                </label>
+                <div className="mt-2 flex flex-wrap gap-1.5 max-h-36 overflow-y-auto p-2 rounded-lg border border-zinc-800 bg-zinc-950">
+                  {QUOTE_PARTS.map((part) => {
+                    const isSelected = quoteAssistant.selectedParts.includes(part);
+                    return (
+                      <button
+                        key={part}
+                        type="button"
+                        onClick={() => toggleQuotePart(part)}
+                        className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
+                          isSelected
+                            ? "bg-purple-600 text-white shadow-sm font-bold"
+                            : "border border-zinc-700 bg-zinc-900 text-zinc-300 hover:border-zinc-500"
+                        }`}
+                      >
+                        {isSelected ? "✓ " : "+ "}
+                        {part}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-zinc-300">Notas adicionales (opcional)</label>
+                <input
+                  type="text"
+                  value={quoteAssistant.customNotes}
+                  onChange={(e) => setQuoteAssistant({ ...quoteAssistant, customNotes: e.target.value })}
+                  placeholder="Ej: Requiere cambiar grapas de fijación y ajuste de luces"
+                  className="mt-1 w-full rounded-md border border-zinc-700 bg-zinc-950 p-2 text-xs text-white"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCalculateQuote}
+                disabled={quoteAssistant.loading || quoteAssistant.selectedParts.length === 0}
+                className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 py-3 text-sm font-bold text-white shadow-lg shadow-purple-600/30 transition hover:opacity-90 disabled:opacity-50"
+              >
+                {quoteAssistant.loading ? "Calculando con Gemini..." : "✨ Calcular Estimado y Generar Mensaje de WhatsApp"}
+              </button>
+            </div>
+
+            {/* Resultado Generado para WhatsApp */}
+            <div className="space-y-4 lg:col-span-5 rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+                  <span className="text-xs font-bold uppercase tracking-wider text-purple-400">
+                    Respuesta Lista para WhatsApp
+                  </span>
+                  {quoteAssistant.calculated ? (
+                    <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-400 border border-emerald-500/20">
+                      Calculado
+                    </span>
+                  ) : (
+                    <span className="text-[11px] text-zinc-500">Pendiente de cálculo</span>
+                  )}
+                </div>
+
+                {quoteAssistant.calculated ? (
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <div className="rounded-lg border border-purple-500/40 bg-purple-950/30 p-2.5">
+                      <p className="text-[11px] text-zinc-400">Inversión Estimada</p>
+                      <p className="text-sm font-black text-white">
+                        ₡{quoteAssistant.minEstimate.toLocaleString("es-CR")} - ₡{quoteAssistant.maxEstimate.toLocaleString("es-CR")}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-2.5">
+                      <p className="text-[11px] text-zinc-400">Tiempo de Entrega</p>
+                      <p className="text-xs font-bold text-emerald-400">{quoteAssistant.deliveryDays}</p>
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="mt-3">
+                  <textarea
+                    rows={10}
+                    value={quoteAssistant.generatedMessage || "Seleccione piezas y haga clic en 'Calcular' para redactar la respuesta automática de cotización con Don Randy..."}
+                    onChange={(e) => setQuoteAssistant({ ...quoteAssistant, generatedMessage: e.target.value })}
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-950 p-3 font-mono text-xs leading-relaxed text-zinc-200 focus:border-purple-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 pt-2">
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={copyQuoteMessage}
+                    className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 py-2.5 text-xs font-bold text-zinc-200 transition hover:bg-zinc-700"
+                  >
+                    {quoteAssistant.copySuccess ? "✓ ¡Copiado!" : "📋 Copiar Texto"}
+                  </button>
+                  <a
+                    href={`https://wa.me/?text=${encodeURIComponent(quoteAssistant.generatedMessage)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-600/30 transition hover:bg-emerald-500"
+                  >
+                    <span>💬 Abrir WhatsApp</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab Respuestas Frecuentes */}
+        {activeGeminiTab === "respuestas" && (
+          <div className="grid gap-4 md:grid-cols-2">
+            {[
+              {
+                title: "📍 Ubicación Exacta & Rutas (Waze / Maps)",
+                text: "¡Hola! Estamos ubicados en Barrio San José de Alajuela, 300 metros oeste de la iglesia católica. Puede abrir la ruta directa en Waze aquí: https://waze.com/ul?ll=10.0188372,-84.2361356 o en Google Maps: https://maps.app.goo.gl/tallerdayana. ¡Le esperamos con gusto!"
+              },
+              {
+                title: "🕒 Horario de Atención y Valoración",
+                text: "¡Hola! Con gusto le atendemos de Lunes a Viernes de 8:00 AM a 6:00 PM y Sábados de 8:00 AM a 1:00 PM. Don Randy Barrantes realiza valoraciones de golpes sin cita previa directamente en el taller."
+              },
+              {
+                title: "🛡️ Trámite con Aseguradoras (INS, Qualitas, etc.)",
+                text: "¡Hola! Sí, en Taller Dayana reparamos con todas las aseguradoras del país: INS, Qualitas, Oceánica, ASSA, Lafise y Mapfre. Si ya tiene el reclamo abierto o requiere inspección, Don Randy le asesora paso a paso para que su carro quede como nuevo de fábrica."
+              },
+              {
+                title: "🔍 Seguimiento en Línea 24/7 por Placa",
+                text: "¡Hola! Para su tranquilidad y comodidad, puede ver las fotos de avance de la reparación de su carro las 24 horas del día. Solo ingrese su placa en nuestra plataforma web: https://tallerdayana.vercel.app/seguimiento"
+              }
+            ].map((faq, i) => (
+              <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-4 flex flex-col justify-between">
+                <div>
+                  <h4 className="font-bold text-sm text-white">{faq.title}</h4>
+                  <p className="mt-2 text-xs leading-relaxed text-zinc-300 font-mono bg-zinc-950 p-2.5 rounded-lg border border-zinc-800">
+                    {faq.text}
+                  </p>
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (typeof navigator !== "undefined") navigator.clipboard.writeText(faq.text);
+                      alert("Respuesta copiada al portapapeles");
+                    }}
+                    className="flex-1 rounded-md border border-zinc-700 bg-zinc-800 py-1.5 text-xs font-semibold text-zinc-200 hover:bg-zinc-700"
+                  >
+                    📋 Copiar
+                  </button>
+                  <a
+                    href={`https://wa.me/?text=${encodeURIComponent(faq.text)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 inline-flex items-center justify-center rounded-md bg-emerald-600/90 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500"
+                  >
+                    💬 Enviar a WhatsApp
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* ===================== DIRECTORIO DE GRÚAS ALIADAS ===================== */}
+      <section className="section-card space-y-6 border-amber-500/40 bg-gradient-to-br from-zinc-950 via-amber-950/15 to-zinc-950">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between border-b border-zinc-800 pb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="flex h-2.5 w-2.5 rounded-full bg-amber-400" />
+              <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
+                Red de Asistencia Vial • Alajuela, Heredia y GAM
+              </span>
+            </div>
+            <h2 className="mt-1 text-2xl font-bold text-white md:text-3xl">
+              Directorio de Grúas Aliadas & Asistencia en Carretera
+            </h2>
+            <p className="mt-1 text-xs text-zinc-300">
+              Operadores de grúa de confianza para traer carros accidentados o varados directamente a Taller Dayana sin que el cliente se quede botado.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowAddTowModal(!showAddTowModal)}
+            className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-amber-600/30 hover:bg-amber-500"
+          >
+            {showAddTowModal ? "✕ Cerrar Formulario" : "➕ Registrar Nuevo Gruero"}
+          </button>
+        </div>
+
+        {showAddTowModal && (
+          <form onSubmit={handleCreateTowTruck} className="rounded-xl border border-amber-500/30 bg-zinc-900/80 p-4 space-y-3">
+            <h3 className="text-sm font-bold text-white">Registrar Operador de Grúa Amigo</h3>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <input
+                type="text"
+                placeholder="Nombre del servicio (ej: Grúas El Coyol)"
+                value={newTowTruck.name}
+                onChange={(e) => setNewTowTruck({ ...newTowTruck, name: e.target.value })}
+                className="rounded-md border border-zinc-700 bg-zinc-950 p-2 text-xs text-white"
+                required
+              />
+              <input
+                type="text"
+                placeholder="Nombre del chofer (ej: Don Esteban)"
+                value={newTowTruck.driverName}
+                onChange={(e) => setNewTowTruck({ ...newTowTruck, driverName: e.target.value })}
+                className="rounded-md border border-zinc-700 bg-zinc-950 p-2 text-xs text-white"
+              />
+              <input
+                type="text"
+                placeholder="Teléfono (ej: 8822-1144)"
+                value={newTowTruck.phone}
+                onChange={(e) => setNewTowTruck({ ...newTowTruck, phone: e.target.value })}
+                className="rounded-md border border-zinc-700 bg-zinc-950 p-2 text-xs text-white"
+                required
+              />
+              <input
+                type="text"
+                placeholder="Zonas (separadas por comas)"
+                value={newTowTruck.zones}
+                onChange={(e) => setNewTowTruck({ ...newTowTruck, zones: e.target.value })}
+                className="rounded-md border border-zinc-700 bg-zinc-950 p-2 text-xs text-white"
+              />
+              <input
+                type="text"
+                placeholder="Tarifa aprox (ej: ₡25,000 - ₡35,000)"
+                value={newTowTruck.priceRange}
+                onChange={(e) => setNewTowTruck({ ...newTowTruck, priceRange: e.target.value })}
+                className="rounded-md border border-zinc-700 bg-zinc-950 p-2 text-xs text-white"
+              />
+              <select
+                value={newTowTruck.type}
+                onChange={(e) => setNewTowTruck({ ...newTowTruck, type: e.target.value })}
+                className="rounded-md border border-zinc-700 bg-zinc-950 p-2 text-xs text-white"
+              >
+                <option value="Plataforma Hidráulica">Plataforma Hidráulica</option>
+                <option value="Grúa de Gancho">Grúa de Gancho</option>
+                <option value="Plataforma Doble Tracción 4x4">Plataforma Doble Tracción 4x4</option>
+                <option value="Grúa Pesada">Grúa Pesada</option>
+              </select>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowAddTowModal(false)}
+                className="rounded-md border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs text-zinc-300"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="rounded-md bg-amber-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-amber-500"
+              >
+                Guardar Grúa
+              </button>
+            </div>
+          </form>
+        )}
+
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {towTrucks.map((tow) => {
+            const dispatchMsg = `Hola ${tow.driverName ? tow.driverName : tow.name}, le saluda Don Randy de Taller Dayana en Barrio San José de Alajuela. Ocupamos coordinar el traslado de un vehículo accidentado hacia nuestro taller. ¿Tiene unidad disponible en este momento?`;
+            const shareToClientMsg = `¡Hola! Si ocupa servicio de grúa de confianza para traer su carro a Taller Dayana, le recomendamos a ${tow.name} (${tow.type}). Teléfono directo: ${tow.phone}. Solo indíqueles que va hacia Taller Dayana en Barrio San José de Alajuela.`;
+
+            return (
+              <div key={tow.id} className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4 flex flex-col justify-between hover:border-amber-500/50 transition">
+                <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h4 className="font-bold text-sm text-white">{tow.name}</h4>
+                      {tow.driverName ? <p className="text-xs text-amber-400">Chofer: {tow.driverName}</p> : null}
+                    </div>
+                    <span className="rounded bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-400 border border-amber-500/20">
+                      ★ {tow.rating || 5.0}
+                    </span>
+                  </div>
+
+                  <p className="mt-2 text-xs text-zinc-300 font-medium">🚜 {tow.type}</p>
+                  <p className="text-xs text-zinc-400">Tarifa aprox: {tow.priceRange}</p>
+
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {(Array.isArray(tow.zones) ? tow.zones : [tow.zones]).map((z, idx) => (
+                      <span key={idx} className="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-300">
+                        {z}
+                      </span>
+                    ))}
+                  </div>
+
+                  {tow.notes ? <p className="mt-2 text-[11px] text-zinc-400 italic">{tow.notes}</p> : null}
+                </div>
+
+                <div className="mt-4 space-y-2 border-t border-zinc-800 pt-3">
+                  <div className="flex gap-2">
+                    <a
+                      href={`tel:${tow.phone}`}
+                      className="flex-1 inline-flex items-center justify-center gap-1 rounded-md border border-zinc-700 bg-zinc-800 py-1.5 text-xs font-bold text-white hover:bg-zinc-700"
+                    >
+                      📞 {tow.phone}
+                    </a>
+                    <a
+                      href={`https://wa.me/${tow.whatsapp}?text=${encodeURIComponent(dispatchMsg)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 inline-flex items-center justify-center gap-1 rounded-md bg-emerald-600 py-1.5 text-xs font-bold text-white hover:bg-emerald-500"
+                      title="Pedir grúa para traer vehículo a Taller Dayana"
+                    >
+                      🟢 Pedir Grúa
+                    </a>
+                  </div>
+
+                  <a
+                    href={`https://wa.me/?text=${encodeURIComponent(shareToClientMsg)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full inline-flex items-center justify-center gap-1 rounded-md border border-amber-500/40 bg-amber-950/30 py-1.5 text-[11px] font-bold text-amber-300 hover:bg-amber-900/50"
+                    title="Enviar datos de la grúa al cliente por WhatsApp"
+                  >
+                    📤 Enviar Contacto al Cliente
+                  </a>
+
+                  {tow.id > 4 ? (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteTowTruck(tow.id)}
+                      className="w-full text-center text-[10px] text-red-400 hover:underline pt-1"
+                    >
+                      Eliminar grúa
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
       <section className="section-card space-y-4">
         <h2 className="border-l-4 border-brandRed pl-3 text-xl font-semibold">Registrar vehículo en taller</h2>
         <form className="grid gap-3 md:grid-cols-2" onSubmit={registerWorkshopVehicle}>
@@ -1415,13 +2125,40 @@ export default function AdminPage() {
       </section>
 
       <section className="section-card space-y-3">
-        <h2 className="border-l-4 border-brandRed pl-3 text-xl font-semibold">Vehículos en taller</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-l-4 border-brandRed pl-3">
+          <div>
+            <h2 className="text-xl font-semibold">Vehículos en taller ({workshopVehicles.length})</h2>
+            <p className="text-xs text-zinc-400">Carros activos con seguimiento de fotos 24/7 por placa.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-400 border border-emerald-500/20">
+              ☁️ Google Drive Conectado
+            </span>
+            <button
+              type="button"
+              onClick={loadWorkshopVehicles}
+              className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:bg-zinc-800"
+            >
+              🔄 Refrescar lista
+            </button>
+          </div>
+        </div>
         <div className="space-y-2">
           {workshopVehicles.map((item) => (
             <article key={item.id} className="rounded-md border border-zinc-700 bg-zinc-950 p-4">
-              <p className="font-semibold">
-                #{item.id} - {item.plate} - {item.customerName}
-              </p>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-semibold text-white">
+                  #{item.id} - <span className="text-brandRed font-mono font-bold tracking-wider">{item.plate}</span> - {item.customerName}
+                </p>
+                <a
+                  href={`/seguimiento?plate=${item.plate}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-md border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-xs text-zinc-300 transition hover:border-white hover:text-white"
+                >
+                  👁️ Ver Seguimiento 24/7 →
+                </a>
+              </div>
               <p className="text-sm text-zinc-300">Trabajo: {item.workType}</p>
               <p className="text-sm text-zinc-300">Ingreso: {item.entryDate}</p>
               <p className="text-sm text-zinc-300">Estado: {workshopStatusLabels[item.status] || item.status}</p>
@@ -1470,29 +2207,65 @@ export default function AdminPage() {
 
               {activePhotosPlate === item.plate ? (
                 <div className="mt-4 rounded-md border border-zinc-700 bg-zinc-900 p-4">
-                  <p className="mb-4 font-semibold text-white">Fotos del vehiculo {item.plate} ({progressPhotos.length})</p>
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-3">
+                    <div>
+                      <p className="font-semibold text-white">Fotos del vehículo {item.plate} ({progressPhotos.length})</p>
+                      <p className="text-xs text-zinc-400">Ordene las fotos desde el estado inicial hasta el terminado usando las flechas.</p>
+                    </div>
+                    <span className="rounded-full bg-zinc-800 px-2.5 py-0.5 text-[11px] text-zinc-300">
+                      Mover ◀ ▶ guarda el orden automáticamente
+                    </span>
+                  </div>
                   {loadingPhotos ? <p className="text-sm text-zinc-300">Cargando fotos...</p> : null}
                   {!loadingPhotos && progressPhotos.length === 0 ? (
                     <p className="text-sm text-zinc-300">No hay fotos para esta placa.</p>
                   ) : null}
                   {!loadingPhotos && progressPhotos.length > 0 ? (
                     <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-                      {progressPhotos.map((photo) => (
-                        <article key={photo.id} className="overflow-hidden rounded-md border border-zinc-700 bg-zinc-950">
-                          <img
-                            src={resolvePhotoUrl(photo.photoUrl)}
-                            alt={photo.description}
-                            className="h-40 w-full object-cover"
-                          />
-                          <div className="p-3">
-                            <p className="mb-1 text-xs text-zinc-400">{new Date(photo.createdAt).toLocaleString()}</p>
-                            <p className="mb-2 text-xs text-zinc-200 line-clamp-2">{photo.description}</p>
+                      {progressPhotos.map((photo, pIdx) => (
+                        <article key={photo.id} className="overflow-hidden rounded-md border border-zinc-700 bg-zinc-950 flex flex-col justify-between">
+                          <div className="relative">
+                            <img
+                              src={resolvePhotoUrl(photo.photoUrl)}
+                              alt={photo.description}
+                              className="h-44 w-full object-cover"
+                            />
+                            <span className="absolute top-2 left-2 rounded-md bg-black/85 px-2 py-0.5 text-xs font-black text-white border border-zinc-600 shadow">
+                              #{pIdx + 1}
+                            </span>
+                          </div>
+                          <div className="p-3 space-y-2">
+                            <p className="text-[11px] text-zinc-400">{new Date(photo.createdAt).toLocaleString()}</p>
+                            <p className="text-xs text-zinc-200 line-clamp-2">{photo.description}</p>
+                            
+                            {/* Botones de Reordenamiento */}
+                            <div className="grid grid-cols-2 gap-1.5 pt-1">
+                              <button
+                                type="button"
+                                disabled={pIdx === 0}
+                                onClick={() => movePhotoOrder(pIdx, pIdx - 1)}
+                                className="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs font-bold text-zinc-200 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-30"
+                                title="Mover hacia atrás en la secuencia"
+                              >
+                                ◀ Mover antes
+                              </button>
+                              <button
+                                type="button"
+                                disabled={pIdx === progressPhotos.length - 1}
+                                onClick={() => movePhotoOrder(pIdx, pIdx + 1)}
+                                className="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs font-bold text-zinc-200 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-30"
+                                title="Mover hacia adelante en la secuencia"
+                              >
+                                Mover después ▶
+                              </button>
+                            </div>
+
                             <button
                               type="button"
                               onClick={() => deleteProgressPhoto(photo.id)}
-                              className="w-full rounded-md border border-red-500 px-2 py-1 text-xs text-red-200 transition hover:bg-red-950/50"
+                              className="w-full rounded-md border border-red-500/60 py-1 text-xs text-red-300 transition hover:bg-red-950/50"
                             >
-                              Eliminar
+                              Eliminar foto
                             </button>
                           </div>
                         </article>

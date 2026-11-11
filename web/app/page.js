@@ -947,6 +947,32 @@ export default function Home() {
               </article>
             ))}
           </div>
+
+          {/* Asistencia Vial y Grúas Banner */}
+          <div className="mt-8 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-950/30 via-zinc-900 to-zinc-950 p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-2xl border border-amber-500/30">
+                🚜
+              </div>
+              <div>
+                <span className="rounded bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-300">
+                  Asistencia en Carretera & Grúas
+                </span>
+                <h3 className="mt-1 text-base font-bold text-white">¿Tuvo un accidente o su vehículo no camina?</h3>
+                <p className="mt-0.5 text-xs text-zinc-300">
+                  Coordinamos operadores de grúa de confianza en Alajuela, Heredia y GAM para trasladar su vehículo de inmediato a Taller Dayana.
+                </p>
+              </div>
+            </div>
+            <a
+              href="https://wa.me/50670439248?text=Hola%2C%20tuve%20un%20accidente%20o%20el%20carro%20no%20me%20camina%2C%20ocupo%20asistencia%20de%20gr%C3%BAa%20para%20llevarlo%20a%20Taller%20Dayana."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-amber-600/20 transition hover:opacity-90"
+            >
+              <span>Pedir Asistencia / Grúa ➔</span>
+            </a>
+          </div>
         </section>
 
         {/* Before & After Section: Vehículos Listos (Antes y Después) */}

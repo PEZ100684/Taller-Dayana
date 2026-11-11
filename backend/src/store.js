@@ -8,7 +8,9 @@ const {
   notifications,
   workshopVehicles,
   workshopProgressPhotos,
-  persistLocalData
+  towTrucks,
+  persistLocalData,
+  reloadLocalData
 } = require("./data");
 
 function persistIfLocal() {
@@ -18,6 +20,10 @@ function persistIfLocal() {
     appointments,
     notifications,
     workshopVehicles,
+    workshopProgressPhotos,
+    towTrucks
+  });
+}
     workshopProgressPhotos
   });
 }
@@ -1008,6 +1014,9 @@ async function listWorkshopVehicles() {
   const pool = getPool();
 
   if (!pool) {
+    if (typeof reloadLocalData === "function") {
+      reloadLocalData();
+    }
     return [...workshopVehicles]
       .sort((a, b) => Number(b.id) - Number(a.id))
       .map((vehicle) => {
@@ -1212,6 +1221,9 @@ async function listWorkshopProgressPhotos(plate) {
   const normalizedPlate = plate ? plate.trim().toUpperCase() : "";
 
   if (!pool) {
+    if (typeof reloadLocalData === "function") {
+      reloadLocalData();
+    }
     const filtered = normalizedPlate
       ? workshopProgressPhotos.filter((item) => item.plate.toUpperCase() === normalizedPlate)
       : workshopProgressPhotos;
@@ -1287,6 +1299,67 @@ async function deleteWorkshopProgressPhoto(id) {
     description: row.description,
     createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at
   };
+}
+
+async function updateWorkshopPhotosOrder(photosOrder) {
+  if (!Array.isArray(photosOrder)) return false;
+  const pool = getPool();
+
+  if (!pool) {
+    for (const item of photosOrder) {
+      const photo = workshopProgressPhotos.find((p) => p.id === Number(item.id));
+      if (photo && item.createdAt) {
+        photo.createdAt = item.createdAt;
+      }
+    }
+    persistIfLocal();
+    return true;
+  }
+
+  for (const item of photosOrder) {
+    if (item.id && item.createdAt) {
+      await pool.query(
+        `UPDATE workshop_progress_photos SET created_at = $1 WHERE id = $2`,
+        [item.createdAt, Number(item.id)]
+      );
+    }
+  }
+  return true;
+}
+
+async function listTowTrucks() {
+  if (typeof reloadLocalData === "function") {
+    reloadLocalData();
+  }
+  return [...towTrucks];
+}
+
+async function createTowTruck(input) {
+  const newId = nextId(towTrucks);
+  const item = {
+    id: newId,
+    name: input.name || "Servicio de Grúa",
+    driverName: input.driverName || "",
+    phone: input.phone || "",
+    whatsapp: input.whatsapp || (input.phone ? String(input.phone).replace(/[^0-9]/g, "") : ""),
+    zones: Array.isArray(input.zones) ? input.zones : [input.zones || "Alajuela / GAM"],
+    type: input.type || "Plataforma Hidráulica",
+    rating: Number(input.rating || 5.0),
+    priceRange: input.priceRange || "A convenir",
+    notes: input.notes || ""
+  };
+  towTrucks.push(item);
+  persistIfLocal();
+  return item;
+}
+
+async function deleteTowTruck(id) {
+  const numericId = Number(id);
+  const index = towTrucks.findIndex((t) => t.id === numericId);
+  if (index < 0) return null;
+  const [deleted] = towTrucks.splice(index, 1);
+  persistIfLocal();
+  return deleted;
 }
 
 async function syncPhotosFromFilesystem() {
@@ -1487,8 +1560,12 @@ module.exports = {
   deleteQuote,
   addWorkshopProgressPhoto,
   listWorkshopProgressPhotos,
+  updateWorkshopPhotosOrder,
   deleteWorkshopProgressPhoto,
   syncPhotosFromFilesystem,
+  listTowTrucks,
+  createTowTruck,
+  deleteTowTruck,
   listReviews,
   createReview
 };

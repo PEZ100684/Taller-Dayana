@@ -35,8 +35,12 @@ const {
   deleteWorkshopVehicle,
   addWorkshopProgressPhoto,
   listWorkshopProgressPhotos,
+  updateWorkshopPhotosOrder,
   deleteWorkshopProgressPhoto,
   syncPhotosFromFilesystem,
+  listTowTrucks,
+  createTowTruck,
+  deleteTowTruck,
   listReviews,
   createReview
 } = require("./store");
@@ -898,6 +902,159 @@ app.delete("/api/admin/workshop-progress-photos/:id", requireAdmin, async (req, 
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
+});
+
+app.put("/api/admin/workshop-photos/reorder", requireAdmin, async (req, res) => {
+  const { photosOrder } = req.body;
+  if (!Array.isArray(photosOrder)) {
+    return res.status(400).json({ error: "Se requiere un arreglo 'photosOrder' [{ id, createdAt }]" });
+  }
+
+  try {
+    await updateWorkshopPhotosOrder(photosOrder);
+    return res.json({ success: true, message: "Orden de fotos actualizado correctamente" });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// Directorio de Grúas Aliadas
+app.get("/api/tow-trucks", async (_req, res) => {
+  try {
+    const items = await listTowTrucks();
+    return res.json(items);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/admin/tow-trucks", requireAdmin, async (_req, res) => {
+  try {
+    const items = await listTowTrucks();
+    return res.json(items);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/admin/tow-trucks", requireAdmin, async (req, res) => {
+  try {
+    const item = await createTowTruck(req.body);
+    return res.status(201).json(item);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete("/api/admin/tow-trucks/:id", requireAdmin, async (req, res) => {
+  try {
+    const deleted = await deleteTowTruck(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: "Grúa no encontrada" });
+    }
+    return res.json({ deleted: true, id: deleted.id });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// Asistente Inteligente Gemini: Estimador de Presupuesto Exprés
+app.post("/api/admin/quote-assistant", requireAdmin, async (req, res) => {
+  const {
+    customerName = "Estimado cliente",
+    vehicle = "Vehículo",
+    selectedParts = [],
+    damageLevel = "medio",
+    paintType = "bicapa",
+    customNotes = ""
+  } = req.body;
+
+  const basePiecePrices = {
+    "Bumper delantero": 45000,
+    "Bumper trasero": 45000,
+    "Bonete / Capó": 65000,
+    "Puerta delantera izq.": 55000,
+    "Puerta delantera der.": 55000,
+    "Puerta trasera izq.": 55000,
+    "Puerta trasera der.": 55000,
+    "Guardabarro del. izq.": 48000,
+    "Guardabarro del. der.": 48000,
+    "Costado trasero izq.": 60000,
+    "Costado trasero der.": 60000,
+    "Techo": 75000,
+    "Compuerta trasera": 58000,
+    "Tapa de cajón": 55000,
+    "Estribo": 40000
+  };
+
+  const damageMultipliers = {
+    leve: 1.0,
+    medio: 1.35,
+    fuerte: 1.85
+  };
+
+  const paintMultipliers = {
+    monocapa: 1.0,
+    bicapa: 1.15,
+    tricapa: 1.30
+  };
+
+  const parts = Array.isArray(selectedParts) && selectedParts.length > 0
+    ? selectedParts
+    : ["Bumper delantero"];
+
+  let baseTotal = 0;
+  for (const part of parts) {
+    baseTotal += (basePiecePrices[part] || 50000);
+  }
+
+  const mult = (damageMultipliers[damageLevel] || 1.35) * (paintMultipliers[paintType] || 1.15);
+  const calculated = Math.round((baseTotal * mult) / 1000) * 1000;
+  const minEstimate = Math.round((calculated * 0.92) / 1000) * 1000;
+  const maxEstimate = Math.round((calculated * 1.12) / 1000) * 1000;
+
+  const damageLabel = damageLevel === "leve"
+    ? "Leve (raspón / pintura superficial)"
+    : damageLevel === "medio"
+    ? "Medio (abolladura con enderezado de lámina)"
+    : "Fuerte (enderezado estructural y ajuste de escuadre)";
+
+  const paintLabel = paintType === "monocapa"
+    ? "Monocapa (color sólido)"
+    : paintType === "bicapa"
+    ? "Bicapa metalizada con perla y barniz UHS"
+    : "Tricapa especial (perla profunda de alta gama)";
+
+  const partsCount = parts.length;
+  const deliveryDays = partsCount <= 2 ? "3 a 4 días hábiles" : partsCount <= 4 ? "4 a 6 días hábiles" : "7 a 10 días hábiles";
+
+  const generatedWhatsAppMessage =
+    `🚗 *PRESUPUESTO ESTIMADO • TALLER DAYANA* 🚗\n\n` +
+    `¡Hola ${customerName}! Don Randy y nuestro equipo técnico revisaron la consulta de su *${vehicle}*.\n\n` +
+    `📋 *Piezas a trabajar:*\n` +
+    parts.map((p) => `  • ${p}`).join("\n") + "\n\n" +
+    `🛠️ *Alcance del trabajo:*\n` +
+    `  • Daño: ${damageLabel}\n` +
+    `  • Acabado: ${paintLabel}\n` +
+    `  • Proceso: Desabollado profesional, fondo anticorrosivo, cabina presurizada y secado al horno.\n\n` +
+    `💰 *Rango Estimado:* *₡${minEstimate.toLocaleString("es-CR")} - ₡${maxEstimate.toLocaleString("es-CR")} colones*\n` +
+    `_(Sujeto a revisión visual en taller para verificar detalles internos o fijaciones)_\n\n` +
+    `⏱️ *Tiempo estimado de entrega:* ${deliveryDays}\n` +
+    `🛡️ *Garantía:* Por escrito en tono, brillo y adherencia.\n\n` +
+    (customNotes ? `📝 *Nota adicional:* ${customNotes}\n\n` : "") +
+    `📍 *Ubicación:* Barrio San José de Alajuela (Waze: Taller Dayana)\n` +
+    `📲 ¿Gusta que le agendemos un espacio para que Don Randy lo valore sin compromiso en el taller?`;
+
+  return res.json({
+    parts,
+    partsCount,
+    damageLevel,
+    paintType,
+    minEstimate,
+    maxEstimate,
+    deliveryDays,
+    message: generatedWhatsAppMessage
+  });
 });
 
 app.post("/api/admin/deduplicate-photos", requireAdmin, async (req, res) => {

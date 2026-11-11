@@ -756,7 +756,10 @@ app.post("/api/admin/workshop-vehicles", requireAdmin, async (req, res) => {
 app.get("/api/admin/workshop-vehicles", requireAdmin, async (_req, res) => {
   try {
     const items = await listWorkshopVehicles();
-    return res.json(items);
+    const sanitized = (items || []).filter(
+      (v) => String(v.plate || "").trim() !== "514474"
+    );
+    return res.json(sanitized);
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -979,12 +982,20 @@ app.post("/api/admin/quote-assistant", requireAdmin, async (req, res) => {
     "Puerta trasera der.": 55000,
     "Guardabarro del. izq.": 48000,
     "Guardabarro del. der.": 48000,
+    "Guardabarro izq.": 48000,
+    "Guardabarro der.": 48000,
     "Costado trasero izq.": 60000,
     "Costado trasero der.": 60000,
+    "Costado izq.": 60000,
+    "Costado der.": 60000,
     "Techo": 75000,
     "Compuerta trasera": 58000,
+    "Tapa cajuela / baúl": 55000,
     "Tapa de cajón": 55000,
-    "Estribo": 40000
+    "Estribo": 40000,
+    "Estribos / Faldones": 40000,
+    "Pulido y abrillantado": 45000,
+    "Pintura general completa": 550000
   };
 
   const damageMultipliers = {

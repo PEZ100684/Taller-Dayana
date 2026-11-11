@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useRef, useState } from "react";
 
@@ -145,10 +145,15 @@ export default function AdminPage() {
     "Techo",
     "Compuerta trasera",
     "Tapa de cajón",
-    "Estribo"
+    "Estribo",
+    "Pulido y abrillantado general",
+    "Pintura general completa (Sedán / SUV)",
+    "Pintura completa buseta / microbús"
   ];
 
   const [activeGeminiTab, setActiveGeminiTab] = useState("cotizador");
+  const [showPdfProposalModal, setShowPdfProposalModal] = useState(false);
+  const [quoteProposalCode, setQuoteProposalCode] = useState("TD-2026-104");
   const [quoteAssistant, setQuoteAssistant] = useState({
     customerName: "",
     customerPhone: "",
@@ -169,51 +174,107 @@ export default function AdminPage() {
   const [towTrucks, setTowTrucks] = useState([
     {
       id: 1,
-      name: "Grúas San José & Alajuela",
-      driverName: "Carlos Mora",
-      phone: "8333-4455",
-      whatsapp: "50683334455",
-      zones: ["Alajuela Centro", "Barrio San José", "San Rafael", "Aeropuerto"],
-      type: "Plataforma Hidráulica",
+      name: "Grúas Barrio San José & La Garita",
+      driverName: "Randall Soto",
+      phone: "8844-1234",
+      whatsapp: "50688441234",
+      email: "gruas.sanjose.alajuela@gmail.com",
+      zones: ["Barrio San José", "La Garita", "Radial", "Radio 5 km"],
+      type: "Plataforma Rápida",
       rating: 5.0,
-      priceRange: "₡25,000 - ₡35,000",
-      notes: "Rápidos, plataforma para autos bajos y 4x4. Entrega directa a Taller Dayana."
+      priceRange: "₡22,000 - ₡30,000",
+      notes: "Ubicados en Barrio San José a menos de 5 minutos de Taller Dayana."
     },
     {
       id: 2,
-      name: "Grúas Hermanos Vargas",
+      name: "Grúas Hermanos Vargas (El Coyol)",
       driverName: "Esteban Vargas",
       phone: "8822-1144",
       whatsapp: "50688221144",
-      zones: ["El Coyol", "Radial Alajuela", "Autopista Bernardo Soto (Ruta 1)"],
-      type: "Plataforma Pesada & Liviana",
+      email: "gruasvargas.coyol@gmail.com",
+      zones: ["El Coyol", "Zona Franca", "Ruta 1 Bernardo Soto", "Radio 6 km"],
+      type: "Plataforma Hidráulica & Pesada",
       rating: 4.9,
-      priceRange: "₡30,000 - ₡45,000",
-      notes: "Especialistas en rescates en autopista y zona franca El Coyol."
+      priceRange: "₡25,000 - ₡35,000",
+      notes: "Rescate express en autopista y parques industriales de El Coyol."
     },
     {
       id: 3,
-      name: "Grúas del Valle Central",
-      driverName: "Mauricio Alfaro",
-      phone: "8700-1234",
-      whatsapp: "50687001234",
-      zones: ["Heredia Centro", "San Joaquín de Flores", "Barva", "Santa Bárbara"],
-      type: "Plataforma Hidráulica",
-      rating: 4.8,
-      priceRange: "₡28,000 - ₡40,000",
-      notes: "Cobertura completa zona Heredia y traslados hacia Alajuela."
+      name: "Grúas San José & Alajuela Centro",
+      driverName: "Carlos Mora",
+      phone: "8333-4455",
+      whatsapp: "50683334455",
+      email: "carlos.gruasalajuela@gmail.com",
+      zones: ["Alajuela Centro", "Plaza Ferias", "Aeropuerto", "Radio 4 km"],
+      type: "Plataforma para Autos Bajos",
+      rating: 5.0,
+      priceRange: "₡22,000 - ₡32,000",
+      notes: "Especialistas en autos modernos y vehículos con faldones o aros especiales."
     },
     {
       id: 4,
-      name: "Asistencia Ruta 27 & Orotina",
+      name: "Grúas Montserrat & Villa Bonita",
+      driverName: "Geovanny Alfaro",
+      phone: "8711-3344",
+      whatsapp: "50687113344",
+      email: "gruasmontserrat@gmail.com",
+      zones: ["Montserrat", "Villa Bonita", "San Antonio", "Radio 5 km"],
+      type: "Plataforma Hidráulica",
+      rating: 4.8,
+      priceRange: "₡24,000 - ₡32,000",
+      notes: "Atención 24/7 en zona sur y este de Alajuela."
+    },
+    {
+      id: 5,
+      name: "Grúas Rápidas Belén & San Rafael",
+      driverName: "David Solano",
+      phone: "8622-9900",
+      whatsapp: "50686229900",
+      email: "gruasbelen.cr@gmail.com",
+      zones: ["San Rafael de Alajuela", "Guácima", "Belén", "Radio 9 km"],
+      type: "Plataforma Hidráulica",
+      rating: 4.9,
+      priceRange: "₡26,000 - ₡38,000",
+      notes: "Llegada rápida desde San Rafael y Guácima directo a Taller Dayana."
+    },
+    {
+      id: 6,
+      name: "Grúas Tambor, Tuetal & Carrizal",
+      driverName: "Luis Méndez",
+      phone: "8955-2211",
+      whatsapp: "50689552211",
+      email: "gruastambor.alajuela@gmail.com",
+      zones: ["Tambor", "Tuetal Norte/Sur", "Carrizal", "Radio 8 km"],
+      type: "Plataforma Doble Tracción 4x4",
+      rating: 5.0,
+      priceRange: "₡28,000 - ₡40,000",
+      notes: "Ideal para zonas con cuestas empinadas en Alajuela norte."
+    },
+    {
+      id: 7,
+      name: "Asistencia Ruta 27 & Turrúcares",
       driverName: "Jorge Quesada",
       phone: "8911-2233",
       whatsapp: "50689112233",
-      zones: ["Ruta 27", "Turrúcares", "Atenas", "Orotina"],
-      type: "Plataforma doble tracción",
+      email: "asistenciaruta27.cr@gmail.com",
+      zones: ["Ruta 27", "Turrúcares", "Atenas", "Radio 11 km"],
+      type: "Plataforma Pesada",
       rating: 4.9,
-      priceRange: "₡35,000 - ₡50,000",
-      notes: "Respuesta inmediata en Ruta 27 con convenio de llegada a taller."
+      priceRange: "₡30,000 - ₡45,000",
+      notes: "Respuesta inmediata en Ruta 27 y peajes con descarga en taller."
+    },
+    {
+      id: 8,
+      name: "Grúas del Valle Central Heredia",
+      driverName: "Mauricio Alfaro",
+      phone: "8700-1234",
+      whatsapp: "50687001234",
+      email: "gruasvallecentral.cr@gmail.com",
+      zones: ["San Joaquín", "Heredia Centro", "Barva", "Radio 12 km"],
+      type: "Plataforma Hidráulica",
+      rating: 4.8,
+      priceRange: "₡28,000 - ₡40,000",
+      notes: "Convenio de traslado interprovincial Heredia - Alajuela."
     }
   ]);
 
@@ -223,6 +284,7 @@ export default function AdminPage() {
     driverName: "",
     phone: "",
     whatsapp: "",
+    email: "",
     zones: "",
     type: "Plataforma Hidráulica",
     priceRange: "₡25,000 - ₡35,000",
@@ -443,8 +505,15 @@ export default function AdminPage() {
       "Costado trasero der.": 60000,
       "Techo": 75000,
       "Compuerta trasera": 58000,
+      "Tapa cajuela / baúl": 55000,
       "Tapa de cajón": 55000,
-      "Estribo": 40000
+      "Estribo": 40000,
+      "Estribos / Faldones": 40000,
+      "Pulido y abrillantado": 45000,
+      "Pulido y abrillantado general": 45000,
+      "Pintura general completa": 550000,
+      "Pintura general completa (Sedán / SUV)": 550000,
+      "Pintura completa buseta / microbús": 750000
     };
     const multD = quoteAssistant.damageLevel === "leve" ? 1.0 : quoteAssistant.damageLevel === "medio" ? 1.35 : 1.85;
     const multP = quoteAssistant.paintType === "monocapa" ? 1.0 : quoteAssistant.paintType === "bicapa" ? 1.15 : 1.30;
@@ -455,21 +524,47 @@ export default function AdminPage() {
     const maxEst = Math.round((calc * 1.12) / 1000) * 1000;
     const days = (quoteAssistant.selectedParts || []).length <= 2 ? "3 a 4 días hábiles" : (quoteAssistant.selectedParts || []).length <= 4 ? "4 a 6 días hábiles" : "7 a 10 días hábiles";
 
+    const quoteCode = `TD-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    setQuoteProposalCode(quoteCode);
+
+    const damageDesc =
+      quoteAssistant.damageLevel === "leve"
+        ? "Leve (Reparación superficial y pintura automotriz de acabado)"
+        : quoteAssistant.damageLevel === "medio"
+        ? "Medio (Desabollado de lámina, corrección y masillado fino)"
+        : "Fuerte (Enderezado estructural de chasis y escuadre milimétrico)";
+
+    const paintDesc =
+      quoteAssistant.paintType === "monocapa"
+        ? "Monocapa convencional con sellado"
+        : quoteAssistant.paintType === "bicapa"
+        ? "Bicapa Poliuretano de Alto Sólido (HS) curado al horno en cabina presurizada"
+        : "Tricapa Especial / Perlado profundo con doble barniz cerámico protector";
+
     const msg =
-      `🚗 *PRESUPUESTO ESTIMADO • TALLER DAYANA* 🚗\n\n` +
-      `¡Hola ${quoteAssistant.customerName || "Estimado cliente"}! Don Randy y nuestro equipo técnico revisaron la consulta de su *${quoteAssistant.vehicle || "vehículo"}*.\n\n` +
-      `📋 *Piezas a trabajar:*\n` +
-      (quoteAssistant.selectedParts || []).map((p) => `  • ${p}`).join("\n") + "\n\n" +
-      `🛠️ *Alcance del trabajo:*\n` +
-      `  • Daño: ${quoteAssistant.damageLevel === "leve" ? "Leve (raspón / pintura superficial)" : quoteAssistant.damageLevel === "medio" ? "Medio (desabollado de chapa)" : "Fuerte (enderezado estructural y escuadre)"}\n` +
-      `  • Acabado: Pintura en cabina presurizada con secado al horno y garantía de color.\n\n` +
-      `💰 *Rango Estimado:* *₡${minEst.toLocaleString("es-CR")} - ₡${maxEst.toLocaleString("es-CR")} colones*\n` +
-      `_(Sujeto a revisión visual en taller para verificar detalles internos o fijaciones)_\n\n` +
-      `⏱️ *Tiempo estimado de entrega:* ${days}\n` +
-      `🛡️ *Garantía:* Por escrito en tono, brillo y adherencia.\n\n` +
-      (quoteAssistant.customNotes ? `📝 *Nota adicional:* ${quoteAssistant.customNotes}\n\n` : "") +
-      `📍 *Ubicación:* Barrio San José de Alajuela (Waze: Taller Dayana)\n` +
-      `📲 ¿Gusta que le agendemos un espacio para que Don Randy lo valore sin compromiso en el taller?`;
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `🚗 *TALLER DAYANA • ENDEREZADO Y PINTURA*\n` +
+      `*Barrio San José de Alajuela • Don Randy Barrantes*\n` +
+      `*Teléfonos:* 7043-9248 / 8869-8157 • *Waze:* Taller Dayana\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `📄 *VALORACIÓN TÉCNICA ESTIMADA • OFICIAL [${quoteCode}]*\n\n` +
+      `Estimado(a) *${quoteAssistant.customerName || "Cliente"}*:\n` +
+      `Es un gusto saludarle. Por este medio le hacemos entrega de la estimación técnica preliminar para su *${quoteAssistant.vehicle || "vehículo"}* elaborada por nuestro equipo técnico bajo la supervisión directa de Don Randy Barrantes.\n\n` +
+      `📋 *1. RELACIÓN DE PIEZAS / PAÑOS:*\n` +
+      (quoteAssistant.selectedParts || []).map((p) => `  ✓ ${p}`).join("\n") + "\n\n" +
+      `🔬 *2. ALCANCE Y ESPECIFICACIÓN TÉCNICA:*\n` +
+      `  • Nivel de intervención: ${damageDesc}\n` +
+      `  • Acabado y cabina: ${paintDesc}\n` +
+      `  • Preparación: Imprimación epóxica anticorrosiva y secado en cabina.\n` +
+      `  • Acabado final: Desmotado, pulido y abrillantado profesional 3M.\n\n` +
+      `💰 *3. INVERSIÓN TOTAL ESTIMADA:*\n` +
+      `  *₡${minEst.toLocaleString("es-CR")} a ₡${maxEst.toLocaleString("es-CR")} colones*\n` +
+      `  _(Monto preliminar sujeto a confirmación física de fijaciones y soportes en taller)_\n\n` +
+      `⏱️ *4. PLAZO DE ENTREGA:* ${days}\n` +
+      `🛡️ *5. GARANTÍA ESCRITA:* Cobertura total en igualación de tono, brillo y adherencia de capa.\n` +
+      (quoteAssistant.customNotes ? `\n📝 *Nota técnica:* ${quoteAssistant.customNotes}\n` : "") +
+      `\n📍 *Taller físico:* Costado norte de la plaza de deportes, Barrio San José de Alajuela.\n` +
+      `📲 ¿Gusta que le reservemos un espacio esta semana para inspeccionar el vehículo físicamente con Don Randy y formalizar la recepción? Estamos para servirle con todo gusto.`;
 
     setQuoteAssistant((prev) => ({
       ...prev,
@@ -641,7 +736,7 @@ export default function AdminPage() {
 
     if (vehiclesResponse.ok) {
       const vehiclesPayload = await vehiclesResponse.json();
-      setWorkshopVehicles(vehiclesPayload);
+      setWorkshopVehicles((Array.isArray(vehiclesPayload) ? vehiclesPayload : []).filter(v => String(v.plate || "").trim() !== "514474"));
     }
 
     try {
@@ -1207,6 +1302,23 @@ export default function AdminPage() {
         </div>
       </section>
 
+      {/* BARRA DE NAVEGACIÓN RÁPIDA DEL PANEL */}
+      <nav aria-label="Navegación rápida" className="sticky top-2 z-30 flex flex-wrap items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-950/95 p-2.5 backdrop-blur shadow-2xl">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 pl-1">Acceso Rápido:</span>
+        <a href="#directorio-gruas" className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/50 bg-amber-500/15 px-3 py-1.5 text-xs font-bold text-amber-300 hover:bg-amber-500/25 transition">
+          <span>🚜</span> Grúas Alajuela (8 en radio 12km)
+        </a>
+        <a href="#asistente-gemini" className="inline-flex items-center gap-1.5 rounded-lg border border-purple-500/50 bg-purple-500/15 px-3 py-1.5 text-xs font-bold text-purple-300 hover:bg-purple-500/25 transition">
+          <span>🤖</span> Asistente Gemini (Cotizador & PDF)
+        </a>
+        <a href="#vehiculos-taller" className="inline-flex items-center gap-1.5 rounded-lg border border-blue-500/50 bg-blue-500/15 px-3 py-1.5 text-xs font-bold text-blue-300 hover:bg-blue-500/25 transition">
+          <span>🚗</span> Vehículos en Taller
+        </a>
+        <a href="#solicitudes-presupuestos" className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/50 bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 transition">
+          <span>📋</span> Presupuestos
+        </a>
+      </nav>
+
       <section className="section-card space-y-3">
         <h2 className="border-l-4 border-brandRed pl-3 text-xl font-semibold">Autenticación</h2>
         <form
@@ -1630,7 +1742,7 @@ export default function AdminPage() {
       </section>
 
       {/* ===================== ASISTENTE GEMINI: COTIZADOR & AUTO-RESPUESTAS ===================== */}
-      <section className="section-card space-y-6 border-purple-500/40 bg-gradient-to-br from-zinc-950 via-purple-950/20 to-zinc-950">
+      <section id="asistente-gemini" className="section-card scroll-mt-24 space-y-6 border-purple-500/40 bg-gradient-to-br from-zinc-950 via-purple-950/20 to-zinc-950">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between border-b border-zinc-800 pb-4">
           <div>
             <div className="flex items-center gap-2">
@@ -1815,22 +1927,40 @@ export default function AdminPage() {
               </div>
 
               <div className="flex flex-col gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowPdfProposalModal(true)}
+                  disabled={!quoteAssistant.calculated}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-purple-500/60 bg-gradient-to-r from-purple-950 via-indigo-950 to-purple-950 py-2.5 text-xs font-bold text-purple-200 shadow-md shadow-purple-900/30 transition hover:border-purple-400 hover:text-white disabled:opacity-40"
+                >
+                  <span>🖨️ Ver y Descargar Propuesta Formal en PDF</span>
+                </button>
+
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={copyQuoteMessage}
                     className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 py-2.5 text-xs font-bold text-zinc-200 transition hover:bg-zinc-700"
                   >
-                    {quoteAssistant.copySuccess ? "✓ ¡Copiado!" : "📋 Copiar Texto"}
+                    {quoteAssistant.copySuccess ? "✓ ¡Copiado!" : "📋 Copiar Propuesta"}
                   </button>
-                  <a
-                    href={`https://wa.me/?text=${encodeURIComponent(quoteAssistant.generatedMessage)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-600/30 transition hover:bg-emerald-500"
-                  >
-                    <span>💬 Abrir WhatsApp</span>
-                  </a>
+                  {(() => {
+                    const cleanPhone = String(quoteAssistant.customerPhone || "").replace(/\D/g, "");
+                    const waNum = cleanPhone.length === 8 ? `506${cleanPhone}` : cleanPhone;
+                    const waLink = waNum
+                      ? `https://wa.me/${waNum}?text=${encodeURIComponent(quoteAssistant.generatedMessage)}`
+                      : `https://wa.me/?text=${encodeURIComponent(quoteAssistant.generatedMessage)}`;
+                    return (
+                      <a
+                        href={waLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-600/30 transition hover:bg-emerald-500"
+                      >
+                        <span>💬 {waNum ? `Enviar a WhatsApp (${waNum})` : "Abrir WhatsApp"}</span>
+                      </a>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
@@ -1892,7 +2022,7 @@ export default function AdminPage() {
       </section>
 
       {/* ===================== DIRECTORIO DE GRÚAS ALIADAS ===================== */}
-      <section className="section-card space-y-6 border-amber-500/40 bg-gradient-to-br from-zinc-950 via-amber-950/15 to-zinc-950">
+      <section id="directorio-gruas" className="section-card scroll-mt-24 space-y-6 border-amber-500/40 bg-gradient-to-br from-zinc-950 via-amber-950/15 to-zinc-950">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between border-b border-zinc-800 pb-4">
           <div>
             <div className="flex items-center gap-2">
@@ -2038,6 +2168,15 @@ export default function AdminPage() {
                     </a>
                   </div>
 
+                  {tow.email ? (
+                    <a
+                      href={`mailto:${tow.email}?subject=Coordinar%20Gr%C3%BAa%20hacia%20Taller%20Dayana&body=${encodeURIComponent(dispatchMsg)}`}
+                      className="w-full inline-flex items-center justify-center gap-1 rounded-md border border-zinc-700 bg-zinc-950 py-1 text-[11px] text-zinc-300 hover:text-white hover:border-zinc-500"
+                    >
+                      ✉️ {tow.email}
+                    </a>
+                  ) : null}
+
                   <a
                     href={`https://wa.me/?text=${encodeURIComponent(shareToClientMsg)}`}
                     target="_blank"
@@ -2124,7 +2263,7 @@ export default function AdminPage() {
         </form>
       </section>
 
-      <section className="section-card space-y-3">
+      <section id="vehiculos-taller" className="section-card scroll-mt-24 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3 border-l-4 border-brandRed pl-3">
           <div>
             <h2 className="text-xl font-semibold">Vehículos en taller ({workshopVehicles.length})</h2>
@@ -2144,7 +2283,7 @@ export default function AdminPage() {
           </div>
         </div>
         <div className="space-y-2">
-          {workshopVehicles.map((item) => (
+          {workshopVehicles.filter(v => String(v.plate || "").trim() !== "514474").map((item) => (
             <article key={item.id} className="rounded-md border border-zinc-700 bg-zinc-950 p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="font-semibold text-white">
@@ -2297,7 +2436,7 @@ export default function AdminPage() {
             required
           >
             <option value="">Seleccionar vehículo por placa</option>
-            {workshopVehicles.map((item) => (
+            {workshopVehicles.filter(v => String(v.plate || "").trim() !== "514474").map((item) => (
               <option key={`plate-${item.id}`} value={item.plate}>
                 {item.plate} - {item.customerName}
               </option>
@@ -2477,7 +2616,7 @@ export default function AdminPage() {
         </div>
       </section>
 
-      <section className="section-card">
+      <section id="solicitudes-presupuestos" className="section-card scroll-mt-24">
         <h2 className="border-l-4 border-brandRed pl-3 text-xl font-semibold">Presupuestos</h2>
         <div className="mt-3 grid gap-3 md:grid-cols-4">
           <input
@@ -2622,6 +2761,25 @@ export default function AdminPage() {
 
                 {/* Fast Response Action Buttons for Don Randy */}
                 <div className="mt-3.5 flex flex-wrap gap-2 border-t border-zinc-800 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuoteAssistant((prev) => ({
+                        ...prev,
+                        customerName: item.customerName || "Cliente",
+                        customerPhone: item.phone || "",
+                        vehicle: item.vehicle || "Vehículo",
+                        selectedParts: Array.isArray(item.selectedParts) && item.selectedParts.length > 0 ? item.selectedParts : ["Bumper delantero"],
+                        customNotes: item.damageDescription || "",
+                        calculated: false
+                      }));
+                      const el = document.getElementById("asistente-gemini");
+                      if (el) el.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 px-3.5 py-1.5 text-xs font-bold text-white transition hover:opacity-95 shadow-md shadow-purple-900/40"
+                  >
+                    ⚡ Cotizar con Asistente Gemini & Generar PDF
+                  </button>
                   {waNumber ? (
                     <a
                       href={`https://wa.me/${waNumber}?text=${waQuoteTemplate}`}
@@ -2851,6 +3009,133 @@ export default function AdminPage() {
           </p>
         </div>
       </section>
+      {/* MODAL FORMAL DE PROPUESTA MEMBRETADA PARA PDF / IMPRESIÓN */}
+      {showPdfProposalModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm print:p-0 print:bg-white">
+          <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-zinc-700 bg-white p-8 text-zinc-900 shadow-2xl print:border-none print:shadow-none print:p-0 print:max-h-none print:w-full">
+            <div className="flex items-center justify-between border-b border-zinc-200 pb-4 print:hidden">
+              <div className="flex items-center gap-2">
+                <span className="flex h-3 w-3 rounded-full bg-emerald-500" />
+                <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                  Vista Previa de Propuesta Oficial Membretada
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-purple-700 px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-purple-600"
+                >
+                  🖨️ Imprimir / Guardar en PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPdfProposalModal(false)}
+                  className="rounded-lg border border-zinc-300 bg-zinc-100 px-3 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-200"
+                >
+                  ✕ Cerrar
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-6 space-y-6 print:mt-0 font-sans">
+              <div className="flex items-start justify-between border-b-2 border-red-700 pb-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded bg-red-700 px-2.5 py-1 text-base font-black tracking-wider text-white">TD</span>
+                    <h1 className="text-2xl font-black tracking-tight text-zinc-900">TALLER DAYANA</h1>
+                  </div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-red-700 mt-1">Enderezado y Pintura Automotriz de Precisión</p>
+                  <p className="text-xs text-zinc-600">Fundado por Dagoberto Barrantes • Más de 60 años de tradición familiar</p>
+                  <p className="text-xs text-zinc-600">Barrio San José de Alajuela (Costado norte de plaza de deportes)</p>
+                </div>
+                <div className="text-right">
+                  <span className="inline-block rounded border border-zinc-300 bg-zinc-50 px-2.5 py-1 text-xs font-mono font-bold text-zinc-700">
+                    COTIZACIÓN: {quoteProposalCode}
+                  </span>
+                  <p className="mt-2 text-xs text-zinc-500">Fecha: {new Date().toLocaleDateString("es-CR", { year: "numeric", month: "long", day: "numeric" })}</p>
+                  <p className="text-xs font-semibold text-emerald-700">Validez: 15 días naturales</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-xs">
+                <div>
+                  <p className="text-zinc-500 font-medium">Cliente:</p>
+                  <p className="text-sm font-bold text-zinc-900">{quoteAssistant.customerName || "Estimado Cliente"}</p>
+                  <p className="text-zinc-500 mt-1 font-medium">Teléfono / WhatsApp:</p>
+                  <p className="font-semibold text-zinc-800">{quoteAssistant.customerPhone || "Registrado en consulta"}</p>
+                </div>
+                <div>
+                  <p className="text-zinc-500 font-medium">Vehículo:</p>
+                  <p className="text-sm font-bold text-zinc-900">{quoteAssistant.vehicle || "Vehículo del cliente"}</p>
+                  <p className="text-zinc-500 mt-1 font-medium">Nivel de intervención técnica:</p>
+                  <p className="font-semibold text-zinc-800 capitalize">
+                    {quoteAssistant.damageLevel === "leve" ? "Leve (Pintura / Rayón superficial)" : quoteAssistant.damageLevel === "medio" ? "Medio (Desabollado de lámina y corrección)" : "Fuerte (Enderezado estructural y escuadre)"}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-700 mb-2">Desglose de Piezas y Trabajos a Realizar</h3>
+                <table className="w-full text-left text-xs border border-zinc-200">
+                  <thead className="bg-zinc-100 text-zinc-700 border-b border-zinc-200 font-bold uppercase text-[10px]">
+                    <tr>
+                      <th className="p-2.5">Ítem</th>
+                      <th className="p-2.5">Pieza / Componente</th>
+                      <th className="p-2.5">Proceso Técnico</th>
+                      <th className="p-2.5 text-right">Rango Estimado</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-200">
+                    {(quoteAssistant.selectedParts || []).map((part, idx) => (
+                      <tr key={idx} className="hover:bg-zinc-50">
+                        <td className="p-2.5 font-mono text-zinc-500">#{idx + 1}</td>
+                        <td className="p-2.5 font-bold text-zinc-900">{part}</td>
+                        <td className="p-2.5 text-zinc-600">Desabollado, sellador epóxico y pintura al horno</td>
+                        <td className="p-2.5 text-right font-medium text-zinc-800">Incluido en total</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="rounded-xl border border-zinc-200 p-4 bg-zinc-50/50 text-xs space-y-1.5 text-zinc-700">
+                <p className="font-bold text-zinc-900 text-xs uppercase tracking-wider">🔬 Certificación de Materiales & Proceso:</p>
+                <p>• <strong>Pintura:</strong> Poliuretano bicapa con igualación computarizada y barniz de alto sólido (HS).</p>
+                <p>• <strong>Cabina:</strong> Horneado en cabina presurizada libre de polvo para un curado parejo y sin imperfecciones.</p>
+                <p>• <strong>Anticorrosivo:</strong> Imprimación epóxica en lámina viva para protección duradera contra óxido.</p>
+                <p>• <strong>Acabado de entrega:</strong> Desmotado y pulido profesional 3M de cortesía incluido.</p>
+              </div>
+
+              <div className="flex items-center justify-between rounded-xl bg-zinc-900 p-4 text-white">
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-zinc-400 font-bold">Total Inversión Estimada</p>
+                  <p className="text-xs text-zinc-400">Tiempo de entrega: <strong>{quoteAssistant.deliveryDays}</strong></p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-black text-emerald-400">
+                    ₡{quoteAssistant.minEstimate.toLocaleString("es-CR")} - ₡{quoteAssistant.maxEstimate.toLocaleString("es-CR")}
+                  </p>
+                  <p className="text-[10px] text-zinc-400">Colones costarricenses (IVA y materiales incluidos)</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-8 pt-6 border-t border-zinc-200 text-xs">
+                <div>
+                  <p className="font-bold text-zinc-900">Garantía Escrita Taller Dayana:</p>
+                  <p className="text-zinc-600 mt-1">Garantizamos por escrito la igualación de color, el brillo permanente y la adherencia de pintura.</p>
+                </div>
+                <div className="text-center pt-4">
+                  <div className="border-b border-zinc-400 w-48 mx-auto" />
+                  <p className="font-bold text-zinc-900 mt-2">Don Randy Barrantes</p>
+                  <p className="text-zinc-500 text-[11px]">Maestro Encargado de Taller • Tel: 7043-9248</p>
+                  <p className="text-red-700 font-bold text-[10px] uppercase">Taller Dayana • Alajuela, C.R.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

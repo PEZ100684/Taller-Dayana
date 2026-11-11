@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const workTypeOptions = ["Pintura total", "Enderezado y pintura", "Enderezado"];
 const workshopStatusOptions = ["received", "in_progress", "ready"];

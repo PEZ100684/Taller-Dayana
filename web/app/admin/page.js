@@ -22,7 +22,7 @@ export default function AdminPage() {
     plate: "",
     customerName: "",
     workType: workTypeOptions[0],
-    entryDate: "",
+    entryDate: new Date().toISOString().slice(0, 10),
     status: "received"
   });
   const [photoForm, setPhotoForm] = useState({
@@ -727,22 +727,24 @@ export default function AdminPage() {
       headers: authHeaders,
       body: JSON.stringify({
         ...vehicleForm,
-        plate: vehicleForm.plate.toUpperCase().trim(),
-        customerName: vehicleForm.customerName.trim()
+        plate: vehicleForm.plate ? vehicleForm.plate.toUpperCase().trim() : "",
+        customerName: vehicleForm.customerName.trim(),
+        entryDate: vehicleForm.entryDate || new Date().toISOString().slice(0, 10)
       })
     });
 
     if (!response.ok) {
-      setStatus("No se pudo registrar el vehiculo");
+      const err = await response.json().catch(() => ({}));
+      setStatus(`No se pudo registrar el vehículo: ${err.error || "Error en el servidor"}`);
       return;
     }
 
-    setStatus("Vehiculo registrado correctamente");
+    setStatus("Vehículo registrado correctamente");
     setVehicleForm({
       plate: "",
       customerName: "",
       workType: workTypeOptions[0],
-      entryDate: "",
+      entryDate: new Date().toISOString().slice(0, 10),
       status: "received"
     });
     await loadWorkshopVehicles();
@@ -1359,8 +1361,7 @@ export default function AdminPage() {
             value={vehicleForm.plate}
             onChange={(e) => setVehicleForm((prev) => ({ ...prev, plate: e.target.value.toUpperCase() }))}
             className="rounded-md border border-zinc-600 bg-zinc-950 p-3 text-white placeholder:text-zinc-400"
-            placeholder="Placa"
-            required
+            placeholder="Placa (ej: 789456 o deje vacío si no tiene)"
           />
           <input
             value={vehicleForm.customerName}

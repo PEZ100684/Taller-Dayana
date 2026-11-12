@@ -2546,12 +2546,6 @@ export default function AdminPage() {
                           </article>
                         );
                       })}
-                            >
-                              Eliminar foto
-                            </button>
-                          </div>
-                        </article>
-                      ))}
                     </div>
                   ) : null}
                 </div>
@@ -2644,7 +2638,13 @@ export default function AdminPage() {
                 <article key={photo.id} className="rounded-md border border-zinc-700 p-3">
                   <p className="text-sm text-zinc-300">{new Date(photo.createdAt).toLocaleString()}</p>
                   <p className="mb-2 text-sm text-zinc-200">{photo.description}</p>
-                  <img src={resolvePhotoUrl(photo.photoUrl)} alt={photo.description} className="max-h-48 rounded-md border border-zinc-700" />
+                  {isVideoItem(photo) ? (
+                    <div className="relative aspect-video max-h-48 overflow-hidden rounded-md border border-zinc-700 bg-black">
+                      <video src={resolvePhotoUrl(photo.photoUrl)} controls className="h-full w-full object-contain" />
+                    </div>
+                  ) : (
+                    <img src={resolvePhotoUrl(photo.photoUrl)} alt={photo.description} className="max-h-48 rounded-md border border-zinc-700" />
+                  )}
                   <button
                     type="button"
                     onClick={() => deleteProgressPhoto(photo.id)}

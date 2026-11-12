@@ -673,6 +673,22 @@ export default function AdminPage() {
     );
   };
 
+  const extractDriveVideoEmbedUrl = (item) => {
+    if (!item) return null;
+    if (item.videoUrl && item.videoUrl.includes("/preview")) {
+      return item.videoUrl;
+    }
+    const url = String(item.photoUrl || "");
+    const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/) || url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (match && match[1]) {
+      return `https://drive.google.com/file/d/${match[1]}/preview`;
+    }
+    if (item.fileId) {
+      return `https://drive.google.com/file/d/${item.fileId}/preview`;
+    }
+    return null;
+  };
+
   const authHeaders = {
     "Content-Type": "application/json",
     Authorization: `Bearer ${token}`
@@ -2473,14 +2489,16 @@ export default function AdminPage() {
                       {progressPhotos.map((photo, pIdx) => {
                         const isVideo = isVideoItem(photo);
                         const mediaSrc = resolvePhotoUrl(photo.photoUrl);
+                        const embedVideoUrl = isVideo ? extractDriveVideoEmbedUrl(photo) : null;
+                        const fullVideoUrl = embedVideoUrl ? embedVideoUrl.replace("/preview", "/view") : (photo.fileId ? `https://drive.google.com/file/d/${photo.fileId}/view` : mediaSrc);
                         return (
                           <article key={photo.id} className="overflow-hidden rounded-md border border-zinc-700 bg-zinc-950 flex flex-col justify-between">
                             <div className="relative">
                               {isVideo ? (
                                 <div className="relative aspect-video w-full overflow-hidden bg-black">
-                                  {photo.videoUrl ? (
+                                  {embedVideoUrl ? (
                                     <iframe
-                                      src={photo.videoUrl}
+                                      src={embedVideoUrl}
                                       className="h-full w-full border-0"
                                       allow="autoplay; encrypted-media; fullscreen"
                                       allowFullScreen
@@ -2512,6 +2530,16 @@ export default function AdminPage() {
                             <div className="p-3 space-y-2">
                               <p className="text-[11px] text-zinc-400">{new Date(photo.createdAt).toLocaleString()}</p>
                               <p className="text-xs text-zinc-200 line-clamp-2">{photo.description}</p>
+                              {isVideo ? (
+                                <a
+                                  href={fullVideoUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-block text-[11px] font-semibold text-red-400 hover:text-red-300 hover:underline"
+                                >
+                                  ▶ Pantalla completa / Drive ↗
+                                </a>
+                              ) : null}
                               
                               {/* Botones de Reordenamiento */}
                               <div className="grid grid-cols-2 gap-1.5 pt-1">

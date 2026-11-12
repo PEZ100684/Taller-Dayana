@@ -103,6 +103,22 @@ export default function SeguimientoPage() {
     );
   };
 
+  const extractDriveVideoEmbedUrl = (item) => {
+    if (!item) return null;
+    if (item.videoUrl && item.videoUrl.includes("/preview")) {
+      return item.videoUrl;
+    }
+    const url = String(item.photoUrl || "");
+    const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/) || url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (match && match[1]) {
+      return `https://drive.google.com/file/d/${match[1]}/preview`;
+    }
+    if (item.fileId) {
+      return `https://drive.google.com/file/d/${item.fileId}/preview`;
+    }
+    return null;
+  };
+
   const resolvePhotoUrl = (photoUrl) => {
     if (!photoUrl || typeof photoUrl !== "string") {
       return "";
@@ -240,14 +256,17 @@ export default function SeguimientoPage() {
                       .map((item) => {
                         const isVideo = isVideoItem(item);
                         const mediaSrc = resolvePhotoUrl(item.photoUrl);
+                        const embedVideoUrl = isVideo ? extractDriveVideoEmbedUrl(item) : null;
+                        const fullVideoUrl = embedVideoUrl ? embedVideoUrl.replace("/preview", "/view") : (item.fileId ? `https://drive.google.com/file/d/${item.fileId}/view` : mediaSrc);
+
                         return (
                           <article key={item.id} className="flex flex-col justify-between rounded-lg border border-zinc-700 bg-zinc-900 p-3 shadow-lg">
                             <div>
                               {isVideo ? (
                                 <div className="relative aspect-video w-full overflow-hidden rounded-md border border-zinc-700 bg-black">
-                                  {item.videoUrl ? (
+                                  {embedVideoUrl ? (
                                     <iframe
-                                      src={item.videoUrl}
+                                      src={embedVideoUrl}
                                       className="h-full w-full border-0"
                                       allow="autoplay; encrypted-media; fullscreen"
                                       allowFullScreen
@@ -285,12 +304,12 @@ export default function SeguimientoPage() {
                             </div>
                             <div className="mt-3 flex items-center gap-2 border-t border-zinc-800 pt-3">
                               <a
-                                href={item.videoUrl ? (item.fileId ? `https://drive.google.com/file/d/${item.fileId}/view` : mediaSrc) : mediaSrc}
+                                href={isVideo ? fullVideoUrl : mediaSrc}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 rounded-md border border-zinc-600 bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-100 transition hover:border-brandRed hover:text-white"
+                                className="inline-flex items-center gap-1.5 rounded-md border border-zinc-600 bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-100 transition hover:border-brandRed hover:text-white"
                               >
-                                {isVideo ? "Ver en Drive / Pantalla completa ↗" : "Ver en alta resolución ↗"}
+                                {isVideo ? "▶ Abrir video en pantalla completa ↗" : "Ver en alta resolución ↗"}
                               </a>
                             </div>
                           </article>

@@ -37,7 +37,7 @@ const historyTimeline = [
   },
   {
     period: "Actualidad",
-    title: "Dirigido por Randy Barrantes",
+    title: "Dirigido por Randy Barrantes Palma",
     description: "La nueva generación mantiene vivo el legado con atención cercana, tecnología y acabados de alto nivel."
   }
 ];
@@ -1996,11 +1996,11 @@ export default function Home() {
                   e.currentTarget.onerror = null;
                   e.currentTarget.src = ownerPhotos.randy.driveUrl;
                 }}
-                alt="Randy Barrantes"
+                alt="Randy Barrantes Palma"
                 className="mx-auto h-[350px] w-[350px] max-w-full rounded-xl bg-zinc-950 object-contain object-center"
               />
               <p className="mt-4 text-xs font-bold uppercase tracking-wider text-brandRed">Director actual</p>
-              <p className="text-xl font-bold text-white">Randy Barrantes</p>
+              <p className="text-xl font-bold text-white">Randy Barrantes Palma</p>
               <p className="mt-3 text-sm font-semibold italic text-zinc-100">
                 "No eligió este oficio por necesidad, lo eligió por amor y vocación."
               </p>

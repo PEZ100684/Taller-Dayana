@@ -132,7 +132,7 @@ export const ownerPhotos = {
   },
   randy: {
     id: "1iWdA5ACDT92QFDvknUUrH20v4dWH8vbM",
-    localPath: "/randy-barrantes.jpg",
+    localPath: "/randy-barrantes.jpg?v=2",
     driveUrl: "https://drive.google.com/thumbnail?id=1iWdA5ACDT92QFDvknUUrH20v4dWH8vbM&sz=w1200"
   }
 };

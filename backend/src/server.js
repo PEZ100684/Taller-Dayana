@@ -409,7 +409,7 @@ app.get("/api/gallery", async (_req, res) => {
 });
 
 app.post("/api/quotes", submitLimiter, async (req, res) => {
-  const { customerName, phone, vehicle, plate, damageDescription, photos, contactChannel, email, selectedParts } = req.body;
+  const { customerName, phone, vehicle, plate, damageDescription, photos, video, contactChannel, email, selectedParts } = req.body;
 
   if (!customerName || !phone || !vehicle || !damageDescription) {
     return res.status(400).json({ error: "Faltan campos requeridos" });
@@ -425,16 +425,16 @@ app.post("/api/quotes", submitLimiter, async (req, res) => {
   const cleanParts = Array.isArray(selectedParts) ? selectedParts : [];
 
   const normalizedPhotos = Array.isArray(photos) ? photos : [];
-  if (normalizedPhotos.length > 5) {
-    return res.status(400).json({ error: "Solo se permiten hasta 5 fotos" });
+  if (normalizedPhotos.length > 8) {
+    return res.status(400).json({ error: "Solo se permiten hasta 8 archivos multimedia" });
   }
 
-  const hasInvalidPhoto = normalizedPhotos.some(
-    (item) => !item || typeof item.dataUrl !== "string" || !item.dataUrl.startsWith("data:image/")
+  const hasInvalidMedia = normalizedPhotos.some(
+    (item) => !item || typeof item.dataUrl !== "string" || (!item.dataUrl.startsWith("data:image/") && !item.dataUrl.startsWith("data:video/"))
   );
 
-  if (hasInvalidPhoto) {
-    return res.status(400).json({ error: "Formato de fotos invalido" });
+  if (hasInvalidMedia) {
+    return res.status(400).json({ error: "Formato de archivo inválido (solo fotos y videos)" });
   }
 
   try {
@@ -446,6 +446,7 @@ app.post("/api/quotes", submitLimiter, async (req, res) => {
       plate: cleanPlate,
       damageDescription,
       photos: normalizedPhotos,
+      video: video || null,
       contactChannel: cleanChannel,
       email: cleanEmail,
       selectedParts: cleanParts,
@@ -612,10 +613,21 @@ app.get("/api/repairs/status/:plate", searchLimiter, async (req, res) => {
 
   const combinedPhotos = [
     ...(Array.isArray(dbProgressPhotos)
-      ? dbProgressPhotos.map((photo) => ({
-          ...photo,
-          photoUrl: toPublicPhotoUrl(photo.photoUrl)
-        }))
+      ? dbProgressPhotos.map((photo) => {
+          const isVid =
+            photo.mediaType === "video" ||
+            Boolean(photo.videoUrl) ||
+            (photo.photoUrl && (photo.photoUrl.includes("video") || /\.(mp4|mov|webm)$/i.test(photo.photoUrl))) ||
+            (photo.description && /video/i.test(photo.description));
+          return {
+            ...photo,
+            mediaType: isVid ? "video" : "image",
+            photoUrl: toPublicPhotoUrl(photo.photoUrl),
+            videoUrl:
+              photo.videoUrl ||
+              (isVid && photo.fileId ? `https://drive.google.com/file/d/${photo.fileId}/preview` : null)
+          };
+        })
       : []),
     ...drivePhotos
   ];

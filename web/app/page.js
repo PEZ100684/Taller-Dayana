@@ -368,22 +368,30 @@ export default function Home() {
   const onPhotosChange = async (event) => {
     const files = Array.from(event.target.files || []);
 
-    if (files.length > 5) {
-      setStatus({ type: "error", message: "Solo se permiten hasta 5 fotos." });
+    if (files.length > 6) {
+      setStatus({ type: "error", message: "Solo se permiten hasta 6 archivos multimedia (fotos o video corto)." });
       event.target.value = "";
       return;
     }
 
-    const hasInvalidSize = files.some((file) => file.size > 4 * 1024 * 1024);
+    const hasInvalidSize = files.some((file) => {
+      const isVideo = file.type.startsWith("video/") || /\.(mp4|mov|webm)$/i.test(file.name);
+      const maxSize = isVideo ? 25 * 1024 * 1024 : 10 * 1024 * 1024;
+      return file.size > maxSize;
+    });
     if (hasInvalidSize) {
-      setStatus({ type: "error", message: "Cada foto debe ser menor a 4MB." });
+      setStatus({ type: "error", message: "Las fotos deben ser menores a 10MB y los videos menores a 25MB." });
       event.target.value = "";
       return;
     }
 
-    const hasInvalidType = files.some((file) => !file.type.startsWith("image/"));
+    const hasInvalidType = files.some((file) => {
+      const isImg = file.type.startsWith("image/");
+      const isVid = file.type.startsWith("video/") || /\.(mp4|mov|webm)$/i.test(file.name);
+      return !isImg && !isVid;
+    });
     if (hasInvalidType) {
-      setStatus({ type: "error", message: "Solo se permiten imágenes." });
+      setStatus({ type: "error", message: "Formato no compatible. Solo se permiten fotos (.jpg, .png) o videos (.mp4, .mov)." });
       event.target.value = "";
       return;
     }
@@ -391,6 +399,8 @@ export default function Home() {
     const photoItems = await Promise.all(
       files.map(async (file) => ({
         name: file.name,
+        type: file.type || "image/jpeg",
+        isVideo: file.type.startsWith("video/") || /\.(mp4|mov|webm)$/i.test(file.name),
         dataUrl: await toDataUrl(file)
       }))
     );
@@ -1429,15 +1439,15 @@ export default function Home() {
                 <div className="rounded-xl border border-dashed border-zinc-700 bg-zinc-950/80 p-4 sm:col-span-2">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <p className="text-sm font-semibold text-white">Fotos del vehículo (máximo 5)</p>
-                      <p className="text-xs text-zinc-400">Opcional • Hasta 4MB por imagen.</p>
+                      <p className="text-sm font-semibold text-white">Fotos o Video del vehículo (máximo 6)</p>
+                      <p className="text-xs text-zinc-400">Opcional • Puede subir fotos o un video corto del golpe/rayón.</p>
                     </div>
                     <label className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-zinc-600 bg-zinc-900 px-4 py-2 text-xs font-semibold text-zinc-100 transition hover:border-brandRed hover:text-white">
-                      📷 Seleccionar fotos
+                      📷 🎥 Seleccionar fotos o video
                       <input
                         ref={photoInputRef}
                         type="file"
-                        accept="image/*"
+                        accept="image/*,video/mp4,video/quicktime,video/webm"
                         multiple
                         className="hidden"
                         onChange={onPhotosChange}
@@ -1445,18 +1455,30 @@ export default function Home() {
                     </label>
                   </div>
                   {formData.photos.length > 0 ? (
-                    <div className="mt-4 grid grid-cols-3 gap-2.5">
-                      {formData.photos.map((photo, index) => (
-                        <article
-                          key={`${photo.name}-${index}`}
-                          className="rounded-lg border border-zinc-700 bg-zinc-900 p-1.5"
-                        >
-                          <img src={photo.dataUrl} alt={photo.name} className="h-20 w-full rounded object-cover" />
-                          <p className="mt-1 truncate text-[11px] text-zinc-300" title={photo.name}>
-                            {photo.name}
-                          </p>
-                        </article>
-                      ))}
+                    <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                      {formData.photos.map((photo, index) => {
+                        const isVid = photo.isVideo || photo.dataUrl.startsWith("data:video/") || /\.(mp4|mov|webm)$/i.test(photo.name);
+                        return (
+                          <article
+                            key={`${photo.name}-${index}`}
+                            className="relative overflow-hidden rounded-lg border border-zinc-700 bg-zinc-900 p-1.5"
+                          >
+                            {isVid ? (
+                              <div className="relative aspect-video w-full overflow-hidden rounded bg-black">
+                                <video src={photo.dataUrl} className="h-full w-full object-contain" muted controls />
+                                <span className="pointer-events-none absolute left-1 top-1 rounded bg-red-600 px-1.5 py-0.5 text-[9px] font-bold text-white shadow">
+                                  VIDEO
+                                </span>
+                              </div>
+                            ) : (
+                              <img src={photo.dataUrl} alt={photo.name} className="h-24 w-full rounded object-cover" />
+                            )}
+                            <p className="mt-1 truncate text-[11px] text-zinc-300" title={photo.name}>
+                              {photo.name}
+                            </p>
+                          </article>
+                        );
+                      })}
                     </div>
                   ) : null}
                 </div>

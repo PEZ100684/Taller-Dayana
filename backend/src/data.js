@@ -1,4 +1,4 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 
 const services = [
@@ -121,65 +121,455 @@ const dataDir = path.join(__dirname, "..", "data");
 const dataFilePath = path.join(dataDir, "local-store.json");
 
 const defaultWorkshopVehicles = [
-  {
-    id: 1,
-    plate: "BLC990",
-    customerName: "Vehículo en Taller",
-    workType: "Enderezado y pintura",
-    status: "in_progress",
-    notes: "Proceso de enderezado y pintura en curso",
-    createdAt: "2026-11-06T18:00:00.000Z"
-  },
-  {
-    id: 2,
-    plate: "537676",
-    customerName: "Vehículo en Taller",
-    workType: "Enderezado y pintura",
-    status: "in_progress",
-    notes: "Proceso de pintura y acabado",
-    createdAt: "2026-11-06T18:00:00.000Z"
-  },
-  {
-    id: 3,
-    plate: "514471",
-    customerName: "Vehículo en Taller",
-    workType: "Enderezado y pintura",
-    status: "in_progress",
-    notes: "Proceso de reparación",
-    createdAt: "2026-11-06T18:00:00.000Z"
-  },
-  {
-    id: 4,
-    plate: "ADT564",
-    customerName: "Vehículo en Taller",
-    workType: "Enderezado y pintura",
-    status: "in_progress",
-    notes: "Ingreso reciente por WhatsApp / Google Drive",
-    createdAt: "2026-11-10T18:26:00.000Z"
-  }
+    {
+        "id":  1,
+        "tenantId":  1,
+        "plate":  "514471",
+        "customerName":  "Vehículo en Taller",
+        "workType":  "Enderezado y pintura",
+        "entryDate":  "2026-11-10",
+        "status":  "in_progress",
+        "createdAt":  "2026-11-11T02:09:58.435Z",
+        "photoCount":  17
+    },
+    {
+        "id":  2,
+        "tenantId":  1,
+        "plate":  "537676",
+        "customerName":  "Vehículo en Taller",
+        "workType":  "Enderezado y pintura",
+        "entryDate":  "2026-11-10",
+        "status":  "in_progress",
+        "createdAt":  "2026-11-11T02:09:59.383Z",
+        "photoCount":  6
+    },
+    {
+        "id":  3,
+        "tenantId":  1,
+        "plate":  "ADT564",
+        "customerName":  "Vehículo en Taller",
+        "workType":  "Enderezado y pintura",
+        "entryDate":  "2026-11-10",
+        "status":  "in_progress",
+        "createdAt":  "2026-11-11T02:09:59.924Z",
+        "photoCount":  8
+    },
+    {
+        "id":  4,
+        "tenantId":  1,
+        "plate":  "BLC990",
+        "customerName":  "Vehículo en Taller",
+        "workType":  "Enderezado y pintura",
+        "entryDate":  "2026-11-10",
+        "status":  "in_progress",
+        "createdAt":  "2026-11-11T02:10:00.723Z",
+        "photoCount":  4
+    },
+    {
+        "id":  5,
+        "tenantId":  1,
+        "plate":  "NWG228",
+        "customerName":  "Vehículo en Taller",
+        "workType":  "Enderezado y pintura",
+        "entryDate":  "2026-11-11",
+        "status":  "in_progress",
+        "createdAt":  "2026-11-12T00:53:54.383Z",
+        "photoCount":  3
+    }
 ];
 
 const defaultWorkshopProgressPhotos = [
-  { id: 1, workshopVehicleId: 1, plate: "BLC990", photoUrl: "https://drive.google.com/thumbnail?id=1C8UgbvQAhV6DUWzs_4fVB3zjJ0GS69dl&sz=w1200", description: "Avance de reparación - Foto 1", createdAt: "2026-11-06T18:10:00.000Z" },
-  { id: 2, workshopVehicleId: 1, plate: "BLC990", photoUrl: "https://drive.google.com/thumbnail?id=1vAILWRXxJFkh2UO_8oJgLcMDR2NvLz7I&sz=w1200", description: "Avance de reparación - Foto 2", createdAt: "2026-11-06T18:11:00.000Z" },
-  { id: 3, workshopVehicleId: 1, plate: "BLC990", photoUrl: "https://drive.google.com/thumbnail?id=1IAHskzL4KFc-G1HS849wMI8ylHRbtKk1&sz=w1200", description: "Avance de reparación - Foto 3", createdAt: "2026-11-06T18:12:00.000Z" },
-  { id: 4, workshopVehicleId: 1, plate: "BLC990", photoUrl: "https://drive.google.com/thumbnail?id=1iETMmviO-81cHFvG-E3z8HIje4IYQ2Uc&sz=w1200", description: "Avance de reparación - Foto 4", createdAt: "2026-11-06T18:13:00.000Z" },
-  { id: 5, workshopVehicleId: 2, plate: "537676", photoUrl: "https://drive.google.com/thumbnail?id=1dpUNMGpTKvHDhl02jPkrHG5FJnH1flYb&sz=w1200", description: "Avance de reparación - Foto 1", createdAt: "2026-11-06T18:20:00.000Z" },
-  { id: 6, workshopVehicleId: 2, plate: "537676", photoUrl: "https://drive.google.com/thumbnail?id=1ULiEoKj94rcO-IHjCsuaeZx8_X003MWU&sz=w1200", description: "Avance de reparación - Foto 2", createdAt: "2026-11-06T18:21:00.000Z" },
-  { id: 7, workshopVehicleId: 2, plate: "537676", photoUrl: "https://drive.google.com/thumbnail?id=1h-n4F4xqdq94L7cUfBN7adQzUmeGTRIc&sz=w1200", description: "Avance de reparación - Foto 3", createdAt: "2026-11-06T18:22:00.000Z" },
-  { id: 8, workshopVehicleId: 2, plate: "537676", photoUrl: "https://drive.google.com/thumbnail?id=17NbmT4FpQPAbxL4egWTxk6NAlS0bVAoJ&sz=w1200", description: "Avance de reparación - Foto 4", createdAt: "2026-11-06T18:23:00.000Z" },
-  { id: 9, workshopVehicleId: 2, plate: "537676", photoUrl: "https://drive.google.com/thumbnail?id=1VE0x7c7ROWG1-309teKqdq_6yJs6z0tk&sz=w1200", description: "Avance de reparación - Foto 5", createdAt: "2026-11-06T18:24:00.000Z" },
-  { id: 10, workshopVehicleId: 2, plate: "537676", photoUrl: "https://drive.google.com/thumbnail?id=1GF9H1-vDtj52liBIFpCAkjt2UOVdXSVX&sz=w1200", description: "Avance de reparación - Foto 6", createdAt: "2026-11-06T18:25:00.000Z" },
-  { id: 11, workshopVehicleId: 3, plate: "514471", photoUrl: "https://drive.google.com/thumbnail?id=1jNoctxVXwMGVHZ5gccrKcc_k9TjkRKgF&sz=w1200", description: "Avance de reparación - Foto 1", createdAt: "2026-11-06T18:30:00.000Z" },
-  { id: 12, workshopVehicleId: 3, plate: "514471", photoUrl: "https://drive.google.com/thumbnail?id=16KHqtFTh-h5hyGsaJqA5MHNUfWAUmECB&sz=w1200", description: "Avance de reparación - Foto 2", createdAt: "2026-11-06T18:31:00.000Z" },
-  { id: 13, workshopVehicleId: 4, plate: "ADT564", photoUrl: "https://drive.google.com/thumbnail?id=1FiaohCuvwBZ4TGAiCuwr46SQeicA_vtj&sz=w1200", description: "Avance de reparación - IMG-20261110-WA0011.jpg", createdAt: "2026-11-10T18:26:51.800Z" },
-  { id: 14, workshopVehicleId: 4, plate: "ADT564", photoUrl: "https://drive.google.com/thumbnail?id=1_vZ9maXZrHL1Z0DCFi25SUBlo7YUBXEj&sz=w1200", description: "Avance de reparación - IMG-20261110-WA0012.jpg", createdAt: "2026-11-10T18:26:51.613Z" },
-  { id: 15, workshopVehicleId: 4, plate: "ADT564", photoUrl: "https://drive.google.com/thumbnail?id=1BO_Iga3FzTkveFWuo-K0hp2TNT1blL4Q&sz=w1200", description: "Avance de reparación - IMG-20261110-WA0013.jpg", createdAt: "2026-11-10T18:26:51.730Z" },
-  { id: 16, workshopVehicleId: 4, plate: "ADT564", photoUrl: "https://drive.google.com/thumbnail?id=1kd5dNX5Px6jib1R2WEOC6aBCnEtjcVsh&sz=w1200", description: "Avance de reparación - IMG-20261110-WA0014.jpg", createdAt: "2026-11-10T18:26:51.430Z" },
-  { id: 17, workshopVehicleId: 4, plate: "ADT564", photoUrl: "https://drive.google.com/thumbnail?id=1yBO5tYLBhEYtpeaVN7G4SmkcAWZ-vABD&sz=w1200", description: "Avance de reparación - IMG-20261110-WA0015.jpg", createdAt: "2026-11-10T18:26:51.228Z" },
-  { id: 18, workshopVehicleId: 4, plate: "ADT564", photoUrl: "https://drive.google.com/thumbnail?id=1nDOWLVytWX9jjW0lBwFevCLrwxYn6nH_&sz=w1200", description: "Avance de reparación - IMG-20261110-WA0017.jpg", createdAt: "2026-11-10T18:26:50.693Z" },
-  { id: 19, workshopVehicleId: 4, plate: "ADT564", photoUrl: "https://drive.google.com/thumbnail?id=13U5kTsZk7EjwYpRYmczCdDfeHGBAalat&sz=w1200", description: "Avance de reparación - IMG-20261110-WA0018.jpg", createdAt: "2026-11-10T18:26:50.974Z" },
-  { id: 20, workshopVehicleId: 4, plate: "ADT564", photoUrl: "https://drive.google.com/thumbnail?id=1Rxos354Uu8ZPh-rootRst5Z3AaDAOQB3&sz=w1200", description: "Avance de reparación - IMG-20261110-WA0020.jpg", createdAt: "2026-11-10T19:40:47.791Z" }
+    {
+        "id":  1,
+        "workshopVehicleId":  1,
+        "plate":  "514471",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1jNoctxVXwMGVHZ5gccrKcc_k9TjkRKgF\u0026sz=w1200",
+        "description":  "Avance de reparación - 1794082917908.jpg",
+        "createdAt":  "2026-11-07T20:22:07.886Z",
+        "mediaType":  "image",
+        "fileId":  "1jNoctxVXwMGVHZ5gccrKcc_k9TjkRKgF"
+    },
+    {
+        "id":  2,
+        "workshopVehicleId":  1,
+        "plate":  "514471",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=16KHqtFTh-h5hyGsaJqA5MHNUfWAUmECB\u0026sz=w1200",
+        "description":  "Avance de reparación - 1794082917974.jpg",
+        "createdAt":  "2026-11-07T20:22:08.166Z",
+        "mediaType":  "image",
+        "fileId":  "16KHqtFTh-h5hyGsaJqA5MHNUfWAUmECB"
+    },
+    {
+        "id":  3,
+        "workshopVehicleId":  1,
+        "plate":  "514471",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1Oi4X-yrDwFqcDMF2VJNR65VReI6Q88eu\u0026sz=w1200",
+        "description":  "Avance de reparación - IMG-20261110-WA0016.jpg",
+        "createdAt":  "2026-11-10T18:27:26.293Z",
+        "mediaType":  "image",
+        "fileId":  "1Oi4X-yrDwFqcDMF2VJNR65VReI6Q88eu"
+    },
+    {
+        "id":  4,
+        "workshopVehicleId":  1,
+        "plate":  "514471",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1dNfDIFiTuVap-Hf0qf4kLrg6uuwzbcpH\u0026sz=w1200",
+        "description":  "Avance de reparación - IMG-20261110-WA0019.jpg",
+        "createdAt":  "2026-11-10T18:27:26.028Z",
+        "mediaType":  "image",
+        "fileId":  "1dNfDIFiTuVap-Hf0qf4kLrg6uuwzbcpH"
+    },
+    {
+        "id":  5,
+        "workshopVehicleId":  1,
+        "plate":  "514471",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1wV4JKNPhmzXJflB-Ua79seMA8df8AB_N\u0026sz=w1200",
+        "description":  "Avance de reparación - IMG-20261110-WA0026.jpg",
+        "createdAt":  "2026-11-10T21:47:44.048Z",
+        "mediaType":  "image",
+        "fileId":  "1wV4JKNPhmzXJflB-Ua79seMA8df8AB_N"
+    },
+    {
+        "id":  6,
+        "workshopVehicleId":  1,
+        "plate":  "514471",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1nz0SfSETnq0fIDpKKpJrrN9ktE2ztQg4\u0026sz=w1200",
+        "description":  "Avance de reparación - IMG-20261110-WA0026.jpg",
+        "createdAt":  "2026-11-10T19:40:21.617Z",
+        "mediaType":  "image",
+        "fileId":  "1nz0SfSETnq0fIDpKKpJrrN9ktE2ztQg4"
+    },
+    {
+        "id":  7,
+        "workshopVehicleId":  1,
+        "plate":  "514471",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1uH8O-tI5cBxPywwa8Ot9223yQAYzcG_m\u0026sz=w1200",
+        "description":  "Avance de reparación - IMG-20261110-WA0037.jpg",
+        "createdAt":  "2026-11-10T21:47:43.710Z",
+        "mediaType":  "image",
+        "fileId":  "1uH8O-tI5cBxPywwa8Ot9223yQAYzcG_m"
+    },
+    {
+        "id":  8,
+        "workshopVehicleId":  1,
+        "plate":  "514471",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1GIlhGiGf644-gE31J8Qp-D6wjU9PPYGG\u0026sz=w1200",
+        "description":  "Avance de reparación - IMG-20261110-WA0041.jpg",
+        "createdAt":  "2026-11-11T01:54:25.606Z",
+        "mediaType":  "image",
+        "fileId":  "1GIlhGiGf644-gE31J8Qp-D6wjU9PPYGG"
+    },
+    {
+        "id":  9,
+        "workshopVehicleId":  1,
+        "plate":  "514471",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1igFx5MUaFyWPCvMAzoyynxMu7Y1nr5yt\u0026sz=w1200",
+        "description":  "Avance de reparación - IMG-20261110-WA0051.jpg",
+        "createdAt":  "2026-11-11T01:54:25.503Z",
+        "mediaType":  "image",
+        "fileId":  "1igFx5MUaFyWPCvMAzoyynxMu7Y1nr5yt"
+    },
+    {
+        "id":  10,
+        "workshopVehicleId":  3,
+        "plate":  "ADT564",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1FiaohCuvwBZ4TGAiCuwr46SQeicA_vtj\u0026sz=w1200",
+        "description":  "Avance de reparación - IMG-20261110-WA0011.jpg",
+        "createdAt":  "2026-11-10T18:26:51.800Z",
+        "mediaType":  "image",
+        "fileId":  "1FiaohCuvwBZ4TGAiCuwr46SQeicA_vtj"
+    },
+    {
+        "id":  11,
+        "workshopVehicleId":  3,
+        "plate":  "ADT564",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1_vZ9maXZrHL1Z0DCFi25SUBlo7YUBXEj\u0026sz=w1200",
+        "description":  "Avance de reparación - IMG-20261110-WA0012.jpg",
+        "createdAt":  "2026-11-10T18:26:51.613Z",
+        "mediaType":  "image",
+        "fileId":  "1_vZ9maXZrHL1Z0DCFi25SUBlo7YUBXEj"
+    },
+    {
+        "id":  12,
+        "workshopVehicleId":  3,
+        "plate":  "ADT564",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1BO_Iga3FzTkveFWuo-K0hp2TNT1blL4Q\u0026sz=w1200",
+        "description":  "Avance de reparación - IMG-20261110-WA0013.jpg",
+        "createdAt":  "2026-11-10T18:26:51.730Z",
+        "mediaType":  "image",
+        "fileId":  "1BO_Iga3FzTkveFWuo-K0hp2TNT1blL4Q"
+    },
+    {
+        "id":  13,
+        "workshopVehicleId":  3,
+        "plate":  "ADT564",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1kd5dNX5Px6jib1R2WEOC6aBCnEtjcVsh\u0026sz=w1200",
+        "description":  "Avance de reparación - IMG-20261110-WA0014.jpg",
+        "createdAt":  "2026-11-10T18:26:51.430Z",
+        "mediaType":  "image",
+        "fileId":  "1kd5dNX5Px6jib1R2WEOC6aBCnEtjcVsh"
+    },
+    {
+        "id":  14,
+        "workshopVehicleId":  3,
+        "plate":  "ADT564",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1yBO5tYLBhEYtpeaVN7G4SmkcAWZ-vABD\u0026sz=w1200",
+        "description":  "Avance de reparación - IMG-20261110-WA0015.jpg",
+        "createdAt":  "2026-11-10T18:26:51.228Z",
+        "mediaType":  "image",
+        "fileId":  "1yBO5tYLBhEYtpeaVN7G4SmkcAWZ-vABD"
+    },
+    {
+        "id":  15,
+        "workshopVehicleId":  3,
+        "plate":  "ADT564",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1nDOWLVytWX9jjW0lBwFevCLrwxYn6nH_\u0026sz=w1200",
+        "description":  "Avance de reparación - IMG-20261110-WA0017.jpg",
+        "createdAt":  "2026-11-10T18:26:50.693Z",
+        "mediaType":  "image",
+        "fileId":  "1nDOWLVytWX9jjW0lBwFevCLrwxYn6nH_"
+    },
+    {
+        "id":  16,
+        "workshopVehicleId":  3,
+        "plate":  "ADT564",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=13U5kTsZk7EjwYpRYmczCdDfeHGBAalat\u0026sz=w1200",
+        "description":  "Avance de reparación - IMG-20261110-WA0018.jpg",
+        "createdAt":  "2026-11-10T18:26:50.974Z",
+        "mediaType":  "image",
+        "fileId":  "13U5kTsZk7EjwYpRYmczCdDfeHGBAalat"
+    },
+    {
+        "id":  17,
+        "workshopVehicleId":  3,
+        "plate":  "ADT564",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1Rxos354Uu8ZPh-rootRst5Z3AaDAOQB3\u0026sz=w1200",
+        "description":  "Avance de reparación - IMG-20261110-WA0020.jpg",
+        "createdAt":  "2026-11-10T19:40:47.791Z",
+        "mediaType":  "image",
+        "fileId":  "1Rxos354Uu8ZPh-rootRst5Z3AaDAOQB3"
+    },
+    {
+        "id":  18,
+        "workshopVehicleId":  4,
+        "plate":  "BLC990",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1C8UgbvQAhV6DUWzs_4fVB3zjJ0GS69dl\u0026sz=w1200",
+        "description":  "Avance de reparación - 1794082941804.jpg",
+        "createdAt":  "2026-11-07T20:22:32.353Z",
+        "mediaType":  "image",
+        "fileId":  "1C8UgbvQAhV6DUWzs_4fVB3zjJ0GS69dl"
+    },
+    {
+        "id":  19,
+        "workshopVehicleId":  4,
+        "plate":  "BLC990",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1vAILWRXxJFkh2UO_8oJgLcMDR2NvLz7I\u0026sz=w1200",
+        "description":  "Avance de reparación - 1794082983507.jpg",
+        "createdAt":  "2026-11-07T20:23:05.438Z",
+        "mediaType":  "image",
+        "fileId":  "1vAILWRXxJFkh2UO_8oJgLcMDR2NvLz7I"
+    },
+    {
+        "id":  20,
+        "workshopVehicleId":  4,
+        "plate":  "BLC990",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1IAHskzL4KFc-G1HS849wMI8ylHRbtKk1\u0026sz=w1200",
+        "description":  "Avance de reparación - 1794082983545.jpg",
+        "createdAt":  "2026-11-07T20:23:05.695Z",
+        "mediaType":  "image",
+        "fileId":  "1IAHskzL4KFc-G1HS849wMI8ylHRbtKk1"
+    },
+    {
+        "id":  21,
+        "workshopVehicleId":  4,
+        "plate":  "BLC990",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1iETMmviO-81cHFvG-E3z8HIje4IYQ2Uc\u0026sz=w1200",
+        "description":  "Avance de reparación - 1794082983573.jpg",
+        "createdAt":  "2026-11-07T20:23:05.890Z",
+        "mediaType":  "image",
+        "fileId":  "1iETMmviO-81cHFvG-E3z8HIje4IYQ2Uc"
+    },
+    {
+        "id":  22,
+        "workshopVehicleId":  2,
+        "plate":  "537676",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1dpUNMGpTKvHDhl02jPkrHG5FJnH1flYb\u0026sz=w1200",
+        "description":  "Avance de reparación - 1794083013624.jpg",
+        "createdAt":  "2026-11-07T20:23:41.541Z",
+        "mediaType":  "image",
+        "fileId":  "1dpUNMGpTKvHDhl02jPkrHG5FJnH1flYb"
+    },
+    {
+        "id":  23,
+        "workshopVehicleId":  2,
+        "plate":  "537676",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1ULiEoKj94rcO-IHjCsuaeZx8_X003MWU\u0026sz=w1200",
+        "description":  "Avance de reparación - 1794083013659.jpg",
+        "createdAt":  "2026-11-07T20:23:41.820Z",
+        "mediaType":  "image",
+        "fileId":  "1ULiEoKj94rcO-IHjCsuaeZx8_X003MWU"
+    },
+    {
+        "id":  24,
+        "workshopVehicleId":  2,
+        "plate":  "537676",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1h-n4F4xqdq94L7cUfBN7adQzUmeGTRIc\u0026sz=w1200",
+        "description":  "Avance de reparación - 1794083013690.jpg",
+        "createdAt":  "2026-11-07T20:23:41.964Z",
+        "mediaType":  "image",
+        "fileId":  "1h-n4F4xqdq94L7cUfBN7adQzUmeGTRIc"
+    },
+    {
+        "id":  25,
+        "workshopVehicleId":  2,
+        "plate":  "537676",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=17NbmT4FpQPAbxL4egWTxk6NAlS0bVAoJ\u0026sz=w1200",
+        "description":  "Avance de reparación - 1794083013728.jpg",
+        "createdAt":  "2026-11-07T20:23:42.124Z",
+        "mediaType":  "image",
+        "fileId":  "17NbmT4FpQPAbxL4egWTxk6NAlS0bVAoJ"
+    },
+    {
+        "id":  26,
+        "workshopVehicleId":  2,
+        "plate":  "537676",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1VE0x7c7ROWG1-309teKqdq_6yJs6z0tk\u0026sz=w1200",
+        "description":  "Avance de reparación - 1794083013761.jpg",
+        "createdAt":  "2026-11-07T20:23:42.279Z",
+        "mediaType":  "image",
+        "fileId":  "1VE0x7c7ROWG1-309teKqdq_6yJs6z0tk"
+    },
+    {
+        "id":  27,
+        "workshopVehicleId":  2,
+        "plate":  "537676",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1GF9H1-vDtj52liBIFpCAkjt2UOVdXSVX\u0026sz=w1200",
+        "description":  "Avance de reparación - 1794083013785.jpg",
+        "createdAt":  "2026-11-07T20:23:42.431Z",
+        "mediaType":  "image",
+        "fileId":  "1GF9H1-vDtj52liBIFpCAkjt2UOVdXSVX"
+    },
+    {
+        "id":  28,
+        "workshopVehicleId":  1,
+        "plate":  "514471",
+        "fileId":  "1A6UK3pr1YkQtmIY51nh4YoFUMKNNN3zx",
+        "mediaType":  "image",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1A6UK3pr1YkQtmIY51nh4YoFUMKNNN3zx\u0026sz=w1200",
+        "videoUrl":  null,
+        "description":  "Avance de reparación - Actualización 11-11-26",
+        "createdAt":  "2026-11-11T19:10:21.099Z"
+    },
+    {
+        "id":  29,
+        "workshopVehicleId":  1,
+        "plate":  "514471",
+        "fileId":  "1TGPPI4OL-M43f3Oo4JYyXg3QNvE02Avh",
+        "mediaType":  "image",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1TGPPI4OL-M43f3Oo4JYyXg3QNvE02Avh\u0026sz=w1200",
+        "videoUrl":  null,
+        "description":  "Avance de reparación - IMG-20261111-WA0013.jpg",
+        "createdAt":  "2026-11-11T19:43:23.220Z"
+    },
+    {
+        "id":  30,
+        "workshopVehicleId":  1,
+        "plate":  "514471",
+        "fileId":  "1sRAEanAHBBVNoIYCzGxwtkBSy_IbBu8g",
+        "mediaType":  "image",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1sRAEanAHBBVNoIYCzGxwtkBSy_IbBu8g\u0026sz=w1200",
+        "videoUrl":  null,
+        "description":  "Avance de reparación - IMG-20261111-WA0014.jpg",
+        "createdAt":  "2026-11-11T19:43:22.930Z"
+    },
+    {
+        "id":  31,
+        "workshopVehicleId":  1,
+        "plate":  "514471",
+        "fileId":  "1xyt4RftLqJmOaRuaA2OPF_x0z5AdPx0i",
+        "mediaType":  "image",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1xyt4RftLqJmOaRuaA2OPF_x0z5AdPx0i\u0026sz=w1200",
+        "videoUrl":  null,
+        "description":  "Avance de reparación - IMG-20261111-WA0015.jpg",
+        "createdAt":  "2026-11-11T19:43:23.273Z"
+    },
+    {
+        "id":  32,
+        "workshopVehicleId":  1,
+        "plate":  "514471",
+        "fileId":  "15lwuAMTWquWB3AYkKY0nMwWelu6q6yuy",
+        "mediaType":  "image",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=15lwuAMTWquWB3AYkKY0nMwWelu6q6yuy\u0026sz=w1200",
+        "videoUrl":  null,
+        "description":  "Avance de reparación - IMG-20261111-WA0016.jpg",
+        "createdAt":  "2026-11-11T19:43:23.075Z"
+    },
+    {
+        "id":  33,
+        "workshopVehicleId":  1,
+        "plate":  "514471",
+        "fileId":  "1qCy05P41PaOoVo-B9mzhtxQ4RllQv1Kr",
+        "mediaType":  "video",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1qCy05P41PaOoVo-B9mzhtxQ4RllQv1Kr\u0026sz=w1200",
+        "videoUrl":  "https://drive.google.com/file/d/1qCy05P41PaOoVo-B9mzhtxQ4RllQv1Kr/preview",
+        "description":  "Video de avance - Video Bumper 1",
+        "createdAt":  "2026-11-11T22:17:47.437Z"
+    },
+    {
+        "id":  34,
+        "workshopVehicleId":  1,
+        "plate":  "514471",
+        "fileId":  "1WZutIMf1URwcUENQG8cCfRpykxF5UpPk",
+        "mediaType":  "video",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1WZutIMf1URwcUENQG8cCfRpykxF5UpPk\u0026sz=w1200",
+        "videoUrl":  "https://drive.google.com/file/d/1WZutIMf1URwcUENQG8cCfRpykxF5UpPk/preview",
+        "description":  "Video de avance - Video Bumper 2",
+        "createdAt":  "2026-11-11T22:18:12.099Z"
+    },
+    {
+        "id":  35,
+        "workshopVehicleId":  1,
+        "plate":  "514471",
+        "fileId":  "1WWCrPZyHOh5bo8Mr2cET2YcM-y2cKLpF",
+        "mediaType":  "video",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1WWCrPZyHOh5bo8Mr2cET2YcM-y2cKLpF\u0026sz=w1200",
+        "videoUrl":  "https://drive.google.com/file/d/1WWCrPZyHOh5bo8Mr2cET2YcM-y2cKLpF/preview",
+        "description":  "Video de avance - Video Bumper Pintado",
+        "createdAt":  "2026-11-12T00:19:03.475Z"
+    },
+    {
+        "id":  36,
+        "workshopVehicleId":  5,
+        "plate":  "NWG228",
+        "fileId":  "1HRpEAOS8XcCbMLMbP3Dto-c8Mx5iXEqT",
+        "mediaType":  "image",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1HRpEAOS8XcCbMLMbP3Dto-c8Mx5iXEqT\u0026sz=w1200",
+        "videoUrl":  null,
+        "description":  "Avance de reparación - IMG-20261108-WA0012.jpg",
+        "createdAt":  "2026-11-11T12:51:25.234Z"
+    },
+    {
+        "id":  37,
+        "workshopVehicleId":  5,
+        "plate":  "NWG228",
+        "fileId":  "13-gLptGNcKlnK4RlUw2v2nCtpQn8bnXu",
+        "mediaType":  "image",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=13-gLptGNcKlnK4RlUw2v2nCtpQn8bnXu\u0026sz=w1200",
+        "videoUrl":  null,
+        "description":  "Avance de reparación - IMG-20261108-WA0017.jpg",
+        "createdAt":  "2026-11-11T12:51:25.176Z"
+    },
+    {
+        "id":  38,
+        "workshopVehicleId":  5,
+        "plate":  "NWG228",
+        "fileId":  "1-f-pZF2WVpKhSfl5Umgsg89LfS0fJ9Kn",
+        "mediaType":  "image",
+        "photoUrl":  "https://drive.google.com/thumbnail?id=1-f-pZF2WVpKhSfl5Umgsg89LfS0fJ9Kn\u0026sz=w1200",
+        "videoUrl":  null,
+        "description":  "Avance de reparación - IMG-20261110-WA3031.jpg",
+        "createdAt":  "2026-11-11T12:51:25.111Z"
+    }
 ];
 
 const defaultTowTrucks = [

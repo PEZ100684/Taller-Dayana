@@ -659,6 +659,20 @@ export default function AdminPage() {
     return photoUrl;
   };
 
+  const isVideoItem = (item) => {
+    if (!item) return false;
+    if (item.mediaType === "video" || Boolean(item.videoUrl)) return true;
+    const url = String(item.photoUrl || "").toLowerCase();
+    const desc = String(item.description || "").toLowerCase();
+    return (
+      url.endsWith(".mp4") ||
+      url.endsWith(".mov") ||
+      url.endsWith(".webm") ||
+      url.includes("/video") ||
+      desc.includes("video")
+    );
+  };
+
   const authHeaders = {
     "Content-Type": "application/json",
     Authorization: `Bearer ${token}`
@@ -2456,48 +2470,82 @@ export default function AdminPage() {
                   ) : null}
                   {!loadingPhotos && progressPhotos.length > 0 ? (
                     <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-                      {progressPhotos.map((photo, pIdx) => (
-                        <article key={photo.id} className="overflow-hidden rounded-md border border-zinc-700 bg-zinc-950 flex flex-col justify-between">
-                          <div className="relative">
-                            <img
-                              src={resolvePhotoUrl(photo.photoUrl)}
-                              alt={photo.description}
-                              className="h-44 w-full object-cover"
-                            />
-                            <span className="absolute top-2 left-2 rounded-md bg-black/85 px-2 py-0.5 text-xs font-black text-white border border-zinc-600 shadow">
-                              #{pIdx + 1}
-                            </span>
-                          </div>
-                          <div className="p-3 space-y-2">
-                            <p className="text-[11px] text-zinc-400">{new Date(photo.createdAt).toLocaleString()}</p>
-                            <p className="text-xs text-zinc-200 line-clamp-2">{photo.description}</p>
-                            
-                            {/* Botones de Reordenamiento */}
-                            <div className="grid grid-cols-2 gap-1.5 pt-1">
+                      {progressPhotos.map((photo, pIdx) => {
+                        const isVideo = isVideoItem(photo);
+                        const mediaSrc = resolvePhotoUrl(photo.photoUrl);
+                        return (
+                          <article key={photo.id} className="overflow-hidden rounded-md border border-zinc-700 bg-zinc-950 flex flex-col justify-between">
+                            <div className="relative">
+                              {isVideo ? (
+                                <div className="relative aspect-video w-full overflow-hidden bg-black">
+                                  {photo.videoUrl ? (
+                                    <iframe
+                                      src={photo.videoUrl}
+                                      className="h-full w-full border-0"
+                                      allow="autoplay; encrypted-media; fullscreen"
+                                      allowFullScreen
+                                      title={photo.description || "Video de avance"}
+                                    />
+                                  ) : (
+                                    <video
+                                      src={mediaSrc}
+                                      controls
+                                      playsInline
+                                      className="h-44 w-full object-contain"
+                                    />
+                                  )}
+                                  <span className="pointer-events-none absolute bottom-2 right-2 rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white shadow">
+                                    VIDEO
+                                  </span>
+                                </div>
+                              ) : (
+                                <img
+                                  src={mediaSrc}
+                                  alt={photo.description}
+                                  className="h-44 w-full object-cover"
+                                />
+                              )}
+                              <span className="absolute top-2 left-2 rounded-md bg-black/85 px-2 py-0.5 text-xs font-black text-white border border-zinc-600 shadow">
+                                #{pIdx + 1}
+                              </span>
+                            </div>
+                            <div className="p-3 space-y-2">
+                              <p className="text-[11px] text-zinc-400">{new Date(photo.createdAt).toLocaleString()}</p>
+                              <p className="text-xs text-zinc-200 line-clamp-2">{photo.description}</p>
+                              
+                              {/* Botones de Reordenamiento */}
+                              <div className="grid grid-cols-2 gap-1.5 pt-1">
+                                <button
+                                  type="button"
+                                  disabled={pIdx === 0}
+                                  onClick={() => movePhotoOrder(pIdx, pIdx - 1)}
+                                  className="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs font-bold text-zinc-200 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-30"
+                                  title="Mover hacia atrás en la secuencia"
+                                >
+                                  ◀ Mover antes
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={pIdx === progressPhotos.length - 1}
+                                  onClick={() => movePhotoOrder(pIdx, pIdx + 1)}
+                                  className="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs font-bold text-zinc-200 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-30"
+                                  title="Mover hacia adelante en la secuencia"
+                                >
+                                  Mover después ▶
+                                </button>
+                              </div>
+
                               <button
                                 type="button"
-                                disabled={pIdx === 0}
-                                onClick={() => movePhotoOrder(pIdx, pIdx - 1)}
-                                className="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs font-bold text-zinc-200 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-30"
-                                title="Mover hacia atrás en la secuencia"
+                                onClick={() => deleteProgressPhoto(photo.id)}
+                                className="w-full rounded-md border border-red-500/60 py-1 text-xs text-red-300 transition hover:bg-red-950/50"
                               >
-                                ◀ Mover antes
-                              </button>
-                              <button
-                                type="button"
-                                disabled={pIdx === progressPhotos.length - 1}
-                                onClick={() => movePhotoOrder(pIdx, pIdx + 1)}
-                                className="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs font-bold text-zinc-200 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-30"
-                                title="Mover hacia adelante en la secuencia"
-                              >
-                                Mover después ▶
+                                Eliminar avance
                               </button>
                             </div>
-
-                            <button
-                              type="button"
-                              onClick={() => deleteProgressPhoto(photo.id)}
-                              className="w-full rounded-md border border-red-500/60 py-1 text-xs text-red-300 transition hover:bg-red-950/50"
+                          </article>
+                        );
+                      })}
                             >
                               Eliminar foto
                             </button>
@@ -2515,7 +2563,7 @@ export default function AdminPage() {
       </section>
 
       <section className="section-card space-y-4">
-        <h2 className="border-l-4 border-brandRed pl-3 text-xl font-semibold">Subir foto de avance</h2>
+        <h2 className="border-l-4 border-brandRed pl-3 text-xl font-semibold">Subir foto o video de avance</h2>
         <form className="grid gap-3" onSubmit={uploadProgressPhoto}>
           <select
             value={photoForm.plate}
@@ -2540,7 +2588,7 @@ export default function AdminPage() {
 
           <input
             type="file"
-            accept="image/*"
+            accept="image/*,video/mp4,video/quicktime"
             multiple
             className="rounded-md border border-zinc-600 bg-zinc-950 p-3 text-zinc-100"
             onChange={(e) => {
@@ -2559,7 +2607,7 @@ export default function AdminPage() {
             required
           />
 
-          <p className="text-sm text-zinc-300">Puedes elegir varias fotos a la vez en un solo paso.</p>
+          <p className="text-sm text-zinc-300">Puedes elegir fotos y videos (.mp4, .mov) para documentar el progreso.</p>
           <p className="text-sm text-zinc-300">Total seleccionado: {photoForm.files.length}</p>
 
           <textarea

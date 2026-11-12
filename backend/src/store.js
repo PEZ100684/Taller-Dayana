@@ -111,6 +111,7 @@ function buildQuoteRow(input, id = nextId(quotes)) {
     plate: String(input.plate || "").trim().toUpperCase() || ("SP-" + Date.now().toString().slice(-6)),
     damageDescription: input.damageDescription,
     photos: Array.isArray(input.photos) ? input.photos : [],
+    video: input.video || null,
     status: input.status || "received",
     createdAt: input.createdAt || new Date().toISOString()
   };
@@ -153,7 +154,10 @@ function buildProgressPhotoRow(input, id = nextId(workshopProgressPhotos)) {
     tenantId: Number(input.tenantId || input.tenant_id || 1),
     workshopVehicleId: input.workshopVehicleId,
     plate: String(input.plate || "").trim().toUpperCase(),
+    mediaType: input.mediaType || (input.videoUrl || (input.photoUrl && (input.photoUrl.includes("video") || input.photoUrl.match(/\.(mp4|mov|webm)$/i))) ? "video" : "image"),
     photoUrl: input.photoUrl,
+    videoUrl: input.videoUrl || null,
+    fileId: input.fileId || null,
     description: input.description,
     createdAt: input.createdAt || new Date().toISOString()
   };
@@ -1231,37 +1235,84 @@ async function listWorkshopProgressPhotos(plate) {
   }
 
   if (!normalizedPlate) {
+    try {
+      const result = await pool.query(
+        `SELECT id, workshop_vehicle_id, plate, photo_url, description, created_at,
+                COALESCE(video_url, NULL) as video_url,
+                COALESCE(media_type, 'image') as media_type
+         FROM workshop_progress_photos
+         ORDER BY created_at ASC`
+      );
+      return result.rows.map((row) => ({
+        id: row.id,
+        workshopVehicleId: row.workshop_vehicle_id,
+        plate: row.plate,
+        photoUrl: row.photo_url,
+        videoUrl: row.video_url || null,
+        mediaType: row.media_type || "image",
+        description: row.description,
+        createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at
+      }));
+    } catch (_e) {
+      const result = await pool.query(
+        `SELECT id, workshop_vehicle_id, plate, photo_url, description, created_at
+         FROM workshop_progress_photos
+         ORDER BY created_at ASC`
+      );
+      return result.rows.map((row) => ({
+        id: row.id,
+        workshopVehicleId: row.workshop_vehicle_id,
+        plate: row.plate,
+        photoUrl: row.photo_url,
+        videoUrl: null,
+        mediaType: "image",
+        description: row.description,
+        createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at
+      }));
+    }
+  }
+
+  try {
     const result = await pool.query(
-      `SELECT id, workshop_vehicle_id, plate, photo_url, description, created_at
+      `SELECT id, workshop_vehicle_id, plate, photo_url, description, created_at,
+              COALESCE(video_url, NULL) as video_url,
+              COALESCE(media_type, 'image') as media_type
        FROM workshop_progress_photos
-       ORDER BY created_at ASC`
+       WHERE UPPER(plate) = $1
+       ORDER BY created_at ASC`,
+      [normalizedPlate]
     );
+
     return result.rows.map((row) => ({
       id: row.id,
       workshopVehicleId: row.workshop_vehicle_id,
       plate: row.plate,
       photoUrl: row.photo_url,
+      videoUrl: row.video_url || null,
+      mediaType: row.media_type || "image",
+      description: row.description,
+      createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at
+    }));
+  } catch (_e) {
+    const result = await pool.query(
+      `SELECT id, workshop_vehicle_id, plate, photo_url, description, created_at
+       FROM workshop_progress_photos
+       WHERE UPPER(plate) = $1
+       ORDER BY created_at ASC`,
+      [normalizedPlate]
+    );
+
+    return result.rows.map((row) => ({
+      id: row.id,
+      workshopVehicleId: row.workshop_vehicle_id,
+      plate: row.plate,
+      photoUrl: row.photo_url,
+      videoUrl: null,
+      mediaType: "image",
       description: row.description,
       createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at
     }));
   }
-
-  const result = await pool.query(
-    `SELECT id, workshop_vehicle_id, plate, photo_url, description, created_at
-     FROM workshop_progress_photos
-     WHERE UPPER(plate) = $1
-     ORDER BY created_at ASC`,
-    [normalizedPlate]
-  );
-
-  return result.rows.map((row) => ({
-    id: row.id,
-    workshopVehicleId: row.workshop_vehicle_id,
-    plate: row.plate,
-    photoUrl: row.photo_url,
-    description: row.description,
-    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at
-  }));
 }
 
 async function deleteWorkshopProgressPhoto(id) {

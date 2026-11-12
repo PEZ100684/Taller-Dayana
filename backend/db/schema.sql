@@ -119,12 +119,20 @@ CREATE TABLE IF NOT EXISTS workshop_progress_photos (
   tenant_id INTEGER REFERENCES tenants(id) DEFAULT 1,
   plate VARCHAR(20) NOT NULL,
   photo_url TEXT NOT NULL,
+  video_url TEXT,
+  media_type VARCHAR(20) DEFAULT 'image',
   description TEXT NOT NULL,
   created_at TIMESTAMP DEFAULT NOW()
 );
 
 ALTER TABLE workshop_progress_photos
 ADD COLUMN IF NOT EXISTS tenant_id INTEGER DEFAULT 1;
+
+ALTER TABLE workshop_progress_photos
+ADD COLUMN IF NOT EXISTS media_type VARCHAR(20) DEFAULT 'image';
+
+ALTER TABLE workshop_progress_photos
+ADD COLUMN IF NOT EXISTS video_url TEXT;
 
 CREATE TABLE IF NOT EXISTS reviews (
   id SERIAL PRIMARY KEY,

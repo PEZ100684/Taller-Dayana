@@ -1,3 +1,4 @@
+const fs = require("fs");
 const http = require("http");
 const https = require("https");
 const { google } = require("googleapis");
@@ -24,7 +25,8 @@ const IGNORED_FOLDER_NAMES = new Set([
   "FOTOS DUENOS",
   "GALERIA DE CASOS ATENDIDOS",
   "PLANTILLAS Y ESTIMACIONES DE PRECIOS",
-  "VEHICULOS LISTOS (ANTES Y DESPUES)"
+  "VEHICULOS LISTOS (ANTES Y DESPUES)",
+  "_PAPELERA_ADMIN"
 ]);
 
 const VIDEO_EXTENSIONS = /\.(mp4|mov|webm|m4v|avi|mkv|3gp)$/i;
@@ -49,12 +51,75 @@ function normalizePrivateKey(rawKey) {
   if (!rawKey || typeof rawKey !== "string") {
     return "";
   }
-  return rawKey.trim().replace(/^["']|["']$/g, "").replace(/\\n/g, "\n");
+  return rawKey
+    .trim()
+    .replace(/^["']|["']$/g, "")
+    .replace(/\\\\n/g, "\n")
+    .replace(/\\n/g, "\n");
+}
+
+function tryParseServiceAccountJson(raw) {
+  if (!raw || typeof raw !== "string") {
+    return null;
+  }
+  const trimmed = raw.trim();
+  if (!trimmed.startsWith("{")) {
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (parsed && typeof parsed === "object" && (parsed.private_key || parsed.client_email)) {
+      return parsed;
+    }
+  } catch (_err) {
+    // ignorar si no es JSON válido
+  }
+  return null;
 }
 
 function getServiceAccountConfig() {
-  const email = String(process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || "").trim();
-  const privateKey = normalizePrivateKey(process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY);
+  let email = String(process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || "").trim();
+  let rawKey = String(process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || "").trim();
+
+  const jsonCandidates = [
+    rawKey,
+    process.env.GOOGLE_SERVICE_ACCOUNT_JSON,
+    process.env.GOOGLE_SERVICE_ACCOUNT,
+    process.env.GOOGLE_CREDENTIALS
+  ];
+
+  const fileCandidates = [
+    process.env.GOOGLE_APPLICATION_CREDENTIALS,
+    process.env.GOOGLE_SERVICE_ACCOUNT_FILE,
+    "/etc/secrets/service-account.json",
+    "/etc/secrets/google-service-account.json",
+    "/etc/secrets/GOOGLE_SERVICE_ACCOUNT",
+    "/etc/secrets/GOOGLE_SERVICE_ACCOUNT.json"
+  ].filter(Boolean);
+
+  for (const filePath of fileCandidates) {
+    try {
+      if (fs.existsSync(filePath)) {
+        jsonCandidates.push(fs.readFileSync(filePath, "utf8"));
+      }
+    } catch (_err) {
+      // ignorar si no se puede leer
+    }
+  }
+
+  for (const candidate of jsonCandidates) {
+    const parsed = tryParseServiceAccountJson(candidate);
+    if (parsed) {
+      if (!email && parsed.client_email) {
+        email = String(parsed.client_email).trim();
+      }
+      if ((!rawKey || rawKey.trim().startsWith("{")) && parsed.private_key) {
+        rawKey = String(parsed.private_key);
+      }
+    }
+  }
+
+  const privateKey = normalizePrivateKey(rawKey);
   return {
     configured: Boolean(email && privateKey),
     email,
@@ -995,6 +1060,7 @@ async function trashDrivePlateFolder(plate) {
 
   const rootFolderId = process.env.GOOGLE_DRIVE_GALLERY_FOLDER_ID || DEFAULT_ROOT_FOLDER_ID;
   const driveClient = createDriveClient();
+  let lastSaError = null;
 
   if (driveClient) {
     try {
@@ -1007,17 +1073,73 @@ async function trashDrivePlateFolder(plate) {
         return { trashed: false, count: 0, method: "service_account", reason: "Carpeta no encontrada en Drive" };
       }
 
-      for (const folder of matching) {
-        await driveClient.files.update({
-          fileId: folder.id,
+      let removedCount = 0;
+      let actionMode = "trashed";
+      let trashBinFolderId = null;
+
+      async function getOrCreateAdminTrashFolderId() {
+        if (trashBinFolderId) {
+          return trashBinFolderId;
+        }
+        const existingBin = entries.find(
+          (item) => item.isFolder && item.name.trim().toUpperCase() === "_PAPELERA_ADMIN"
+        );
+        if (existingBin) {
+          trashBinFolderId = existingBin.id;
+          return trashBinFolderId;
+        }
+        const createdBin = await driveClient.files.create({
           supportsAllDrives: true,
-          requestBody: { trashed: true }
+          requestBody: {
+            name: "_PAPELERA_ADMIN",
+            mimeType: "application/vnd.google-apps.folder",
+            parents: [rootFolderId]
+          },
+          fields: "id"
         });
+        trashBinFolderId = createdBin.data.id;
+        return trashBinFolderId;
+      }
+
+      for (const folder of matching) {
+        try {
+          await driveClient.files.update({
+            fileId: folder.id,
+            supportsAllDrives: true,
+            requestBody: { trashed: true }
+          });
+          removedCount += 1;
+        } catch (trashErr) {
+          // Si la carpeta fue creada por el propietario en Mi unidad, un Editor tiene canTrash=false,
+          // pero sí canRemoveMyDriveParent=true y canMoveItemWithinDrive=true.
+          try {
+            await driveClient.files.update({
+              fileId: folder.id,
+              removeParents: rootFolderId,
+              supportsAllDrives: true
+            });
+            actionMode = "unlinked_from_folder";
+            removedCount += 1;
+            console.warn("⚠️ Carpeta retirada de carpeta raíz en Drive (Editor sin canTrash):", trashErr.message);
+          } catch (unlinkErr) {
+            const binId = await getOrCreateAdminTrashFolderId();
+            await driveClient.files.update({
+              fileId: folder.id,
+              addParents: binId,
+              removeParents: rootFolderId,
+              supportsAllDrives: true
+            });
+            actionMode = "moved_to_papelera_admin";
+            removedCount += 1;
+            console.warn("⚠️ Carpeta movida a _PAPELERA_ADMIN en Drive:", unlinkErr.message);
+          }
+        }
       }
       syncState.lastSuccessAt = null;
-      return { trashed: true, count: matching.length, method: "service_account" };
+      return { trashed: removedCount > 0, count: removedCount, method: "service_account", action: actionMode };
     } catch (err) {
-      console.warn("⚠️ No se pudo enviar carpeta a papelera en Drive con Service Account:", err.message);
+      lastSaError = err.message;
+      console.warn("⚠️ No se pudo eliminar/retirar carpeta en Drive con Service Account:", err.message);
     }
   }
 
@@ -1042,7 +1164,7 @@ async function trashDrivePlateFolder(plate) {
   return {
     trashed: false,
     count: 0,
-    reason: "Service Account sin permiso de Editor en la carpeta de Drive o webhook no configurado"
+    reason: lastSaError || "Service Account sin permiso de Editor en la carpeta de Drive o webhook no configurado"
   };
 }
 

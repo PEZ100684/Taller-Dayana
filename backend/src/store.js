@@ -24,9 +24,6 @@ function persistIfLocal() {
     towTrucks
   });
 }
-    workshopProgressPhotos
-  });
-}
 
 function formatDateOnly(value) {
   if (!value) {
@@ -770,7 +767,17 @@ async function listQuotes() {
   }));
 }
 
+async function triggerDriveAutoSync() {
+  try {
+    const { ensureDriveSynced } = require("./driveSync");
+    await ensureDriveSynced();
+  } catch (_err) {
+    // Continuar con datos locales/BD si Drive no responde temporalmente
+  }
+}
+
 async function getRepairStatus(plate, tenantId) {
+  await triggerDriveAutoSync();
   const pool = getPool();
   const normalized = plate.trim().toLowerCase();
   const numericTenantId = tenantId ? Number(tenantId) : null;
@@ -1015,6 +1022,7 @@ async function deleteQuote(id) {
 }
 
 async function listWorkshopVehicles() {
+  await triggerDriveAutoSync();
   const pool = getPool();
 
   if (!pool) {
@@ -1221,6 +1229,7 @@ async function addWorkshopProgressPhoto(input) {
 }
 
 async function listWorkshopProgressPhotos(plate) {
+  await triggerDriveAutoSync();
   const pool = getPool();
   const normalizedPlate = plate ? plate.trim().toUpperCase() : "";
 

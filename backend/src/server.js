@@ -13,6 +13,12 @@ const { sendQuoteWhatsAppAlerts, sendAppointmentWhatsAppAlerts } = require("./wh
 const { initializeDatabase } = require("./initDb");
 const { getVehiclePhotosDir, toPublicPhotoUrl, normalizeIncomingPhotoUrl, deleteManagedPhotoFile } = require("./photoStorage");
 const {
+  syncFromGoogleDrive,
+  startDriveSyncScheduler,
+  getDriveSyncStatus,
+  fetchDriveMediaBuffer
+} = require("./driveSync");
+const {
   listTenants,
   getTenantBySlug,
   getTenantById,
@@ -207,9 +213,9 @@ function createRateLimiter(options) {
 
 const loginLimiter = createRateLimiter({
   name: "login",
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  message: "Demasiados intentos de acceso fallidos. Por seguridad de la plataforma, intente nuevamente en 15 minutos."
+  windowMs: 5 * 60 * 1000,
+  max: 100,
+  message: "Demasiados intentos de acceso. Por seguridad, intente nuevamente en 5 minutos."
 });
 
 const submitLimiter = createRateLimiter({
@@ -346,16 +352,17 @@ app.get("/health", (_req, res) => {
 });
 
 app.post("/api/auth/login", loginLimiter, (req, res) => {
-  const { username, password } = req.body;
-  const expectedUser = process.env.ADMIN_USER || "admin";
-  const expectedPass = process.env.ADMIN_PASSWORD || "admin123";
+  const username = String(req.body?.username || "admin").trim().toLowerCase();
+  const password = String(req.body?.password || "").trim();
+  const expectedUser = (process.env.ADMIN_USER || "admin").trim().toLowerCase();
+  const expectedPass = (process.env.ADMIN_PASSWORD || "admin123").trim();
 
   if (username !== expectedUser || password !== expectedPass) {
-    return res.status(401).json({ error: "Credenciales invalidas" });
+    return res.status(401).json({ error: "Credenciales invalidas. Usuario o contraseña incorrectos." });
   }
 
   const token = signAdminToken(username);
-  return res.json({ token });
+  return res.json({ token, role: "admin" });
 });
 
 app.get("/api/services", (_req, res) => {
@@ -576,6 +583,9 @@ app.post("/api/appointments", submitLimiter, async (req, res) => {
 });
 
 app.get("/api/repairs/status/:plate", searchLimiter, async (req, res) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
   const { plate } = req.params;
   const normalizedPlate = String(plate || "").trim().toUpperCase();
   const tenantId = req.query.tenantId || (req.tenant ? req.tenant.id : null);
@@ -1140,6 +1150,31 @@ app.post("/api/admin/deduplicate-photos", requireAdmin, async (req, res) => {
   }
 });
 
+app.get("/api/drive/media/:fileId", async (req, res) => {
+  try {
+    const { contentType, buffer } = await fetchDriveMediaBuffer(req.params.fileId);
+    res.setHeader("Content-Type", contentType || "image/jpeg");
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    return res.send(buffer);
+  } catch (_error) {
+    return res.status(404).json({ error: "Imagen no disponible en Drive" });
+  }
+});
+
+app.get("/api/admin/drive-sync-status", requireAdmin, async (_req, res) => {
+  return res.json(getDriveSyncStatus());
+});
+
+app.post("/api/admin/sync-drive", requireAdmin, async (_req, res) => {
+  try {
+    const result = await syncFromGoogleDrive({ force: true });
+    return res.json(result);
+  } catch (error) {
+    return res.status(500).json({ error: error.message || "Error al sincronizar Google Drive" });
+  }
+});
+
 app.get("/api/db/status", async (_req, res) => {
   const pool = getPool();
 
@@ -1158,6 +1193,10 @@ app.get("/api/db/status", async (_req, res) => {
 async function startServer() {
   try {
     const dbStatus = await initializeDatabase();
+    syncFromGoogleDrive({ force: true }).catch((err) => {
+      console.warn("⚠️ Error inicial sincronizando Google Drive:", err.message);
+    });
+    startDriveSyncScheduler();
     if (dbStatus.initialized) {
       console.log(dbStatus.message);
     }

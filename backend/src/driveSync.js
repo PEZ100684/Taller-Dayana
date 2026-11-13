@@ -71,7 +71,7 @@ function createDriveClient() {
   const auth = new google.auth.JWT({
     email: sa.email,
     key: sa.privateKey,
-    scopes: ["https://www.googleapis.com/auth/drive.readonly"]
+    scopes: ["https://www.googleapis.com/auth/drive"]
   });
 
   return google.drive({ version: "v3", auth });
@@ -901,6 +901,151 @@ async function fetchDriveMediaBuffer(fileId) {
   throw new Error("No se pudo obtener la imagen desde Google Drive");
 }
 
+async function callDriveWebhook(payload) {
+  const webhookUrl = String(process.env.GOOGLE_SCRIPT_WEBHOOK_URL || "").trim();
+  if (!webhookUrl) {
+    return null;
+  }
+
+  const response = await fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    redirect: "follow"
+  });
+  const text = await response.text();
+  try {
+    return JSON.parse(text);
+  } catch (_err) {
+    return { ok: response.ok, raw: text };
+  }
+}
+
+async function ensureDrivePlateFolder(plate) {
+  const cleanPlate = String(plate || "").trim().toUpperCase();
+  if (!cleanPlate) {
+    return { created: false, reason: "Placa vacía" };
+  }
+
+  const rootFolderId = process.env.GOOGLE_DRIVE_GALLERY_FOLDER_ID || DEFAULT_ROOT_FOLDER_ID;
+  const driveClient = createDriveClient();
+
+  if (driveClient) {
+    try {
+      const entries = await listFolderViaServiceAccount(driveClient, rootFolderId);
+      const existing = entries.find(
+        (item) => item.isFolder && item.name.trim().toUpperCase() === cleanPlate
+      );
+      if (existing) {
+        syncState.lastSuccessAt = null;
+        return { created: false, exists: true, folderId: existing.id, method: "service_account" };
+      }
+
+      const created = await driveClient.files.create({
+        supportsAllDrives: true,
+        requestBody: {
+          name: cleanPlate,
+          mimeType: "application/vnd.google-apps.folder",
+          parents: [rootFolderId]
+        },
+        fields: "id, name"
+      });
+      syncState.lastSuccessAt = null;
+      return {
+        created: true,
+        exists: true,
+        folderId: created.data && created.data.id ? created.data.id : null,
+        method: "service_account"
+      };
+    } catch (err) {
+      console.warn("⚠️ No se pudo crear carpeta en Drive con Service Account:", err.message);
+    }
+  }
+
+  try {
+    const webhookRes = await callDriveWebhook({
+      action: "create_plate_folder",
+      folderId: rootFolderId,
+      plate: cleanPlate
+    });
+    if (webhookRes && webhookRes.ok) {
+      syncState.lastSuccessAt = null;
+      return {
+        created: Boolean(webhookRes.created),
+        exists: true,
+        folderId: webhookRes.folderId || null,
+        method: "webhook"
+      };
+    }
+  } catch (err) {
+    console.warn("⚠️ No se pudo crear carpeta en Drive vía webhook:", err.message);
+  }
+
+  return {
+    created: false,
+    reason: "Service Account sin permiso de Editor o webhook sin soporte de creación"
+  };
+}
+
+async function trashDrivePlateFolder(plate) {
+  const cleanPlate = String(plate || "").trim().toUpperCase();
+  if (!cleanPlate) {
+    return { trashed: false, count: 0, reason: "Placa vacía" };
+  }
+
+  const rootFolderId = process.env.GOOGLE_DRIVE_GALLERY_FOLDER_ID || DEFAULT_ROOT_FOLDER_ID;
+  const driveClient = createDriveClient();
+
+  if (driveClient) {
+    try {
+      const entries = await listFolderViaServiceAccount(driveClient, rootFolderId);
+      const matching = entries.filter(
+        (item) => item.isFolder && item.name.trim().toUpperCase() === cleanPlate
+      );
+      if (matching.length === 0) {
+        syncState.lastSuccessAt = null;
+        return { trashed: false, count: 0, method: "service_account", reason: "Carpeta no encontrada en Drive" };
+      }
+
+      for (const folder of matching) {
+        await driveClient.files.update({
+          fileId: folder.id,
+          supportsAllDrives: true,
+          requestBody: { trashed: true }
+        });
+      }
+      syncState.lastSuccessAt = null;
+      return { trashed: true, count: matching.length, method: "service_account" };
+    } catch (err) {
+      console.warn("⚠️ No se pudo enviar carpeta a papelera en Drive con Service Account:", err.message);
+    }
+  }
+
+  try {
+    const webhookRes = await callDriveWebhook({
+      action: "delete_plate_folder",
+      folderId: rootFolderId,
+      plate: cleanPlate
+    });
+    if (webhookRes && webhookRes.ok) {
+      syncState.lastSuccessAt = null;
+      return {
+        trashed: Boolean(webhookRes.trashed),
+        count: Number(webhookRes.count || 0),
+        method: "webhook"
+      };
+    }
+  } catch (err) {
+    console.warn("⚠️ No se pudo enviar carpeta a papelera en Drive vía webhook:", err.message);
+  }
+
+  return {
+    trashed: false,
+    count: 0,
+    reason: "Service Account sin permiso de Editor en la carpeta de Drive o webhook no configurado"
+  };
+}
+
 module.exports = {
   DEFAULT_ROOT_FOLDER_ID,
   DEFAULT_GALLERY_FOLDER_ID,
@@ -909,5 +1054,7 @@ module.exports = {
   startDriveSyncScheduler,
   getDriveSyncStatus,
   fetchDriveGalleryItems,
-  fetchDriveMediaBuffer
+  fetchDriveMediaBuffer,
+  ensureDrivePlateFolder,
+  trashDrivePlateFolder
 };

@@ -50,6 +50,7 @@ const {
   listReviews,
   createReview
 } = require("./store");
+const { ensureDrivePlateFolder, trashDrivePlateFolder } = require("./driveSync");
 
 const app = express();
 const PORT = Number(process.env.PORT || 4000);
@@ -769,7 +770,11 @@ app.post("/api/admin/workshop-vehicles", requireAdmin, async (req, res) => {
       status: status || "received",
       tenantId: req.tenantId || 1
     });
-    return res.status(201).json(item);
+    const drive = await ensureDrivePlateFolder(cleanPlate).catch((err) => ({
+      created: false,
+      reason: err.message
+    }));
+    return res.status(201).json({ ...item, drive });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -830,7 +835,13 @@ app.delete("/api/admin/workshop-vehicles/:id", requireAdmin, async (req, res) =>
       }
     }
 
-    return res.json({ deleted: true, id: deleted.id });
+    const drive = await trashDrivePlateFolder(deleted.plate).catch((err) => ({
+      trashed: false,
+      count: 0,
+      reason: err.message
+    }));
+
+    return res.json({ deleted: true, id: deleted.id, plate: deleted.plate, drive });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }

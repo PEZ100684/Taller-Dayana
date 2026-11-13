@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { handleDriveImageError } from "../driveGalleryData";
 
 const statusColors = {
   scheduled: "bg-blue-950/40 border-blue-700 text-blue-100",
@@ -47,20 +48,30 @@ export default function SeguimientoPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchStatusForPlate = useCallback(async (targetPlate) => {
+  const fetchStatusForPlate = useCallback(async (targetPlate, attempt = 0) => {
     const clean = String(targetPlate || "").trim().toUpperCase();
     if (!clean) return;
 
     setLoading(true);
     setError(null);
-    setStatus(null);
+    if (attempt === 0) {
+      setStatus(null);
+    }
 
     try {
       const tenantParam = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("tenant") : "";
-      const tenantQuery = tenantParam ? `?tenant=${encodeURIComponent(tenantParam)}` : "";
-      const response = await fetch(`${apiBaseUrl}/api/repairs/status/${clean}${tenantQuery}`);
+      const tenantQuery = tenantParam ? `&tenant=${encodeURIComponent(tenantParam)}` : "";
+      const response = await fetch(`${apiBaseUrl}/api/repairs/status/${clean}?_t=${Date.now()}${tenantQuery}`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache", Pragma: "no-cache" }
+      });
 
       if (!response.ok) {
+        if (response.status >= 500 && attempt < 1) {
+          setError("Despertando servidor en la nube... reintentando automáticamente.");
+          await new Promise((r) => setTimeout(r, 2500));
+          return fetchStatusForPlate(clean, attempt + 1);
+        }
         if (response.status === 404) {
           setError("No se encontró información para esta placa. Verifica el número de placa.");
         } else {
@@ -70,8 +81,14 @@ export default function SeguimientoPage() {
       }
 
       const data = await response.json();
+      setError(null);
       setStatus(data);
     } catch (err) {
+      if (attempt < 1) {
+        setError("Despertando servidor en la nube... reintentando automáticamente.");
+        await new Promise((r) => setTimeout(r, 2500));
+        return fetchStatusForPlate(clean, attempt + 1);
+      }
       setError("Error de conexión. Verifica tu conexión a internet.");
       console.error(err);
     } finally {
@@ -289,6 +306,8 @@ export default function SeguimientoPage() {
                                   <img
                                     src={mediaSrc}
                                     alt={item.description || "Foto de avance"}
+                                    referrerPolicy="no-referrer"
+                                    onError={(e) => handleDriveImageError(e, item, apiBaseUrl)}
                                     className="h-56 w-full object-cover transition duration-300 hover:scale-105"
                                     loading="lazy"
                                   />

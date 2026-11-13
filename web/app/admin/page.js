@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { handleDriveImageError } from "../driveGalleryData";
 
 const workTypeOptions = ["Pintura total", "Enderezado y pintura", "Enderezado"];
 const workshopStatusOptions = ["received", "in_progress", "ready"];
@@ -44,6 +45,7 @@ export default function AdminPage() {
     search: ""
   });
   const [loadingPhotos, setLoadingPhotos] = useState(false);
+  const [syncingDrive, setSyncingDrive] = useState(false);
   const [deletingRecordKey, setDeletingRecordKey] = useState("");
   const [activePhotosPlate, setActivePhotosPlate] = useState("");
   const displayPlate = (p) => (!p || String(p).startsWith("SP-") || p === "SIN PLACA" ? "Sin placa" : p);
@@ -732,29 +734,38 @@ export default function AdminPage() {
 
   const login = async () => {
     setStatus("Autenticando...");
-    const response = await fetch(`${apiBase}/api/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(credentials)
-    });
+    const payloadToSend = {
+      username: (credentials.username || "admin").trim(),
+      password: credentials.password.trim()
+    };
+    try {
+      const response = await fetch(`${apiBase}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payloadToSend)
+      });
 
-    if (!response.ok) {
-      setStatus("Error de autenticacion");
-      return;
-    }
+      if (!response.ok) {
+        const errPayload = await response.json().catch(() => ({}));
+        setStatus(errPayload.error || "Error de autenticación. Verifique su usuario y contraseña.");
+        return;
+      }
 
-    const payload = await response.json();
-    setToken(payload.token);
-    setStatus("Autenticado. Cargando datos...");
+      const payload = await response.json();
+      setToken(payload.token);
+      setStatus("Autenticado. Cargando datos...");
 
-    const authToken = payload.token;
-    const authOnlyHeaders = { Authorization: `Bearer ${authToken}` };
+      const authToken = payload.token;
+      const authOnlyHeaders = {
+        Authorization: `Bearer ${authToken}`,
+        "Cache-Control": "no-cache"
+      };
 
-    const [appointmentsResponse, quotesResponse, vehiclesResponse] = await Promise.all([
-      fetch(`${apiBase}/api/admin/appointments`, { headers: authOnlyHeaders }),
-      fetch(`${apiBase}/api/admin/quotes`, { headers: authOnlyHeaders }),
-      fetch(`${apiBase}/api/admin/workshop-vehicles`, { headers: authOnlyHeaders })
-    ]);
+      const [appointmentsResponse, quotesResponse, vehiclesResponse] = await Promise.all([
+        fetch(`${apiBase}/api/admin/appointments?_t=${Date.now()}`, { headers: authOnlyHeaders, cache: "no-store" }),
+        fetch(`${apiBase}/api/admin/quotes?_t=${Date.now()}`, { headers: authOnlyHeaders, cache: "no-store" }),
+        fetch(`${apiBase}/api/admin/workshop-vehicles?_t=${Date.now()}`, { headers: authOnlyHeaders, cache: "no-store" })
+      ]);
 
     if (appointmentsResponse.ok) {
       const appointmentsPayload = await appointmentsResponse.json();
@@ -787,6 +798,9 @@ export default function AdminPage() {
     } catch (_err) {}
 
     setStatus("Autenticado y datos actualizados");
+    } catch (err) {
+      setStatus("Error de conexión: " + err.message);
+    }
   };
 
   const handleToggleTenantStatus = (id) => {
@@ -1090,8 +1104,9 @@ export default function AdminPage() {
       return;
     }
 
-    const response = await fetch(`${apiBase}/api/admin/workshop-vehicles`, {
-      headers: { Authorization: `Bearer ${token}` }
+    const response = await fetch(`${apiBase}/api/admin/workshop-vehicles?_t=${Date.now()}`, {
+      cache: "no-store",
+      headers: { Authorization: `Bearer ${token}`, "Cache-Control": "no-cache" }
     });
 
     if (!response.ok) {
@@ -1102,6 +1117,36 @@ export default function AdminPage() {
     const payload = await response.json();
     setWorkshopVehicles(payload);
     setStatus(`Vehiculos cargados: ${payload.length}`);
+  };
+
+  const syncDriveNow = async () => {
+    if (!token) {
+      setStatus("Debe autenticarse primero");
+      return;
+    }
+
+    setSyncingDrive(true);
+    setStatus("Sincronizando carpetas y archivos desde Google Drive...");
+    try {
+      const response = await fetch(`${apiBase}/api/admin/sync-drive`, {
+        method: "POST",
+        headers: authHeaders
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setStatus(`Error al sincronizar Drive: ${data.error || response.status}`);
+        return;
+      }
+      await loadWorkshopVehicles();
+      if (activePhotosPlate) {
+        await loadPhotosByPlate(activePhotosPlate);
+      }
+      setStatus(`Google Drive sincronizado (${data.mode || "cloud"}): ${data.platesCount || 0} placas y ${data.mediaCount || 0} archivos.`);
+    } catch (_err) {
+      setStatus("Error de conexión al sincronizar Google Drive.");
+    } finally {
+      setSyncingDrive(false);
+    }
   };
 
   const registerWorkshopVehicle = async (event) => {
@@ -1167,8 +1212,9 @@ export default function AdminPage() {
     }
 
     setLoadingPhotos(true);
-    const response = await fetch(`${apiBase}/api/admin/workshop-progress-photos/${plate}`, {
-      headers: { Authorization: `Bearer ${token}` }
+    const response = await fetch(`${apiBase}/api/admin/workshop-progress-photos/${encodeURIComponent(plate)}?_t=${Date.now()}`, {
+      cache: "no-store",
+      headers: { Authorization: `Bearer ${token}`, "Cache-Control": "no-cache" }
     });
 
     if (!response.ok) {
@@ -2394,10 +2440,18 @@ export default function AdminPage() {
             <h2 className="text-xl font-semibold">Vehículos en taller ({workshopVehicles.length})</h2>
             <p className="text-xs text-zinc-400">Carros activos con seguimiento de fotos 24/7 por placa.</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-400 border border-emerald-500/20">
-              ☁️ Google Drive Conectado
+              ☁️ Google Drive Conectado 24/7
             </span>
+            <button
+              type="button"
+              disabled={syncingDrive}
+              onClick={syncDriveNow}
+              className="rounded-lg border border-emerald-500/40 bg-emerald-950/30 px-3 py-1.5 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-900/50 disabled:opacity-50"
+            >
+              {syncingDrive ? "⏳ Sincronizando..." : "☁️ Sincronizar Drive ahora"}
+            </button>
             <button
               type="button"
               onClick={loadWorkshopVehicles}
@@ -2520,6 +2574,8 @@ export default function AdminPage() {
                                 <img
                                   src={mediaSrc}
                                   alt={photo.description}
+                                  referrerPolicy="no-referrer"
+                                  onError={(e) => handleDriveImageError(e, photo, apiBase)}
                                   className="h-44 w-full object-cover"
                                 />
                               )}
@@ -2662,16 +2718,34 @@ export default function AdminPage() {
             <p className="text-zinc-300">No hay fotos para la placa seleccionada.</p>
           ) : null}
           {!loadingPhotos
-            ? progressPhotos.map((photo) => (
+            ? progressPhotos.map((photo) => {
+                const embedVideoUrl = isVideoItem(photo) ? extractDriveVideoEmbedUrl(photo) : null;
+                return (
                 <article key={photo.id} className="rounded-md border border-zinc-700 p-3">
                   <p className="text-sm text-zinc-300">{new Date(photo.createdAt).toLocaleString()}</p>
                   <p className="mb-2 text-sm text-zinc-200">{photo.description}</p>
                   {isVideoItem(photo) ? (
                     <div className="relative aspect-video max-h-48 overflow-hidden rounded-md border border-zinc-700 bg-black">
-                      <video src={resolvePhotoUrl(photo.photoUrl)} controls className="h-full w-full object-contain" />
+                      {embedVideoUrl ? (
+                        <iframe
+                          src={embedVideoUrl}
+                          className="h-full w-full border-0"
+                          allow="autoplay; encrypted-media; fullscreen"
+                          allowFullScreen
+                          title={photo.description || "Video de avance"}
+                        />
+                      ) : (
+                        <video src={resolvePhotoUrl(photo.photoUrl)} controls className="h-full w-full object-contain" />
+                      )}
                     </div>
                   ) : (
-                    <img src={resolvePhotoUrl(photo.photoUrl)} alt={photo.description} className="max-h-48 rounded-md border border-zinc-700" />
+                    <img
+                      src={resolvePhotoUrl(photo.photoUrl)}
+                      alt={photo.description}
+                      referrerPolicy="no-referrer"
+                      onError={(e) => handleDriveImageError(e, photo, apiBase)}
+                      className="max-h-48 rounded-md border border-zinc-700"
+                    />
                   )}
                   <button
                     type="button"
@@ -2681,7 +2755,8 @@ export default function AdminPage() {
                     Eliminar foto
                   </button>
                 </article>
-              ))
+                );
+              })
             : null}
         </div>
       </section>

@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { cleanGalleryOverrides, defaultBeforeAfterCases, defaultDriveGallery, ownerPhotos } from "./driveGalleryData";
+import {
+  cleanGalleryOverrides,
+  defaultBeforeAfterCases,
+  defaultDriveGallery,
+  ownerPhotos,
+  handleDriveImageError
+} from "./driveGalleryData";
 
 const services = [
   {
@@ -1039,7 +1045,7 @@ export default function Home() {
                           key={photo.id}
                           onClick={() =>
                             setSelectedLightboxPhoto({
-                              title: ` • ${photo.label}`,
+                              title: `Caso Terminado • ${photo.label}`,
                               image: photo.fullImage || photo.image
                             })
                           }
@@ -1074,7 +1080,7 @@ export default function Home() {
                           key={photo.id}
                           onClick={() =>
                             setSelectedLightboxPhoto({
-                              title: ` • ${photo.label}`,
+                              title: `Caso Terminado • ${photo.label}`,
                               image: photo.fullImage || photo.image
                             })
                           }
@@ -1158,6 +1164,8 @@ export default function Home() {
                     src={item.image}
                     alt={item.title}
                     loading="lazy"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => handleDriveImageError(e, item)}
                     className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80 transition group-hover:opacity-100" />
@@ -1227,6 +1235,8 @@ export default function Home() {
                 <img
                   src={selectedPhoto.fullImage || selectedPhoto.image}
                   alt={selectedPhoto.title}
+                  referrerPolicy="no-referrer"
+                  onError={(e) => handleDriveImageError(e, selectedPhoto)}
                   className="max-h-[72vh] w-auto object-contain"
                 />
               </div>

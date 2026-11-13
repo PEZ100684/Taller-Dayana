@@ -118,11 +118,45 @@ export const defaultDriveGallery = DRIVE_PHOTO_IDS.map((id, index) => {
   const cleanImage = cleanGalleryOverrides[id];
   return {
     id,
-    title: `Caso atendido #`,
-    image: cleanImage || `https://drive.google.com/thumbnail?id=&sz=w1000`,
-    fullImage: cleanImage || `https://drive.google.com/thumbnail?id=&sz=w1600`
+    title: `Caso atendido #${index + 1}`,
+    image: cleanImage || `https://drive.google.com/thumbnail?id=${id}&sz=w1000`,
+    fullImage: cleanImage || `https://drive.google.com/thumbnail?id=${id}&sz=w1600`
   };
 });
+
+export function extractDriveFileIdFromMedia(itemOrUrl) {
+  if (!itemOrUrl) return null;
+  if (typeof itemOrUrl === "object" && itemOrUrl.fileId) {
+    return String(itemOrUrl.fileId).trim();
+  }
+  const url = typeof itemOrUrl === "string" ? itemOrUrl : String(itemOrUrl.photoUrl || itemOrUrl.image || itemOrUrl.fullImage || "");
+  const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/) || url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  return match ? match[1] : null;
+}
+
+export function handleDriveImageError(event, itemOrUrl, apiBaseUrl = "https://taller-dayana-api.onrender.com") {
+  const img = event?.currentTarget;
+  if (!img) return;
+  const fileId = extractDriveFileIdFromMedia(itemOrUrl) || extractDriveFileIdFromMedia(img.currentSrc || img.src);
+  if (!fileId) {
+    img.onerror = null;
+    return;
+  }
+
+  const step = Number(img.dataset.driveFallback || "0");
+  if (step === 0) {
+    img.dataset.driveFallback = "1";
+    img.src = `https://lh3.googleusercontent.com/d/${fileId}=w1200`;
+    return;
+  }
+  if (step === 1) {
+    img.dataset.driveFallback = "2";
+    const cleanBase = String(apiBaseUrl || "https://taller-dayana-api.onrender.com").replace(/\/+$/, "");
+    img.src = `${cleanBase}/api/drive/media/${encodeURIComponent(fileId)}`;
+    return;
+  }
+  img.onerror = null;
+}
 
 export const ownerPhotos = {
   dagoberto: {

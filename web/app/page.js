@@ -1059,6 +1059,7 @@ export default function Home() {
                           className="group relative cursor-pointer overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900"
                         >
                           <img
+                            data-no-lightbox="true"
                             src={photo.image}
                             alt={`Placa ${vehicleCase.plate} - ${photo.label}`}
                             loading="lazy"
@@ -1094,6 +1095,7 @@ export default function Home() {
                           className="group relative cursor-pointer overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900"
                         >
                           <img
+                            data-no-lightbox="true"
                             src={photo.image}
                             alt={`Placa ${vehicleCase.plate} - ${photo.label}`}
                             loading="lazy"
@@ -1168,6 +1170,7 @@ export default function Home() {
               >
                 <div className="relative h-56 overflow-hidden bg-zinc-900">
                   <img
+                    data-no-lightbox="true"
                     src={item.image}
                     alt={item.title}
                     loading="lazy"

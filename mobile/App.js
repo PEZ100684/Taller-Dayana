@@ -13,8 +13,9 @@ export default function App() {
   const [appointment, setAppointment] = useState({ customerName: "", phone: "", vehicle: "", plate: "", appointmentDate: "" });
   const [plateQuery, setPlateQuery] = useState("");
   const [repairStatus, setRepairStatus] = useState("Sin consulta");
+  const [progressPhotos, setProgressPhotos] = useState([]);
   const [notification, setNotification] = useState("Sin notificaciones");
-  const [logoModalVisible, setLogoModalVisible] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   const postJson = async (path, payload, successMessage) => {
     try {
@@ -47,8 +48,13 @@ export default function App() {
 
       if (!statusResponse.ok) {
         setRepairStatus(statusPayload.error || "Sin datos");
+        setProgressPhotos([]);
       } else {
         setRepairStatus(`Cita: ${statusPayload.appointmentStatus} | Presupuesto: ${statusPayload.quoteStatus}`);
+        const photos = Array.isArray(statusPayload.progressPhotos)
+          ? statusPayload.progressPhotos.filter((item) => item && item.photoUrl && item.mediaType !== "video")
+          : [];
+        setProgressPhotos(photos);
       }
 
       const notificationResponse = await fetch(`${API_BASE}/api/notifications/${plateQuery}`);
@@ -75,7 +81,15 @@ export default function App() {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.brandRow}>
-          <Pressable onPress={() => setLogoModalVisible(true)} style={styles.logoButton}>
+          <Pressable
+            onPress={() =>
+              setSelectedImage({
+                source: LOGO_IMAGE,
+                caption: "Taller Dayana • Calidad & Confianza"
+              })
+            }
+            style={styles.logoButton}
+          >
             <Image source={LOGO_IMAGE} style={styles.logoThumb} />
           </Pressable>
           <View style={styles.brandTextWrap}>
@@ -85,16 +99,20 @@ export default function App() {
         </View>
 
         <Modal
-          visible={logoModalVisible}
+          visible={Boolean(selectedImage)}
           transparent
           animationType="fade"
-          onRequestClose={() => setLogoModalVisible(false)}
+          onRequestClose={() => setSelectedImage(null)}
         >
-          <Pressable style={styles.modalBackdrop} onPress={() => setLogoModalVisible(false)}>
+          <Pressable style={styles.modalBackdrop} onPress={() => setSelectedImage(null)}>
             <Pressable style={styles.modalCard} onPress={() => {}}>
-              <Image source={LOGO_IMAGE} style={styles.logoFull} resizeMode="contain" />
-              <Text style={styles.modalCaption}>Taller Dayana • Calidad &amp; Confianza</Text>
-              <Pressable style={styles.modalCloseBtn} onPress={() => setLogoModalVisible(false)}>
+              {selectedImage ? (
+                <>
+                  <Image source={selectedImage.source} style={styles.logoFull} resizeMode="contain" />
+                  <Text style={styles.modalCaption}>{selectedImage.caption}</Text>
+                </>
+              ) : null}
+              <Pressable style={styles.modalCloseBtn} onPress={() => setSelectedImage(null)}>
                 <Text style={styles.buttonText}>Cerrar</Text>
               </Pressable>
             </Pressable>
@@ -133,6 +151,24 @@ export default function App() {
           </Pressable>
           <Text style={styles.info}>{repairStatus}</Text>
           <Text style={styles.info}>Notificacion: {notification}</Text>
+          {progressPhotos.length > 0 ? (
+            <View style={styles.photosGrid}>
+              {progressPhotos.map((item) => (
+                <Pressable
+                  key={String(item.id || item.photoUrl)}
+                  onPress={() =>
+                    setSelectedImage({
+                      source: { uri: item.photoUrl },
+                      caption: item.description || `Avance placa ${item.plate || plateQuery}`
+                    })
+                  }
+                  style={styles.photoThumbWrap}
+                >
+                  <Image source={{ uri: item.photoUrl }} style={styles.photoThumb} resizeMode="cover" />
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.card}>
@@ -274,5 +310,22 @@ const styles = StyleSheet.create({
   },
   info: {
     color: "#F7F7F7"
+  },
+  photosGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 6
+  },
+  photoThumbWrap: {
+    width: "48%",
+    borderRadius: 8,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#363636"
+  },
+  photoThumb: {
+    width: "100%",
+    height: 110
   }
 });

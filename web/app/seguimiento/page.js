@@ -320,7 +320,7 @@ export default function SeguimientoPage() {
                                     alt={item.description || "Foto de avance"}
                                     referrerPolicy="no-referrer"
                                     onError={(e) => handleDriveImageError(e, item, apiBaseUrl)}
-                                    className="h-56 w-full object-cover transition duration-300 hover:scale-105"
+                                    className="h-56 w-full cursor-zoom-in object-cover transition duration-300 hover:scale-105"
                                     loading="lazy"
                                   />
                                   <span className="pointer-events-none absolute left-2 top-2 rounded bg-zinc-950/80 px-2 py-0.5 text-[11px] font-medium text-zinc-200 backdrop-blur">

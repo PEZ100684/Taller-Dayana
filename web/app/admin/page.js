@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import BrandLogo from "../components/BrandLogo";
 import { handleDriveImageError } from "../driveGalleryData";
 
 const workTypeOptions = ["Pintura total", "Enderezado y pintura", "Enderezado"];
@@ -1452,10 +1453,8 @@ export default function AdminPage() {
       <section className="section-card border-brandRed/40 bg-gradient-to-br from-zinc-950 to-zinc-900">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <img
-              src="/logo-taller-dayana.jpg"
-              alt="Logo Taller Dayana"
-              className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-brandRed/50 shadow-lg"
+            <BrandLogo
+              className="h-14 w-14 rounded-full object-cover ring-2 ring-brandRed/50 shadow-lg"
             />
             <div>
               <p className="text-sm uppercase tracking-[0.3em] text-brandRed">Panel Interno</p>

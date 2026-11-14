@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import BrandLogo from "./components/BrandLogo";
 import {
   cleanGalleryOverrides,
   defaultBeforeAfterCases,
@@ -751,11 +752,9 @@ export default function Home() {
       {/* Top Sticky Navbar */}
       <header className="sticky top-0 z-40 border-b border-zinc-800/80 bg-zinc-950/85 backdrop-blur-lg">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 md:px-8">
-          <a href="#inicio" className="flex items-center gap-3">
+          <div className="flex items-center gap-3">
             {currentTenant.slug === "taller-dayana" ? (
-              <img
-                src="/logo-taller-dayana.jpg"
-                alt="Logo Taller Dayana"
+              <BrandLogo
                 className="h-11 w-11 rounded-full object-cover ring-2 ring-brandRed/50 shadow-md shadow-brandRed/25"
               />
             ) : (
@@ -766,11 +765,11 @@ export default function Home() {
                 {currentTenant.initials}
               </span>
             )}
-            <div>
+            <a href="#inicio">
               <p className="text-base font-bold leading-tight text-white">{currentTenant.name}</p>
               <p className="text-xs text-zinc-400">{currentTenant.province}, Costa Rica</p>
-            </div>
-          </a>
+            </a>
+          </div>
 
           <nav className="hidden items-center gap-1 lg:flex">
             {navigationTabs.map((tab) => (

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import BrandLogo from "./components/BrandLogo";
+import { openMediaLightbox } from "./components/ImageLightbox";
 import {
   cleanGalleryOverrides,
   defaultBeforeAfterCases,
@@ -1489,6 +1490,19 @@ export default function Home() {
                                 <span className="pointer-events-none absolute left-1 top-1 rounded bg-red-600 px-1.5 py-0.5 text-[9px] font-bold text-white shadow">
                                   VIDEO
                                 </span>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    openMediaLightbox({
+                                      kind: "video",
+                                      src: photo.dataUrl,
+                                      title: photo.name
+                                    })
+                                  }
+                                  className="absolute right-1 top-1 z-10 rounded bg-zinc-950/90 px-1.5 py-0.5 text-[9px] font-bold text-white hover:bg-brandRed"
+                                >
+                                  ⛶ Ampliar
+                                </button>
                               </div>
                             ) : (
                               <img src={photo.dataUrl} alt={photo.name} className="h-24 w-full rounded object-cover" />

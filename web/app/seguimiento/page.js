@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import BrandLogo from "../components/BrandLogo";
+import { openMediaLightbox } from "../components/ImageLightbox";
 import { handleDriveImageError } from "../driveGalleryData";
 
 const statusColors = {
@@ -307,6 +308,19 @@ export default function SeguimientoPage() {
                                   <span className="pointer-events-none absolute left-2 top-2 rounded bg-red-600 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white shadow">
                                     ▶ Video
                                   </span>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      openMediaLightbox({
+                                        kind: embedVideoUrl ? "iframe" : "video",
+                                        src: embedVideoUrl || mediaSrc,
+                                        title: item.description || "Video de avance"
+                                      })
+                                    }
+                                    className="absolute bottom-2 right-2 z-10 rounded-md border border-zinc-600 bg-zinc-950/90 px-2.5 py-1 text-[11px] font-bold text-white shadow transition hover:border-brandRed hover:bg-brandRed"
+                                  >
+                                    ⛶ Ampliar
+                                  </button>
                                   <img
                                     src="/logo-taller-dayana.jpg"
                                     alt="Taller Dayana"

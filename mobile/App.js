@@ -1,21 +1,35 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Alert, Image, Linking, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import Constants from "expo-constants";
 
 const LOGO_IMAGE = require("./assets/logo-taller-dayana.jpg");
 
-const API_BASE = Constants.expoConfig?.extra?.apiBaseUrl || process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:4000";
-
-const gallery = ["Trabajo #1", "Trabajo #2", "Trabajo #3"];
+const API_BASE = Constants.expoConfig?.extra?.apiBaseUrl || process.env.EXPO_PUBLIC_API_BASE_URL || "https://taller-dayana-api.onrender.com";
 
 export default function App() {
   const [quote, setQuote] = useState({ customerName: "", phone: "", vehicle: "", plate: "", damageDescription: "" });
   const [appointment, setAppointment] = useState({ customerName: "", phone: "", vehicle: "", plate: "", appointmentDate: "" });
   const [plateQuery, setPlateQuery] = useState("");
   const [repairStatus, setRepairStatus] = useState("Sin consulta");
-  const [progressPhotos, setProgressPhotos] = useState([]);
+  const [progressMedia, setProgressMedia] = useState([]);
+  const [galleryItems, setGalleryItems] = useState([]);
   const [notification, setNotification] = useState("Sin notificaciones");
-  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedMedia, setSelectedMedia] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    fetch(`${API_BASE}/api/gallery`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((items) => {
+        if (active && Array.isArray(items)) {
+          setGalleryItems(items.slice(0, 12));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const postJson = async (path, payload, successMessage) => {
     try {
@@ -48,13 +62,13 @@ export default function App() {
 
       if (!statusResponse.ok) {
         setRepairStatus(statusPayload.error || "Sin datos");
-        setProgressPhotos([]);
+        setProgressMedia([]);
       } else {
         setRepairStatus(`Cita: ${statusPayload.appointmentStatus} | Presupuesto: ${statusPayload.quoteStatus}`);
-        const photos = Array.isArray(statusPayload.progressPhotos)
-          ? statusPayload.progressPhotos.filter((item) => item && item.photoUrl && item.mediaType !== "video")
+        const media = Array.isArray(statusPayload.progressPhotos)
+          ? statusPayload.progressPhotos.filter((item) => item && (item.photoUrl || item.videoUrl))
           : [];
-        setProgressPhotos(photos);
+        setProgressMedia(media);
       }
 
       const notificationResponse = await fetch(`${API_BASE}/api/notifications/${plateQuery}`);
@@ -83,7 +97,8 @@ export default function App() {
         <View style={styles.brandRow}>
           <Pressable
             onPress={() =>
-              setSelectedImage({
+              setSelectedMedia({
+                kind: "image",
                 source: LOGO_IMAGE,
                 caption: "Taller Dayana • Calidad & Confianza"
               })
@@ -99,20 +114,28 @@ export default function App() {
         </View>
 
         <Modal
-          visible={Boolean(selectedImage)}
+          visible={Boolean(selectedMedia)}
           transparent
           animationType="fade"
-          onRequestClose={() => setSelectedImage(null)}
+          onRequestClose={() => setSelectedMedia(null)}
         >
-          <Pressable style={styles.modalBackdrop} onPress={() => setSelectedImage(null)}>
+          <Pressable style={styles.modalBackdrop} onPress={() => setSelectedMedia(null)}>
             <Pressable style={styles.modalCard} onPress={() => {}}>
-              {selectedImage ? (
+              {selectedMedia ? (
                 <>
-                  <Image source={selectedImage.source} style={styles.logoFull} resizeMode="contain" />
-                  <Text style={styles.modalCaption}>{selectedImage.caption}</Text>
+                  <Image source={selectedMedia.source} style={styles.logoFull} resizeMode="contain" />
+                  <Text style={styles.modalCaption}>{selectedMedia.caption}</Text>
+                  {selectedMedia.kind === "video" && selectedMedia.videoUrl ? (
+                    <Pressable
+                      style={styles.modalVideoBtn}
+                      onPress={() => Linking.openURL(selectedMedia.videoUrl)}
+                    >
+                      <Text style={styles.buttonText}>▶ Ver video en pantalla completa</Text>
+                    </Pressable>
+                  ) : null}
                 </>
               ) : null}
-              <Pressable style={styles.modalCloseBtn} onPress={() => setSelectedImage(null)}>
+              <Pressable style={styles.modalCloseBtn} onPress={() => setSelectedMedia(null)}>
                 <Text style={styles.buttonText}>Cerrar</Text>
               </Pressable>
             </Pressable>
@@ -151,31 +174,66 @@ export default function App() {
           </Pressable>
           <Text style={styles.info}>{repairStatus}</Text>
           <Text style={styles.info}>Notificacion: {notification}</Text>
-          {progressPhotos.length > 0 ? (
+          {progressMedia.length > 0 ? (
             <View style={styles.photosGrid}>
-              {progressPhotos.map((item) => (
-                <Pressable
-                  key={String(item.id || item.photoUrl)}
-                  onPress={() =>
-                    setSelectedImage({
-                      source: { uri: item.photoUrl },
-                      caption: item.description || `Avance placa ${item.plate || plateQuery}`
-                    })
-                  }
-                  style={styles.photoThumbWrap}
-                >
-                  <Image source={{ uri: item.photoUrl }} style={styles.photoThumb} resizeMode="cover" />
-                </Pressable>
-              ))}
+              {progressMedia.map((item) => {
+                const isVideo =
+                  item.mediaType === "video" ||
+                  Boolean(item.videoUrl) ||
+                  /video/i.test(String(item.description || ""));
+                const thumbSource = item.photoUrl ? { uri: item.photoUrl } : LOGO_IMAGE;
+                return (
+                  <Pressable
+                    key={String(item.id || item.photoUrl || item.videoUrl)}
+                    onPress={() =>
+                      setSelectedMedia({
+                        kind: isVideo ? "video" : "image",
+                        source: thumbSource,
+                        videoUrl: item.videoUrl || item.photoUrl,
+                        caption: item.description || `Avance placa ${item.plate || plateQuery}`
+                      })
+                    }
+                    style={styles.photoThumbWrap}
+                  >
+                    <Image source={thumbSource} style={styles.photoThumb} resizeMode="cover" />
+                    {isVideo ? <Text style={styles.videoBadge}>▶ VIDEO</Text> : null}
+                  </Pressable>
+                );
+              })}
             </View>
           ) : null}
         </View>
 
         <View style={styles.card}>
           <Text style={styles.title}>Galeria de trabajos</Text>
-          {gallery.map((item) => (
-            <Text key={item} style={styles.info}>{item}</Text>
-          ))}
+          {galleryItems.length > 0 ? (
+            <View style={styles.photosGrid}>
+              {galleryItems.map((item, idx) => {
+                const imgUrl = item.image || item.photoUrl;
+                const isVideo = item.mediaType === "video" || Boolean(item.videoUrl);
+                const thumbSource = imgUrl ? { uri: imgUrl } : LOGO_IMAGE;
+                return (
+                  <Pressable
+                    key={String(item.id || idx)}
+                    onPress={() =>
+                      setSelectedMedia({
+                        kind: isVideo ? "video" : "image",
+                        source: thumbSource,
+                        videoUrl: item.videoUrl || imgUrl,
+                        caption: item.title || item.description || `Trabajo #${idx + 1}`
+                      })
+                    }
+                    style={styles.photoThumbWrap}
+                  >
+                    <Image source={thumbSource} style={styles.photoThumb} resizeMode="cover" />
+                    {isVideo ? <Text style={styles.videoBadge}>▶ VIDEO</Text> : null}
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : (
+            <Text style={styles.info}>Cargando trabajos...</Text>
+          )}
         </View>
 
         <View style={styles.card}>
@@ -327,5 +385,24 @@ const styles = StyleSheet.create({
   photoThumb: {
     width: "100%",
     height: 110
+  },
+  videoBadge: {
+    position: "absolute",
+    top: 6,
+    left: 6,
+    backgroundColor: "#D62828",
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "700",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4
+  },
+  modalVideoBtn: {
+    backgroundColor: "#2563eb",
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    alignItems: "center"
   }
 });

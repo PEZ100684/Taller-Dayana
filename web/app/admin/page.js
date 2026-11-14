@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import BrandLogo from "../components/BrandLogo";
+import { openMediaLightbox } from "../components/ImageLightbox";
 import { handleDriveImageError } from "../driveGalleryData";
 
 const workTypeOptions = ["Pintura total", "Enderezado y pintura", "Enderezado"];
@@ -2572,6 +2573,19 @@ export default function AdminPage() {
                                       className="h-44 w-full object-contain"
                                     />
                                   )}
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      openMediaLightbox({
+                                        kind: embedVideoUrl ? "iframe" : "video",
+                                        src: embedVideoUrl || mediaSrc,
+                                        title: photo.description || "Video de avance"
+                                      })
+                                    }
+                                    className="absolute left-2 top-2 z-10 rounded bg-zinc-950/90 px-2 py-0.5 text-[10px] font-bold text-white shadow hover:bg-brandRed"
+                                  >
+                                    ⛶ Ampliar
+                                  </button>
                                   <span className="pointer-events-none absolute bottom-2 right-2 rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white shadow">
                                     VIDEO
                                   </span>
@@ -2743,6 +2757,19 @@ export default function AdminPage() {
                       ) : (
                         <video src={resolvePhotoUrl(photo.photoUrl)} controls className="h-full w-full object-contain" />
                       )}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          openMediaLightbox({
+                            kind: embedVideoUrl ? "iframe" : "video",
+                            src: embedVideoUrl || resolvePhotoUrl(photo.photoUrl),
+                            title: photo.description || "Video de avance"
+                          })
+                        }
+                        className="absolute right-2 top-2 z-10 rounded bg-zinc-950/90 px-2 py-0.5 text-[10px] font-bold text-white shadow hover:bg-brandRed"
+                      >
+                        ⛶ Ampliar
+                      </button>
                     </div>
                   ) : (
                     <img

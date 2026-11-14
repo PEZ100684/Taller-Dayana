@@ -43,15 +43,38 @@ function formatDateTime(value) {
   }
 
   if (value instanceof Date) {
-    return value.toISOString();
+    if (Number.isNaN(value.getTime())) {
+      return null;
+    }
+    // PostgreSQL `appointment_date` is TIMESTAMP WITHOUT TIME ZONE, so pg
+    // constructs Date using the Node process timezone. Local getters preserve
+    // the exact Costa Rica wall-clock time regardless of server TZ (UTC/local).
+    const yyyy = value.getFullYear();
+    const mm = String(value.getMonth() + 1).padStart(2, "0");
+    const dd = String(value.getDate()).padStart(2, "0");
+    const hh = String(value.getHours()).padStart(2, "0");
+    const min = String(value.getMinutes()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
   }
 
-  const parsed = new Date(value);
+  const str = String(value).trim();
+  const naiveMatch = str.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/);
+  if (naiveMatch && !/(Z|[+-]\d{2}:\d{2})$/i.test(str)) {
+    return `${naiveMatch[1]}T${naiveMatch[2]}`;
+  }
+
+  const parsed = new Date(str);
   if (!Number.isNaN(parsed.getTime())) {
-    return parsed.toISOString();
+    const crDate = new Date(parsed.getTime() - 6 * 60 * 60 * 1000);
+    const yyyy = crDate.getUTCFullYear();
+    const mm = String(crDate.getUTCMonth() + 1).padStart(2, "0");
+    const dd = String(crDate.getUTCDate()).padStart(2, "0");
+    const hh = String(crDate.getUTCHours()).padStart(2, "0");
+    const min = String(crDate.getUTCMinutes()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
   }
 
-  return String(value);
+  return str;
 }
 
 function nextId(collection) {

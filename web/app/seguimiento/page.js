@@ -162,10 +162,17 @@ export default function SeguimientoPage() {
       {/* Header */}
       <section className="section-card border-brandRed/40 bg-gradient-to-br from-zinc-950 to-zinc-900">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="max-w-4xl">
-            <p className="text-sm uppercase tracking-[0.3em] text-brandRed">Seguimiento</p>
-            <h1 className="mb-2 mt-2 text-4xl font-bold">Seguimiento de tu Vehículo</h1>
-            <p className="text-lg text-zinc-300">Consulta el estado actual de tu reparación</p>
+          <div className="flex max-w-4xl items-center gap-4">
+            <img
+              src="/logo-taller-dayana.jpg"
+              alt="Logo Taller Dayana"
+              className="h-16 w-16 shrink-0 rounded-full object-cover ring-2 ring-brandRed/50 shadow-lg"
+            />
+            <div>
+              <p className="text-sm uppercase tracking-[0.3em] text-brandRed">Seguimiento</p>
+              <h1 className="mb-2 mt-2 text-4xl font-bold">Seguimiento de tu Vehículo</h1>
+              <p className="text-lg text-zinc-300">Consulta el estado actual de tu reparación</p>
+            </div>
           </div>
           <a
             href="/"
@@ -292,6 +299,7 @@ export default function SeguimientoPage() {
                                   ) : (
                                     <video
                                       src={mediaSrc}
+                                      poster="/logo-taller-dayana.jpg"
                                       controls
                                       playsInline
                                       className="h-full w-full object-contain"
@@ -300,6 +308,11 @@ export default function SeguimientoPage() {
                                   <span className="pointer-events-none absolute left-2 top-2 rounded bg-red-600 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white shadow">
                                     ▶ Video
                                   </span>
+                                  <img
+                                    src="/logo-taller-dayana.jpg"
+                                    alt="Taller Dayana"
+                                    className="pointer-events-none absolute right-2 top-2 h-8 w-8 rounded-full object-cover opacity-90 ring-1 ring-white/40 shadow"
+                                  />
                                 </div>
                               ) : (
                                 <div className="relative overflow-hidden rounded-md border border-zinc-700">

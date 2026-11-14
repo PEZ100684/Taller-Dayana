@@ -752,12 +752,20 @@ export default function Home() {
       <header className="sticky top-0 z-40 border-b border-zinc-800/80 bg-zinc-950/85 backdrop-blur-lg">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 md:px-8">
           <a href="#inicio" className="flex items-center gap-3">
-            <span
-              className="flex h-10 w-10 items-center justify-center rounded-xl font-extrabold text-white shadow-md shadow-brandRed/30"
-              style={{ backgroundColor: currentTenant.brandColor }}
-            >
-              {currentTenant.initials}
-            </span>
+            {currentTenant.slug === "taller-dayana" ? (
+              <img
+                src="/logo-taller-dayana.jpg"
+                alt="Logo Taller Dayana"
+                className="h-11 w-11 rounded-full object-cover ring-2 ring-brandRed/50 shadow-md shadow-brandRed/25"
+              />
+            ) : (
+              <span
+                className="flex h-10 w-10 items-center justify-center rounded-xl font-extrabold text-white shadow-md shadow-brandRed/30"
+                style={{ backgroundColor: currentTenant.brandColor }}
+              >
+                {currentTenant.initials}
+              </span>
+            )}
             <div>
               <p className="text-base font-bold leading-tight text-white">{currentTenant.name}</p>
               <p className="text-xs text-zinc-400">{currentTenant.province}, Costa Rica</p>

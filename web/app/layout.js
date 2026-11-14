@@ -21,6 +21,11 @@ export const metadata = {
   alternates: {
     canonical: "https://tallerdayana.vercel.app"
   },
+  icons: {
+    icon: "/logo-taller-dayana.jpg",
+    shortcut: "/logo-taller-dayana.jpg",
+    apple: "/logo-taller-dayana.jpg"
+  },
   openGraph: {
     title: "Taller Dayana | Enderezado y Pintura en Alajuela",
     description:
@@ -29,10 +34,10 @@ export const metadata = {
     siteName: "Taller Dayana",
     images: [
       {
-        url: "/cases/case-6.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Taller Dayana - Enderezado y Pintura Automotriz"
+        url: "/logo-taller-dayana.jpg",
+        width: 1024,
+        height: 1024,
+        alt: "Logo Oficial Taller Dayana - Servicio Automotriz"
       }
     ],
     locale: "es_CR",
@@ -42,7 +47,7 @@ export const metadata = {
     card: "summary_large_image",
     title: "Taller Dayana | Enderezado y Pintura en Alajuela",
     description: "Enderezado, pintura y reparación de carrocería con seguimiento 24/7 en Alajuela, Costa Rica.",
-    images: ["/cases/case-6.jpg"]
+    images: ["/logo-taller-dayana.jpg"]
   }
 };
 
@@ -51,6 +56,8 @@ const jsonLd = {
   "@type": "AutoBodyShop",
   name: "Taller Dayana",
   url: "https://tallerdayana.vercel.app",
+  logo: "https://tallerdayana.vercel.app/logo-taller-dayana.jpg",
+  image: "https://tallerdayana.vercel.app/logo-taller-dayana.jpg",
   telephone: ["+50670439248", "+50688698157"],
   email: "pescado100684@yahoo.es",
   address: {

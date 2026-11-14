@@ -1451,10 +1451,17 @@ export default function AdminPage() {
       )}
       <section className="section-card border-brandRed/40 bg-gradient-to-br from-zinc-950 to-zinc-900">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-brandRed">Panel Interno</p>
-            <h1 className="mt-2 text-3xl font-bold md:text-4xl">Panel Admin - Taller Dayana</h1>
-            <p className="mt-2 text-zinc-300">Gestión de citas, vehículos en proceso y avances de reparación.</p>
+          <div className="flex items-center gap-4">
+            <img
+              src="/logo-taller-dayana.jpg"
+              alt="Logo Taller Dayana"
+              className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-brandRed/50 shadow-lg"
+            />
+            <div>
+              <p className="text-sm uppercase tracking-[0.3em] text-brandRed">Panel Interno</p>
+              <h1 className="mt-2 text-3xl font-bold md:text-4xl">Panel Admin - Taller Dayana</h1>
+              <p className="mt-2 text-zinc-300">Gestión de citas, vehículos en proceso y avances de reparación.</p>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <a
@@ -3247,7 +3254,15 @@ export default function AdminPage() {
             <div className="rounded bg-zinc-900 p-2.5 border border-zinc-800">
               <span className="font-bold text-blue-400">12-15 seg (CTA)</span>
               <p className="mt-1 text-zinc-300">Logo Taller Dayana y WhatsApp.</p>
-              <p className="text-[11px] text-zinc-400 italic mt-1">Texto en pantalla: "Cotizá al 7043-9248 • Alajuela 📲"</p>
+              <p className="text-[11px] text-zinc-400 italic mt-1">Texto en pantalla: "Cotizá al 8869-8157 / 7043-9248 • Alajuela 📲"</p>
+              <a
+                href="/logo-taller-dayana.jpg"
+                download="logo-taller-dayana.jpg"
+                className="mt-2 inline-flex items-center gap-1.5 rounded border border-zinc-700 bg-zinc-800 px-2 py-1 text-[11px] font-semibold text-zinc-100 hover:border-brandRed"
+              >
+                <img src="/logo-taller-dayana.jpg" alt="Logo" className="h-4 w-4 rounded-full object-cover" />
+                Descargar Logo para Videos/Redes
+              </a>
             </div>
           </div>
           <p className="mt-3 text-[11px] text-zinc-400">
@@ -3382,6 +3397,15 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+
+      <button
+        type="button"
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        aria-label="Subir al inicio"
+        className="print:hidden fixed bottom-5 right-5 z-40 rounded-full bg-brandRed px-5 py-3 text-xs font-bold text-white shadow-lg shadow-black/50 transition hover:scale-105 hover:opacity-95"
+      >
+        ↑ Subir al inicio
+      </button>
     </main>
   );
 }

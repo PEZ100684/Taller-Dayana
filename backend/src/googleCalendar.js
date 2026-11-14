@@ -84,13 +84,13 @@ function parseCostaRicaDateTime(rawValue) {
   const str = String(rawValue).trim();
   // Si viene como "YYYY-MM-DDTHH:mm" sin zona horaria, interpretarlo en hora de Costa Rica (UTC-6)
   if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(str)) {
-    return new Date(`${str}:00-06:00`);
+    return new Date(`${str}:00`);
   }
   if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(str)) {
-    return new Date(`${str}-06:00`);
+    return new Date(`${str}`);
   }
   if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
-    return new Date(`${str}T09:00:00-06:00`);
+    return new Date(`${str}T09:00:00`);
   }
 
   const parsed = new Date(str);

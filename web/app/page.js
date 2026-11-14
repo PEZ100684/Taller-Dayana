@@ -1765,7 +1765,7 @@ export default function Home() {
                         ) : null}
                         <div className="flex flex-wrap gap-2 pt-1">
                           <a
-                            href={googleMapsLink}
+                            href={currentTenant.mapsLink || mapsLink}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:border-brandRed hover:text-white"
@@ -1773,7 +1773,7 @@ export default function Home() {
                             🗺️ Ver ubicación en Google Maps
                           </a>
                           <a
-                            href={wazeLink}
+                            href={currentTenant.wazeLink || wazeLink}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-sky-400 transition hover:border-sky-500 hover:text-white"

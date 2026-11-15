@@ -15,6 +15,14 @@ export default function App() {
   const [galleryItems, setGalleryItems] = useState([]);
   const [notification, setNotification] = useState("Sin notificaciones");
   const [selectedMedia, setSelectedMedia] = useState(null);
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatMessages, setChatMessages] = useState([
+    {
+      role: "model",
+      text: "¡Hola! Soy el Asistente IA de Taller Dayana con Gemini. Preguntame por precios, horarios, ubicación o el estado de tu carro indicando tu placa."
+    }
+  ]);
 
   useEffect(() => {
     let active = true;
@@ -89,6 +97,46 @@ export default function App() {
     const rawDate = String(appointment.appointmentDate || "").trim();
     const formattedDate = rawDate && !rawDate.includes("T") ? `${rawDate}T09:00` : rawDate;
     postJson("/api/appointments", { ...appointment, appointmentDate: formattedDate }, "Cita enviada");
+  };
+
+  const askGemini = async () => {
+    const text = String(chatInput || "").trim();
+    if (!text || chatLoading) {
+      return;
+    }
+
+    const nextMessages = [...chatMessages, { role: "user", text }];
+    setChatMessages(nextMessages);
+    setChatInput("");
+    setChatLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE}/api/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: text,
+          history: nextMessages.slice(1, -1)
+        })
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || !payload.reply) {
+        throw new Error(payload.error || "No se pudo consultar a Gemini");
+      }
+
+      setChatMessages((prev) => [...prev, { role: "model", text: payload.reply }]);
+    } catch (error) {
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          role: "model",
+          text: `${error.message || "Sin conexión con el asistente."} Podés escribirnos directo por WhatsApp al 7043-9248.`
+        }
+      ]);
+    } finally {
+      setChatLoading(false);
+    }
   };
 
   return (
@@ -234,6 +282,36 @@ export default function App() {
           ) : (
             <Text style={styles.info}>Cargando trabajos...</Text>
           )}
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.title}>Asistente IA (Gemini)</Text>
+          {chatMessages.map((msg, idx) => (
+            <View
+              key={`${msg.role}-${idx}`}
+              style={{
+                backgroundColor: msg.role === "user" ? "#991B1B" : "#1C1C1C",
+                borderRadius: 10,
+                padding: 10,
+                marginBottom: 6
+              }}
+            >
+              <Text style={{ color: "#FFFFFF", fontSize: 13 }}>
+                {msg.role === "user" ? "Vos: " : "Gemini: "}
+                {msg.text}
+              </Text>
+            </View>
+          ))}
+          <TextInput
+            style={styles.input}
+            placeholder="Escribí tu consulta o número de placa..."
+            placeholderTextColor="#9CA3AF"
+            value={chatInput}
+            onChangeText={setChatInput}
+          />
+          <Pressable style={styles.button} onPress={askGemini}>
+            <Text style={styles.buttonText}>{chatLoading ? "Consultando a Gemini..." : "Preguntar a Gemini"}</Text>
+          </Pressable>
         </View>
 
         <View style={styles.card}>

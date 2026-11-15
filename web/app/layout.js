@@ -1,6 +1,7 @@
 import Script from "next/script";
 import "./globals.css";
 import ImageLightbox from "./components/ImageLightbox";
+import GeminiChatWidget from "./components/GeminiChatWidget";
 
 const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || "123456789012345";
 const TIKTOK_PIXEL_ID = process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID || "";
@@ -135,6 +136,7 @@ export default function RootLayout({ children }) {
         />
         {children}
         <ImageLightbox />
+        <GeminiChatWidget />
       </body>
     </html>
   );

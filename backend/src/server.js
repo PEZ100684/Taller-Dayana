@@ -4,6 +4,7 @@ const cors = require("cors");
 const express = require("express");
 
 const { signAdminToken, requireAdmin } = require("./auth");
+const { generateWorkshopChatReply } = require("./geminiChat");
 const { services, gallery } = require("./data");
 const { getPool } = require("./db");
 const { sendQuoteNotification, sendAppointmentNotification } = require("./emailNotifier");
@@ -1198,6 +1199,30 @@ app.get("/api/db/status", async (_req, res) => {
     return res.json({ connected: true });
   } catch (error) {
     return res.status(500).json({ connected: false, error: error.message });
+  }
+});
+
+// Asistente público con Gemini conectado a datos reales del taller
+app.post("/api/chat", searchLimiter, async (req, res) => {
+  const { message, history, plate } = req.body || {};
+
+  try {
+    const result = await generateWorkshopChatReply({
+      message,
+      history,
+      plate,
+      deps: {
+        getRepairStatus,
+        listNotificationsByPlate,
+        listWorkshopProgressPhotos
+      }
+    });
+    return res.json(result);
+  } catch (error) {
+    const status = error.statusCode || 500;
+    return res.status(status).json({
+      error: error.message || "No se pudo consultar al asistente Gemini en este momento."
+    });
   }
 });
 

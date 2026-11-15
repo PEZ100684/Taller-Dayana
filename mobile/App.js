@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Alert, Image, Linking, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import Constants from "expo-constants";
 
@@ -7,6 +7,7 @@ const LOGO_IMAGE = require("./assets/logo-taller-dayana.jpg");
 const API_BASE = Constants.expoConfig?.extra?.apiBaseUrl || process.env.EXPO_PUBLIC_API_BASE_URL || "https://taller-dayana-api.onrender.com";
 
 export default function App() {
+  const scrollViewRef = useRef(null);
   const [quote, setQuote] = useState({ customerName: "", phone: "", vehicle: "", plate: "", damageDescription: "" });
   const [appointment, setAppointment] = useState({ customerName: "", phone: "", vehicle: "", plate: "", appointmentDate: "" });
   const [plateQuery, setPlateQuery] = useState("");
@@ -141,7 +142,7 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView ref={scrollViewRef} contentContainerStyle={styles.content}>
         <View style={styles.brandRow}>
           <Pressable
             onPress={() =>
@@ -330,6 +331,22 @@ export default function App() {
           </Pressable>
         </View>
       </ScrollView>
+      <Pressable
+        onPress={() => scrollViewRef.current?.scrollTo({ y: 0, animated: true })}
+        style={{
+          position: "absolute",
+          left: 16,
+          bottom: 20,
+          backgroundColor: "#18181B",
+          borderColor: "#D62828",
+          borderWidth: 1,
+          borderRadius: 999,
+          paddingHorizontal: 14,
+          paddingVertical: 10
+        }}
+      >
+        <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "700" }}>↑ Subir</Text>
+      </Pressable>
     </SafeAreaView>
   );
 }

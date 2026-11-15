@@ -2263,7 +2263,7 @@ export default function Home() {
 
       <a
         href="#inicio"
-        className="fixed bottom-5 right-5 z-40 rounded-full bg-brandRed px-5 py-3 text-xs font-bold text-white shadow-lg shadow-black/50 transition hover:scale-105 hover:opacity-95"
+        className="fixed bottom-5 left-5 z-40 rounded-full border border-zinc-700 bg-zinc-900/95 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-black/50 transition hover:scale-105 hover:border-brandRed hover:bg-brandRed"
       >
         ↑ Subir al inicio
       </a>

@@ -43,10 +43,14 @@ export default function GeminiChatWidget() {
     setInput("");
     setLoading(true);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+
     try {
       const response = await fetch(`${API_BASE}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           message: text,
           history: nextMessages.slice(1, -1)
@@ -60,14 +64,19 @@ export default function GeminiChatWidget() {
 
       setMessages((prev) => [...prev, { role: "model", text: payload.reply }]);
     } catch (error) {
+      const errorText =
+        error?.name === "AbortError"
+          ? "La consulta tardó más de lo esperado."
+          : error.message || "Hubo un problema de conexión.";
       setMessages((prev) => [
         ...prev,
         {
           role: "model",
-          text: `${error.message || "Hubo un problema de conexión."} Si preferís atención inmediata, podés escribirnos directo por WhatsApp al 7043-9248.`
+          text: `${errorText} Si preferís atención inmediata, podés escribirnos directo por WhatsApp al 7043-9248.`
         }
       ]);
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
     }
   };

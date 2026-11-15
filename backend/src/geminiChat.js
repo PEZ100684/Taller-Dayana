@@ -1,4 +1,5 @@
-const DEFAULT_GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+const DEFAULT_GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3-flash-preview";
+const FALLBACK_GEMINI_MODELS = ["gemini-flash-lite-latest", "gemini-3.1-flash-lite-preview"];
 
 const SYSTEM_INSTRUCTION = [
   "Eres el Asistente Inteligente de Taller Dayana, un taller especializado en enderezado y pintura automotriz con más de 60 años de experiencia en Barrio San José de Alajuela, Costa Rica, dirigido por Don Dagoberto y Don Randy Barrantes.",
@@ -27,13 +28,17 @@ function extractPlateCandidate(text, explicitPlate) {
     return String(explicitPlate).trim().toUpperCase();
   }
 
-  const normalized = String(text || "").toUpperCase();
-  const contextualMatch = normalized.match(/\b(?:PLACA|MATRICULA|MATRÍCULA|CARRO|VEHICULO|VEHÍCULO)\s*(?:#|NO\.?|NUMERO|NÚMERO|:)?\s*([A-Z]{2,3}-?\d{3,4}|\d{5,7}|[A-Z]{1,3}\d{3,5})\b/);
-  if (contextualMatch) {
+  const normalized = String(text || "").trim().toUpperCase();
+  const contextualMatch = normalized.match(/\b(?:PLACA|MATRICULA|MATRÍCULA|CARRO|VEHICULO|VEHÍCULO)\s*(?:#|NO\.?|NUMERO|NÚMERO|:)?\s*([A-Z0-9-]{4,10})\b/);
+  if (contextualMatch && /\d/.test(contextualMatch[1])) {
     return contextualMatch[1];
   }
 
-  const standaloneMatch = normalized.match(/\b([A-Z]{3}-\d{3}|[A-Z]{3}\d{3}|\d{6})\b/);
+  if (/^[A-Z0-9-]{4,10}$/.test(normalized) && /\d/.test(normalized)) {
+    return normalized;
+  }
+
+  const standaloneMatch = normalized.match(/\b([A-Z]{2,4}-?\d{1,4}|\d{5,7})\b/);
   return standaloneMatch ? standaloneMatch[1] : "";
 }
 
@@ -103,60 +108,80 @@ function buildGeminiContents(history, message, liveContext) {
   ];
 }
 
-async function callGeminiApi({ apiKey, model, contents }) {
+async function callGeminiSingleModel({ apiKey, model, contents, timeoutMs = 10000 }) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
-    const { GoogleGenAI } = require("@google/genai");
-    const ai = new GoogleGenAI({ apiKey });
-    const response = await ai.models.generateContent({
-      model,
-      contents,
-      config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
-        temperature: 0.4,
-        maxOutputTokens: 700
-      }
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: controller.signal,
+      body: JSON.stringify({
+        system_instruction: {
+          parts: [{ text: SYSTEM_INSTRUCTION }]
+        },
+        contents,
+        generationConfig: {
+          temperature: 0.4,
+          maxOutputTokens: 700
+        }
+      })
     });
-    if (response && typeof response.text === "string" && response.text.trim()) {
-      return response.text.trim();
-    }
-  } catch (sdkErr) {
-    if (sdkErr && sdkErr.code !== "MODULE_NOT_FOUND") {
-      throw sdkErr;
-    }
-  }
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      system_instruction: {
-        parts: [{ text: SYSTEM_INSTRUCTION }]
-      },
-      contents,
-      generationConfig: {
-        temperature: 0.4,
-        maxOutputTokens: 700
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const apiMsg = payload?.error?.message || `Error HTTP ${response.status} de Gemini`;
+      const err = new Error(apiMsg);
+      err.httpStatus = response.status;
+      throw err;
+    }
+
+    const text = payload?.candidates?.[0]?.content?.parts
+      ?.map((part) => part.text || "")
+      .join("")
+      .trim();
+
+    if (!text) {
+      throw new Error("Gemini devolvió una respuesta vacía.");
+    }
+
+    return text;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function callGeminiApi({ apiKey, model, contents }) {
+  const candidates = Array.from(new Set([model, ...FALLBACK_GEMINI_MODELS].filter(Boolean)));
+  let lastError = null;
+
+  for (const candidateModel of candidates) {
+    try {
+      const text = await callGeminiSingleModel({
+        apiKey,
+        model: candidateModel,
+        contents,
+        timeoutMs: 10000
+      });
+      return { text, usedModel: candidateModel };
+    } catch (err) {
+      lastError = err;
+      const msg = String(err?.message || "");
+      const retryable =
+        err?.name === "AbortError" ||
+        err?.httpStatus === 404 ||
+        err?.httpStatus === 429 ||
+        err?.httpStatus === 503 ||
+        /high demand|timed out|abort|not found/i.test(msg);
+      if (!retryable) {
+        throw err;
       }
-    })
-  });
-
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const apiMsg = payload?.error?.message || `Error HTTP ${response.status} de Gemini`;
-    throw new Error(apiMsg);
+    }
   }
 
-  const text = payload?.candidates?.[0]?.content?.parts
-    ?.map((part) => part.text || "")
-    .join("")
-    .trim();
-
-  if (!text) {
-    throw new Error("Gemini devolvió una respuesta vacía.");
-  }
-
-  return text;
+  throw lastError || new Error("No se pudo obtener respuesta de Gemini.");
 }
 
 async function generateWorkshopChatReply({ message, history = [], plate = "", deps = {} }) {
@@ -180,10 +205,10 @@ async function generateWorkshopChatReply({ message, history = [], plate = "", de
   const model = DEFAULT_GEMINI_MODEL;
 
   try {
-    const reply = await callGeminiApi({ apiKey, model, contents });
+    const { text, usedModel } = await callGeminiApi({ apiKey, model, contents });
     return {
-      reply,
-      model,
+      reply: text,
+      model: usedModel,
       detectedPlate: detectedPlate || null
     };
   } catch (apiError) {

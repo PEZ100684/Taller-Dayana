@@ -752,12 +752,13 @@ export default function Home() {
       )}
 
       {/* Top Sticky Navbar */}
-      <header className="sticky top-0 z-40 border-b border-zinc-800/80 bg-zinc-950/85 backdrop-blur-lg">
+      <header className="sticky top-0 z-40 border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-2xl">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-red-600/50 to-transparent" />
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 md:px-8">
           <div className="flex items-center gap-3">
             {currentTenant.slug === "taller-dayana" ? (
               <BrandLogo
-                className="h-11 w-11 rounded-full object-cover ring-2 ring-brandRed/50 shadow-md shadow-brandRed/25"
+                className="h-11 w-11 rounded-full object-cover ring-2 ring-red-600/70 shadow-lg shadow-red-600/25"
               />
             ) : (
               <span
@@ -767,18 +768,18 @@ export default function Home() {
                 {currentTenant.initials}
               </span>
             )}
-            <a href="#inicio">
-              <p className="text-base font-bold leading-tight text-white">{currentTenant.name}</p>
-              <p className="text-xs text-zinc-400">{currentTenant.province}, Costa Rica</p>
+            <a href="#inicio" className="group">
+              <p className="text-base font-extrabold tracking-tight text-white transition group-hover:text-red-400">{currentTenant.name}</p>
+              <p className="text-[11px] font-medium text-zinc-400">{currentTenant.province}, Costa Rica</p>
             </a>
           </div>
 
-          <nav className="hidden items-center gap-1 lg:flex">
+          <nav className="hidden items-center gap-1 rounded-full border border-zinc-800/80 bg-zinc-900/60 px-2 py-1 lg:flex">
             {navigationTabs.map((tab) => (
               <a
                 key={tab.id}
                 href={`#${tab.id}`}
-                className="rounded-lg px-3 py-2 text-xs font-semibold text-zinc-300 transition hover:bg-zinc-800/80 hover:text-white"
+                className="rounded-full px-3 py-1.5 text-xs font-semibold text-zinc-300 transition hover:bg-zinc-800 hover:text-white"
               >
                 {tab.label}
               </a>
@@ -788,13 +789,13 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <a
               href="/seguimiento"
-              className="rounded-xl border border-zinc-700 bg-zinc-900 px-3.5 py-2 text-xs font-semibold text-white transition hover:border-brandRed"
+              className="rounded-xl border border-zinc-700/90 bg-zinc-900/90 px-3.5 py-2 text-xs font-semibold text-zinc-100 transition hover:border-red-500 hover:text-white"
             >
               Mi Vehículo
             </a>
             <a
               href="#solicitar-presupuesto"
-              className="rounded-xl bg-brandRed px-3.5 py-2 text-xs font-semibold text-white shadow-md shadow-brandRed/25 transition hover:opacity-90"
+              className="btn-primary-glow px-4 py-2 text-xs"
             >
               Cotizar
             </a>
@@ -804,18 +805,25 @@ export default function Home() {
 
       <main className="mx-auto flex max-w-6xl flex-col gap-10 px-4 pt-6 md:px-8 md:pt-10">
         {/* Hero Section */}
-        <section className="relative overflow-hidden rounded-3xl border border-zinc-800 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black p-6 shadow-2xl md:p-12">
-          <div className="grid items-center gap-8 lg:grid-cols-[1.25fr_0.75fr]">
+        <section className="relative overflow-hidden rounded-3xl border border-zinc-800/90 bg-gradient-to-br from-zinc-900/95 via-zinc-950 to-black p-6 shadow-2xl md:p-12" style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 30px 60px -20px rgba(0,0,0,0.9)" }}>
+          <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-red-600/20 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-28 left-1/3 h-72 w-72 rounded-full bg-zinc-500/10 blur-3xl" />
+          <div className="pointer-events-none absolute inset-x-10 top-0 h-[1px] bg-gradient-to-r from-transparent via-red-500/60 to-transparent" />
+
+          <div className="relative z-10 grid items-center gap-8 lg:grid-cols-[1.25fr_0.75fr]">
             <div>
               <span
-                className="inline-flex items-center gap-2 rounded-full border px-3.5 py-1 text-xs font-semibold uppercase tracking-widest text-zinc-200"
-                style={{ borderColor: `${currentTenant.brandColor}55`, backgroundColor: `${currentTenant.brandColor}22` }}
+                className="inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-widest text-zinc-100 backdrop-blur-md"
+                style={{ borderColor: `${currentTenant.brandColor}66`, backgroundColor: `${currentTenant.brandColor}24` }}
               >
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: currentTenant.brandColor }} />
+                <span className="h-2 w-2 animate-pulse rounded-full" style={{ backgroundColor: currentTenant.brandColor }} />
                 {currentTenant.isSaasDemo ? `Taller Afiliado • ${currentTenant.province}, Costa Rica` : "Más de 60 años de tradición en Alajuela"}
               </span>
-              <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-white sm:text-5xl md:text-6xl">
-                {currentTenant.tagline} <span style={{ color: currentTenant.brandColor }}>{currentTenant.name}</span>
+              <h1 className="mt-5 text-4xl font-black tracking-tight sm:text-5xl md:text-6xl">
+                <span className="text-gradient-metallic">{currentTenant.tagline}</span>{" "}
+                <span className="drop-shadow-[0_0_24px_rgba(220,38,38,0.35)]" style={{ color: currentTenant.brandColor }}>
+                  {currentTenant.name}
+                </span>
               </h1>
               <p className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-300 md:text-lg">
                 Dirigido por <span className="font-semibold text-white">{currentTenant.ownerName}</span>. Devolvemos la línea,
@@ -826,30 +834,54 @@ export default function Home() {
               <div className="mt-7 flex flex-wrap gap-3">
                 <a
                   href="#solicitar-presupuesto"
-                  className="inline-flex items-center justify-center rounded-xl bg-brandRed px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-brandRed/30 transition hover:scale-[1.01] hover:opacity-95"
+                  className="btn-primary-glow px-6 py-3.5 text-sm"
                 >
                   Solicitar presupuesto en línea
                 </a>
                 <a
                   href="#solicitar-cita-visita"
-                  className="inline-flex items-center justify-center rounded-xl border border-zinc-600 bg-zinc-900/90 px-6 py-3.5 text-sm font-bold text-white transition hover:border-white"
+                  className="inline-flex items-center justify-center rounded-xl border border-zinc-700 bg-zinc-900/90 px-6 py-3.5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:border-zinc-400 hover:bg-zinc-800/90"
                 >
                   Agendar cita de valoración
                 </a>
                 <a
                   href="/seguimiento"
-                  className="inline-flex items-center justify-center rounded-xl border border-zinc-700 bg-zinc-950/80 px-5 py-3.5 text-sm font-semibold text-zinc-200 transition hover:border-brandRed hover:text-white"
+                  className="inline-flex items-center justify-center rounded-xl border border-zinc-800 bg-zinc-950/90 px-5 py-3.5 text-sm font-semibold text-zinc-200 transition hover:-translate-y-0.5 hover:border-red-500/70 hover:text-white"
                 >
                   Consultar estado por placa →
                 </a>
               </div>
+
+              <div className="mt-7 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                <div className="rounded-xl border border-zinc-800/90 bg-zinc-950/70 px-3 py-2.5">
+                  <p className="text-sm font-black text-white">+60 Años</p>
+                  <p className="text-[11px] text-zinc-400">Experiencia real</p>
+                </div>
+                <div className="rounded-xl border border-zinc-800/90 bg-zinc-950/70 px-3 py-2.5">
+                  <p className="text-sm font-black text-red-400">Cabina</p>
+                  <p className="text-[11px] text-zinc-400">Pintura al horno</p>
+                </div>
+                <div className="rounded-xl border border-zinc-800/90 bg-zinc-950/70 px-3 py-2.5">
+                  <p className="text-sm font-black text-white">24/7 Web</p>
+                  <p className="text-[11px] text-zinc-400">Avance por placa</p>
+                </div>
+                <div className="rounded-xl border border-zinc-800/90 bg-zinc-950/70 px-3 py-2.5">
+                  <p className="text-sm font-black text-white">Garantía</p>
+                  <p className="text-[11px] text-zinc-400">Respaldo escrito</p>
+                </div>
+              </div>
             </div>
 
             {/* Quick Contact & Highlights Card */}
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-950/90 p-5 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-widest text-brandRed">Atención directa</p>
-              <h2 className="mt-1 text-xl font-bold text-white">¿Necesita ayuda rápida?</h2>
-              <p className="mt-1 text-sm text-zinc-300">
+            <div className="glass-panel p-5">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-extrabold uppercase tracking-widest text-red-500">Atención directa</p>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" /> En línea
+                </span>
+              </div>
+              <h2 className="mt-1.5 text-xl font-extrabold text-white">¿Necesita ayuda rápida?</h2>
+              <p className="mt-1 text-xs leading-relaxed text-zinc-300">
                 Escríbanos por WhatsApp o visite nuestro taller en {currentTenant.address}.
               </p>
 
@@ -860,7 +892,7 @@ export default function Home() {
                     href={contact.link}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center justify-between rounded-xl border border-green-600/40 bg-green-600/15 px-4 py-3 text-sm font-semibold text-green-300 transition hover:bg-green-600 hover:text-white"
+                    className="flex items-center justify-between rounded-xl border border-emerald-500/35 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-300 transition hover:-translate-y-0.5 hover:bg-emerald-600 hover:text-white"
                   >
                     <span>WhatsApp {contact.number}</span>
                     <span className="text-xs opacity-90">Chatear ahora →</span>
@@ -871,16 +903,16 @@ export default function Home() {
                     href={currentTenant.mapsLink}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center justify-between rounded-xl border border-zinc-700 bg-zinc-900 px-3.5 py-3 text-xs font-semibold text-zinc-200 transition hover:border-white hover:text-white"
+                    className="flex items-center justify-between rounded-xl border border-zinc-700/90 bg-zinc-900/90 px-3.5 py-3 text-xs font-semibold text-zinc-200 transition hover:border-white hover:text-white"
                   >
                     <span>📍 Google Maps</span>
-                    <span className="text-brandRed">Ir →</span>
+                    <span className="text-red-500">Ir →</span>
                   </a>
                   <a
                     href={currentTenant.wazeLink}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center justify-between rounded-xl border border-sky-500/40 bg-sky-500/15 px-3.5 py-3 text-xs font-semibold text-sky-300 transition hover:bg-sky-500 hover:text-white"
+                    className="flex items-center justify-between rounded-xl border border-sky-500/40 bg-sky-500/10 px-3.5 py-3 text-xs font-semibold text-sky-300 transition hover:bg-sky-500 hover:text-white"
                   >
                     <span>🚗 Ir con Waze</span>
                     <span>Abrir →</span>
@@ -948,30 +980,36 @@ export default function Home() {
             {services.map((service) => (
               <article
                 key={service.title}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 transition hover:-translate-y-1 hover:border-brandRed/70"
+                className="group relative flex flex-col overflow-hidden rounded-2xl border border-zinc-800/90 bg-zinc-950/90 shadow-xl transition duration-300 hover:-translate-y-1.5 hover:border-red-500/70 hover:shadow-red-950/30"
               >
-                <div className="relative h-52 overflow-hidden">
+                <div className="relative h-56 overflow-hidden">
                   <img
                     src={service.image}
                     alt={service.title}
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                    className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
                   />
-                  <span className="absolute left-3 top-3 rounded-full bg-black/75 px-3 py-1 text-xs font-semibold text-red-300 backdrop-blur-sm">
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent" />
+                  <span className="absolute left-3.5 top-3.5 rounded-full border border-red-500/40 bg-black/80 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-red-300 backdrop-blur-md">
                     {service.badge}
                   </span>
                 </div>
                 <div className="flex flex-1 flex-col justify-between p-5">
                   <div>
-                    <h3 className="text-xl font-bold text-white">{service.title}</h3>
+                    <h3 className="text-xl font-extrabold tracking-tight text-white transition group-hover:text-red-400">
+                      {service.title}
+                    </h3>
                     <p className="mt-2 text-sm leading-relaxed text-zinc-300">{service.subtitle}</p>
                   </div>
-                  <a
-                    href="#solicitar-presupuesto"
-                    className="mt-4 inline-flex items-center text-xs font-bold uppercase tracking-wider text-brandRed transition group-hover:text-red-400"
-                  >
-                    Cotizar este servicio →
-                  </a>
+                  <div className="mt-5 flex items-center justify-between border-t border-zinc-800/80 pt-3.5">
+                    <a
+                      href="#solicitar-presupuesto"
+                      className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-red-500 transition group-hover:text-red-400"
+                    >
+                      Cotizar este servicio <span className="transition group-hover:translate-x-1">→</span>
+                    </a>
+                  </div>
                 </div>
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 scale-x-0 bg-gradient-to-r from-red-600 via-red-400 to-red-600 transition-transform duration-300 group-hover:scale-x-100" />
               </article>
             ))}
           </div>

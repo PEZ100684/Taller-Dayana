@@ -1492,6 +1492,9 @@ export default function AdminPage() {
         <a href="#vehiculos-taller" className="inline-flex items-center gap-1.5 rounded-lg border border-blue-500/50 bg-blue-500/15 px-3 py-1.5 text-xs font-bold text-blue-300 hover:bg-blue-500/25 transition">
           <span>🚗</span> Vehículos en Taller
         </a>
+        <a href="/estudio" className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/60 bg-red-600/20 px-3 py-1.5 text-xs font-bold text-red-200 hover:bg-red-600/35 transition">
+          <span>🎬</span> Estudio Redes Sociales (Fotos & Videos IA)
+        </a>
         <a href="#solicitudes-presupuestos" className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/50 bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 transition">
           <span>📋</span> Presupuestos
         </a>

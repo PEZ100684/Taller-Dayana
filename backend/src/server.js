@@ -584,16 +584,14 @@ app.post("/api/appointments", submitLimiter, async (req, res) => {
   }
 });
 
-app.get("/api/repairs/status/:plate", searchLimiter, async (req, res) => {
-  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
-  res.setHeader("Pragma", "no-cache");
-  res.setHeader("Expires", "0");
-  const { plate } = req.params;
+async function getFullRepairInfoForPlate(plate, tenantId = null) {
   const normalizedPlate = String(plate || "").trim().toUpperCase();
-  const tenantId = req.query.tenantId || (req.tenant ? req.tenant.id : null);
-  const [{ appointment, quote }, dbProgressPhotos] = await Promise.all([
+  if (!normalizedPlate) return null;
+
+  const [{ appointment, quote, workshopVehicle }, dbProgressPhotos, notifications] = await Promise.all([
     getRepairStatus(normalizedPlate, tenantId),
-    listWorkshopProgressPhotos(normalizedPlate)
+    listWorkshopProgressPhotos(normalizedPlate),
+    listNotificationsByPlate(normalizedPlate)
   ]);
 
   let drivePhotos = [];
@@ -644,7 +642,6 @@ app.get("/api/repairs/status/:plate", searchLimiter, async (req, res) => {
     ...drivePhotos
   ];
 
-  // Deduplicar por URL
   const uniquePhotos = [];
   const seenUrls = new Set();
   for (const photo of combinedPhotos) {
@@ -654,15 +651,46 @@ app.get("/api/repairs/status/:plate", searchLimiter, async (req, res) => {
     }
   }
 
-  if (!appointment && !quote && uniquePhotos.length === 0) {
+  let imageCount = 0;
+  let videoCount = 0;
+  for (const p of uniquePhotos) {
+    if (p.mediaType === "video" || (p.videoUrl && String(p.videoUrl).trim())) {
+      videoCount++;
+    } else {
+      imageCount++;
+    }
+  }
+
+  return {
+    plate: normalizedPlate,
+    appointment,
+    quote,
+    workshopVehicle,
+    notifications: Array.isArray(notifications) ? notifications : [],
+    progressPhotos: uniquePhotos,
+    imageCount,
+    videoCount,
+    totalMedia: uniquePhotos.length
+  };
+}
+
+app.get("/api/repairs/status/:plate", searchLimiter, async (req, res) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  const { plate } = req.params;
+  const tenantId = req.query.tenantId || (req.tenant ? req.tenant.id : null);
+  const info = await getFullRepairInfoForPlate(plate, tenantId);
+
+  if (!info || (!info.appointment && !info.quote && info.progressPhotos.length === 0)) {
     return res.status(404).json({ error: "No se encontro informacion para esta placa" });
   }
 
   return res.json({
-    plate: normalizedPlate,
-    appointmentStatus: appointment ? appointment.status : uniquePhotos.length > 0 ? "in_progress" : "no_appointment",
-    quoteStatus: quote ? quote.status : "no_quote",
-    progressPhotos: uniquePhotos
+    plate: info.plate,
+    appointmentStatus: info.appointment ? info.appointment.status : info.progressPhotos.length > 0 ? "in_progress" : "no_appointment",
+    quoteStatus: info.quote ? info.quote.status : "no_quote",
+    progressPhotos: info.progressPhotos
   });
 });
 
@@ -1212,6 +1240,7 @@ app.post("/api/chat", searchLimiter, async (req, res) => {
       history,
       plate,
       deps: {
+        getFullRepairInfoForPlate,
         getRepairStatus,
         listNotificationsByPlate,
         listWorkshopProgressPhotos
@@ -1224,6 +1253,93 @@ app.post("/api/chat", searchLimiter, async (req, res) => {
       error: error.message || "No se pudo consultar al asistente Gemini en este momento."
     });
   }
+});
+
+// Proxy seguro con CORS para cargar imágenes de Google Drive en el Estudio Creativo (<canvas>)
+app.get("/api/social-studio/proxy-image", async (req, res) => {
+  const rawUrl = String(req.query.url || "").trim();
+  if (!rawUrl || !/^https?:\/\//i.test(rawUrl)) {
+    return res.status(400).json({ error: "URL inválida" });
+  }
+
+  try {
+    const response = await fetch(rawUrl, { redirect: "follow" });
+    if (!response.ok) {
+      return res.status(response.status).json({ error: "No se pudo descargar la imagen" });
+    }
+    const contentType = response.headers.get("content-type") || "image/jpeg";
+    const arrayBuffer = await response.arrayBuffer();
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    return res.send(Buffer.from(arrayBuffer));
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Edición y estilizado de imágenes con Gemini IA para Redes Sociales
+app.post("/api/social-studio/ai-image", searchLimiter, async (req, res) => {
+  const apiKey = String(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "").trim();
+  if (!apiKey) {
+    return res.status(503).json({ error: "GEMINI_API_KEY no está configurada en el servidor." });
+  }
+
+  const { imageBase64, mimeType = "image/jpeg", prompt = "" } = req.body || {};
+  const cleanBase64 = String(imageBase64 || "").replace(/^data:[^;]+;base64,/, "").trim();
+  if (!cleanBase64) {
+    return res.status(400).json({ error: "Se requiere una imagen base para editar." });
+  }
+
+  const editPrompt =
+    String(prompt || "").trim() ||
+    "Mejora profesionalmente esta foto automotriz para redes sociales de Taller Dayana: realza el brillo de la pintura, limpia el entorno con iluminación dramática de estudio en tonos rojo, negro, gris metálico y blanco, manteniendo intacto el vehículo original.";
+
+  const imageModels = ["gemini-2.5-flash-image", "gemini-3.1-flash-image-preview"];
+  let lastError = "No se pudo procesar la imagen con Gemini.";
+
+  for (const model of imageModels) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                { text: editPrompt },
+                { inline_data: { mime_type: mimeType, data: cleanBase64 } }
+              ]
+            }
+          ],
+          generationConfig: {
+            responseModalities: ["TEXT", "IMAGE"]
+          }
+        })
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        lastError = payload?.error?.message || `Error HTTP ${response.status}`;
+        continue;
+      }
+
+      const parts = payload?.candidates?.[0]?.content?.parts || [];
+      const imgPart = parts.find((p) => p.inlineData?.data || p.inline_data?.data);
+      const inline = imgPart?.inlineData || imgPart?.inline_data;
+      if (inline?.data) {
+        return res.json({
+          imageDataUrl: `data:${inline.mimeType || inline.mime_type || "image/png"};base64,${inline.data}`,
+          model
+        });
+      }
+    } catch (err) {
+      lastError = err.message;
+    }
+  }
+
+  return res.status(500).json({ error: lastError });
 });
 
 async function startServer() {

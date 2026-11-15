@@ -9,9 +9,17 @@ const SYSTEM_INSTRUCTION = [
   "- NUNCA inicies con frases como '¡Hola! Un gusto saludarle de parte de Taller Dayana en Barrio San José de Alajuela' ni introducciones decorativas. No adornes la conversación: responde inmediatamente lo que el usuario preguntó.",
   "- Tono profesional, claro, breve y sin relleno.",
   "",
-  "Reglas de respuesta:",
-  "- Si consultan por una placa: da directamente el estado del vehículo, avances fotográficos registrados y que pueden ver las fotos en la sección 'Seguimiento 24/7' o por WhatsApp.",
-  "- Si no hay datos de la placa: di directamente que no aparece registro activo con esa placa y que pueden coordinar al WhatsApp 7043-9248.",
+  "FORMATO OBLIGATORIO PARA CONSULTA DE PLACAS:",
+  "- Cuando el usuario consulte por el estado de una placa con registros en el sistema, la respuesta DEBE seguir estrictamente esta estructura y redacción exacta:",
+  "",
+  "El vehículo con placa **[PLACA]** se encuentra actualmente con estado **[Estado con iniciales mayúsculas, ej: En Proceso]**.",
+  "",
+  "Contamos con **[TOTAL] avances fotográficos** registrados ([X] fotos y [Y] videos). Puede visualizar el progreso detallado en la sección **Consultar estado por placa** o **Mi Vehiculo** de nuestro sitio web.",
+  "",
+  "- Si no hay videos (0 videos), especifica '([TOTAL] fotos)'. Si hay tanto fotos como videos, especifica ambos exactamente: '([X] fotos y [Y] video/videos)'.",
+  "- Si no hay registros de la placa: 'No se encontraron registros activos para la placa **[PLACA]** en nuestro sistema. Puede consultar directamente por WhatsApp al 7043-9248.'",
+  "",
+  "Reglas de respuesta generales:",
   "- Si preguntan por presupuesto o precios: da directamente el rango orientativo en colones (₡) y aclara brevemente que depende del nivel de daño y tipo de pintura.",
   "- Si preguntan horarios, ubicación o contacto: da los datos directos sin preámbulos.",
   "- Nunca inventes precios cerrados ni datos de vehículos no existentes.",
@@ -25,6 +33,42 @@ const SYSTEM_INSTRUCTION = [
   "- Precios base aproximados: Bumper o guardabarro: ₡45,000 - ₡55,000 | Puerta: ₡55,000 | Capó: ₡65,000 | Costado o techo: ₡60,000 - ₡75,000 | Pulido: ₡45,000 | Pintura general: desde ₡550,000.",
   "- Garantía por escrito en tono, brillo y adherencia."
 ].join("\n");
+
+function formatStatusLabel(rawStatus) {
+  const s = String(rawStatus || "").trim().toLowerCase();
+  if (s === "in_progress" || s === "en_proceso" || s === "en progreso" || s === "reparacion" || s === "reparación") {
+    return "En Proceso";
+  }
+  if (s === "ready" || s === "listo" || s === "terminado" || s === "finalizado" || s === "entregado") {
+    return "Finalizado";
+  }
+  if (s === "scheduled" || s === "agendada") {
+    return "Cita Agendada";
+  }
+  if (s === "received" || s === "recibido") {
+    return "Presupuesto Recibido";
+  }
+  return "En Proceso";
+}
+
+function formatPlateDirectResponse(plate, info) {
+  const status = formatStatusLabel(info?.status || info?.workshopVehicle?.status || info?.appointment?.status || "En Proceso");
+  const total = Number(info?.totalMedia ?? (Number(info?.imageCount || 0) + Number(info?.videoCount || 0))) || 0;
+  const images = Number(info?.imageCount) || 0;
+  const videos = Number(info?.videoCount) || 0;
+
+  let breakdown = "";
+  if (images > 0 && videos > 0) {
+    breakdown = ` (${images} foto${images === 1 ? "" : "s"} y ${videos} video${videos === 1 ? "" : "s"})`;
+  } else if (videos > 0) {
+    breakdown = ` (${videos} video${videos === 1 ? "" : "s"})`;
+  } else if (images > 0) {
+    breakdown = ` (${images} foto${images === 1 ? "" : "s"})`;
+  }
+
+  let text = `El vehículo con placa **${plate}** se encuentra actualmente con estado **${status}**.\n\nContamos con **${total} avances fotográficos** registrados${breakdown}. Puede visualizar el progreso detallado en la sección **Consultar estado por placa** o **Mi Vehiculo** de nuestro sitio web.`;
+  return text;
+}
 
 function extractPlateCandidate(text, explicitPlate) {
   if (explicitPlate && String(explicitPlate).trim()) {
@@ -46,44 +90,100 @@ function extractPlateCandidate(text, explicitPlate) {
 }
 
 async function buildLiveContext(plate, deps) {
-  if (!plate || !deps || typeof deps.getRepairStatus !== "function") {
-    return "";
+  if (!plate || !deps) {
+    return { text: "", plateInfo: null };
   }
 
   try {
-    const [{ appointment, quote, workshopVehicle }, notifications, photos] = await Promise.all([
-      deps.getRepairStatus(plate, null),
-      typeof deps.listNotificationsByPlate === "function" ? deps.listNotificationsByPlate(plate) : Promise.resolve([]),
-      typeof deps.listWorkshopProgressPhotos === "function" ? deps.listWorkshopProgressPhotos(plate) : Promise.resolve([])
-    ]);
-
-    if (!appointment && !quote && !workshopVehicle && (!photos || photos.length === 0)) {
-      return `Consulta de sistema para la placa ${plate}: No se encontraron registros activos con esa placa en la base de datos.`;
+    let fullInfo = null;
+    if (typeof deps.getFullRepairInfoForPlate === "function") {
+      fullInfo = await deps.getFullRepairInfoForPlate(plate);
     }
 
-    const lines = [`Datos en tiempo real del taller para la placa ${plate}:`];
-    if (workshopVehicle) {
-      lines.push(`- Vehículo en taller: ${workshopVehicle.vehicle || "Registrado"} | Estado actual: ${workshopVehicle.status || "En proceso"} | Cliente: ${workshopVehicle.customerName || "N/D"}`);
-      if (workshopVehicle.notes) {
-        lines.push(`- Notas del taller: ${workshopVehicle.notes}`);
+    let appointment = fullInfo?.appointment;
+    let quote = fullInfo?.quote;
+    let workshopVehicle = fullInfo?.workshopVehicle;
+    let notifications = fullInfo?.notifications || [];
+    let photos = fullInfo?.progressPhotos || [];
+
+    if (!fullInfo) {
+      const [repairStatusRes, notifsRes, photosRes] = await Promise.all([
+        typeof deps.getRepairStatus === "function" ? deps.getRepairStatus(plate, null) : Promise.resolve({}),
+        typeof deps.listNotificationsByPlate === "function" ? deps.listNotificationsByPlate(plate) : Promise.resolve([]),
+        typeof deps.listWorkshopProgressPhotos === "function" ? deps.listWorkshopProgressPhotos(plate) : Promise.resolve([])
+      ]);
+      appointment = repairStatusRes?.appointment;
+      quote = repairStatusRes?.quote;
+      workshopVehicle = repairStatusRes?.workshopVehicle;
+      notifications = notifsRes;
+      photos = photosRes;
+    }
+
+    let imageCount = 0;
+    let videoCount = 0;
+    if (Array.isArray(photos)) {
+      for (const p of photos) {
+        const isVid =
+          p.mediaType === "video" ||
+          Boolean(p.videoUrl) ||
+          (p.photoUrl && (p.photoUrl.includes("video") || /\.(mp4|mov|webm)$/i.test(p.photoUrl))) ||
+          (p.description && /video/i.test(p.description));
+        if (isVid) {
+          videoCount++;
+        } else {
+          imageCount++;
+        }
       }
     }
-    if (appointment) {
-      lines.push(`- Cita registrada: Estado=${appointment.status || "scheduled"}, Fecha/hora=${appointment.appointmentDate || "Por definir"}, Vehículo=${appointment.vehicle || "N/D"}`);
+    const totalMedia = imageCount + videoCount;
+
+    const hasData = Boolean(appointment || quote || workshopVehicle || totalMedia > 0);
+    if (!hasData) {
+      return {
+        text: `Consulta de sistema para la placa ${plate}: No se encontraron registros activos con esa placa en la base de datos.`,
+        plateInfo: { plate, found: false }
+      };
     }
-    if (quote) {
-      lines.push(`- Presupuesto registrado: Estado=${quote.status || "received"}, Descripción=${quote.damageDescription || "N/D"}`);
+
+    const rawStatus = workshopVehicle?.status || appointment?.status || (totalMedia > 0 ? "in_progress" : quote?.status) || "in_progress";
+    const statusLabel = formatStatusLabel(rawStatus);
+
+    const plateInfo = {
+      plate,
+      found: true,
+      status: statusLabel,
+      totalMedia,
+      imageCount,
+      videoCount,
+      vehicle: workshopVehicle?.vehicle || appointment?.vehicle || "Vehículo",
+      customerName: workshopVehicle?.customerName || appointment?.customerName || ""
+    };
+
+    const lines = [
+      `Datos en tiempo real del taller para la placa ${plate}:`,
+      `- Estado del vehículo: ${statusLabel}`,
+      `- Total de avances fotográficos registrados: ${totalMedia}`,
+      `- Desglose exacto: ${imageCount} foto(s) y ${videoCount} video(s)`
+    ];
+    if (workshopVehicle?.vehicle) {
+      lines.push(`- Vehículo: ${workshopVehicle.vehicle} (Cliente: ${workshopVehicle.customerName || "N/D"})`);
     }
-    if (Array.isArray(photos) && photos.length > 0) {
-      lines.push(`- Avances multimedia registrados: ${photos.length} foto(s)/video(s) disponibles en Seguimiento 24/7.`);
+    if (workshopVehicle?.notes) {
+      lines.push(`- Notas del taller: ${workshopVehicle.notes}`);
     }
     if (Array.isArray(notifications) && notifications.length > 0) {
-      const latest = notifications[notifications.length - 1];
-      lines.push(`- Última notificación: ${latest.message}`);
+      lines.push(`- Última notificación: ${notifications[notifications.length - 1].message}`);
     }
-    return lines.join("\n");
+
+    return {
+      text: lines.join("\n"),
+      plateInfo
+    };
   } catch (error) {
-    return `No se pudo consultar la placa ${plate} en este momento (${error.message}).`;
+    return {
+      text: `No se pudo consultar la placa ${plate} en este momento (${error.message}).`,
+      plateInfo: null
+    };
   }
 }
 
@@ -204,7 +304,24 @@ async function generateWorkshopChatReply({ message, history = [], plate = "", de
   }
 
   const detectedPlate = extractPlateCandidate(cleanMessage, plate);
-  const liveContext = await buildLiveContext(detectedPlate, deps);
+  const { text: liveContext, plateInfo } = await buildLiveContext(detectedPlate, deps);
+
+  // Si el mensaje es una consulta directa de la placa (ej: "AROS1", "placa AROS1", "estado AROS1", etc.):
+  const isDirectPlateQuery =
+    detectedPlate &&
+    plateInfo &&
+    plateInfo.found &&
+    cleanMessage.length <= 45 &&
+    /^(?:(?:HOLA|BUENAS|CONSULTAR|ESTADO|PLACA|REVISION|VEHICULO|MI CARRO|AUTO|INFO|DE)\s*)*(?:[A-Z0-9-]{4,10})\s*(?:\?|\.|!)?$/i.test(cleanMessage);
+
+  if (isDirectPlateQuery) {
+    return {
+      reply: formatPlateDirectResponse(detectedPlate, plateInfo),
+      model: "direct-db",
+      detectedPlate
+    };
+  }
+
   const contents = buildGeminiContents(history, cleanMessage, liveContext);
   const model = DEFAULT_GEMINI_MODEL;
 
@@ -219,9 +336,9 @@ async function generateWorkshopChatReply({ message, history = [], plate = "", de
     const rawMsg = String(apiError?.message || "");
     const isBillingOrQuota = /402|429|RESOURCE_EXHAUSTED|prepayment credits|quota/i.test(rawMsg);
 
-    if (isBillingOrQuota && detectedPlate && liveContext) {
+    if (detectedPlate && plateInfo && plateInfo.found) {
       return {
-        reply: `${liveContext}\n\nPodés ver las fotos y el avance completo en la sección "Seguimiento 24/7" de la página, o escribirnos por WhatsApp al 7043-9248.`,
+        reply: formatPlateDirectResponse(detectedPlate, plateInfo),
         model: "fallback-db",
         detectedPlate
       };

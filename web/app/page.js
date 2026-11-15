@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import BrandLogo from "./components/BrandLogo";
+import BeforeAfterShowcase from "./components/BeforeAfterShowcase";
 import { openMediaLightbox } from "./components/ImageLightbox";
 import {
   cleanGalleryOverrides,
@@ -786,6 +787,12 @@ export default function Home() {
 
           <div className="flex items-center gap-2">
             <a
+              href="/estudio"
+              className="hidden rounded-xl border border-red-500/40 bg-red-600/15 px-3 py-2 text-xs font-bold text-red-300 transition hover:bg-red-600 hover:text-white sm:inline-flex"
+            >
+              🎬 Estudio Redes
+            </a>
+            <a
               href="/seguimiento"
               className="rounded-xl border border-zinc-700 bg-zinc-900 px-3.5 py-2 text-xs font-semibold text-white transition hover:border-brandRed"
             >
@@ -927,6 +934,9 @@ export default function Home() {
             ))}
           </div>
         </section>
+
+        {/* Experiencia Interactiva 3D: Comparador Antes y Después + Video */}
+        <BeforeAfterShowcase />
 
         {/* Services Section */}
         <section id="servicios" className="section-card scroll-mt-24">

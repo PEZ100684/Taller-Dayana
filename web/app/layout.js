@@ -2,6 +2,7 @@ import Script from "next/script";
 import "./globals.css";
 import ImageLightbox from "./components/ImageLightbox";
 import GeminiChatWidget from "./components/GeminiChatWidget";
+import Interactive3DBackground from "./components/Interactive3DBackground";
 
 const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || "123456789012345";
 const TIKTOK_PIXEL_ID = process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID || "";
@@ -134,7 +135,8 @@ export default function RootLayout({ children }) {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        {children}
+        <Interactive3DBackground />
+        <div className="relative z-10">{children}</div>
         <ImageLightbox />
         <GeminiChatWidget />
       </body>

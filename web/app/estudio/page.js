@@ -43,10 +43,79 @@ function loadImageElement(src) {
 }
 
 export default function SocialMediaStudioPage() {
+  const [adminToken, setAdminToken] = useState("");
+  const [authChecking, setAuthChecking] = useState(true);
+  const [loginUser, setLoginUser] = useState("admin");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+
   const [activeTab, setActiveTab] = useState("image"); // "image" | "video"
   const [drivePhotos, setDrivePhotos] = useState(FALLBACK_LOCAL_PHOTOS);
   const [plateSearch, setPlateSearch] = useState("AROS1");
   const [loadingDrive, setLoadingDrive] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const verifyStoredToken = async () => {
+      try {
+        const stored = typeof window !== "undefined" ? localStorage.getItem("td_admin_token") || "" : "";
+        if (!stored) {
+          if (active) setAuthChecking(false);
+          return;
+        }
+        const res = await fetch(`${API_BASE}/api/admin/workshop-vehicles`, {
+          headers: { Authorization: `Bearer ${stored}` },
+          cache: "no-store"
+        });
+        if (res.ok && active) {
+          setAdminToken(stored);
+        } else if (typeof window !== "undefined") {
+          localStorage.removeItem("td_admin_token");
+        }
+      } catch {
+      } finally {
+        if (active) setAuthChecking(false);
+      }
+    };
+    verifyStoredToken();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleStudioAdminLogin = async (e) => {
+    e.preventDefault();
+    setLoginError("");
+    try {
+      const response = await fetch(`${API_BASE}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: (loginUser || "admin").trim(),
+          password: loginPassword.trim()
+        })
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || !payload.token) {
+        setLoginError(payload.error || "Credenciales incorrectas. Acceso exclusivo para administradores.");
+        return;
+      }
+      if (typeof window !== "undefined") {
+        localStorage.setItem("td_admin_token", payload.token);
+      }
+      setAdminToken(payload.token);
+      setLoginPassword("");
+    } catch {
+      setLoginError("No se pudo conectar con el servidor de autenticación.");
+    }
+  };
+
+  const handleLogout = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("td_admin_token");
+    }
+    setAdminToken("");
+  };
 
   // Estado del Editor de Imagen
   const [formatId, setFormatId] = useState("9:16");
@@ -375,7 +444,10 @@ export default function SocialMediaStudioPage() {
       const base64Data = canvas.toDataURL("image/jpeg", 0.88);
       const response = await fetch(`${API_BASE}/api/social-studio/ai-image`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${adminToken}`
+        },
         body: JSON.stringify({
           imageBase64: base64Data,
           mimeType: "image/jpeg",
@@ -613,6 +685,77 @@ export default function SocialMediaStudioPage() {
     );
   };
 
+  if (authChecking) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950 p-6 text-white">
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/90 px-6 py-5 text-sm text-zinc-300">
+          Verificando sesión de administrador...
+        </div>
+      </div>
+    );
+  }
+
+  if (!adminToken) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950 p-6 text-white">
+        <div className="w-full max-w-md space-y-5 rounded-2xl border border-red-600/40 bg-zinc-900/95 p-6 shadow-2xl">
+          <div className="flex items-center gap-3">
+            <BrandLogo className="h-11 w-11 rounded-full object-cover ring-2 ring-red-600" />
+            <div>
+              <span className="inline-block rounded bg-red-600/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-red-400">
+                Uso Interno • Solo Administración
+              </span>
+              <h1 className="mt-1 text-lg font-black text-white">
+                Estudio Creativo de Redes Sociales
+              </h1>
+            </div>
+          </div>
+
+          <p className="text-xs leading-relaxed text-zinc-300">
+            Esta herramienta es exclusiva para el administrador de Taller Dayana. Iniciá sesión con tus credenciales administrativas para editar fotos y generar videos.
+          </p>
+
+          <form onSubmit={handleStudioAdminLogin} className="space-y-3">
+            <input
+              type="text"
+              value={loginUser}
+              onChange={(e) => setLoginUser(e.target.value)}
+              placeholder="Usuario administrador"
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-sm text-white outline-none focus:border-red-500"
+            />
+            <input
+              type="password"
+              value={loginPassword}
+              onChange={(e) => setLoginPassword(e.target.value)}
+              placeholder="Contraseña"
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3.5 py-2.5 text-sm text-white outline-none focus:border-red-500"
+            />
+            {loginError && (
+              <p className="rounded-lg border border-red-500/40 bg-red-950/50 px-3 py-2 text-xs text-red-200">
+                {loginError}
+              </p>
+            )}
+            <button
+              type="submit"
+              className="w-full rounded-xl bg-red-600 py-2.5 text-sm font-extrabold text-white transition hover:bg-red-500"
+            >
+              Ingresar al Estudio Admin
+            </button>
+          </form>
+
+          <div className="flex items-center justify-between border-t border-zinc-800 pt-3 text-xs">
+            <a href="/admin" className="font-semibold text-red-400 hover:text-red-300">
+              ← Ir al Panel Administrador
+            </a>
+            <a href="/" className="text-zinc-400 hover:text-white">
+              Volver al sitio público
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen pb-20 text-white">
       {/* Barra superior */}
@@ -622,7 +765,7 @@ export default function SocialMediaStudioPage() {
             <BrandLogo className="h-10 w-10 rounded-full object-cover ring-2 ring-red-600" />
             <div>
               <h1 className="text-base font-black tracking-tight text-white">
-                Estudio Creativo IA • Taller Dayana
+                Estudio Creativo IA • Solo Admin
               </h1>
               <p className="text-xs text-zinc-400">
                 Editor Personal de Fotos y Creador de Videos con Audio para Redes Sociales
@@ -632,17 +775,18 @@ export default function SocialMediaStudioPage() {
 
           <div className="flex items-center gap-2">
             <a
-              href="/"
-              className="rounded-xl border border-zinc-700 bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-200 transition hover:border-red-500 hover:text-white"
-            >
-              ← Volver al Inicio
-            </a>
-            <a
               href="/admin"
               className="rounded-xl bg-red-600 px-3.5 py-2 text-xs font-bold text-white transition hover:bg-red-500"
             >
-              Panel Admin
+              ← Volver al Panel Admin
             </a>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="rounded-xl border border-zinc-700 bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-200 transition hover:border-red-500 hover:text-white"
+            >
+              Cerrar Sesión
+            </button>
           </div>
         </div>
       </header>

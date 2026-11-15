@@ -198,50 +198,34 @@ export default function BeforeAfterShowcase({ promoVideoUrl = "/videos/taller-pr
             <p className="mt-2.5 text-xs leading-relaxed text-zinc-300">
               Conozca nuestro estándar en enderezado estructural, laboratorio de color y pintura horneada en Barrio San José de Alajuela.
             </p>
-            <div className="mt-2.5 flex flex-wrap gap-2">
-              <a
-                href="/videos/taller-reel-9x16.mp4"
-                download="Taller-Dayana-Reel-9x16.mp4"
-                className="inline-flex items-center gap-1 rounded-lg border border-red-500/40 bg-red-600/15 px-2.5 py-1.5 text-[11px] font-bold text-red-200 transition hover:bg-red-600/30"
-              >
-                ⬇️ Reel Vertical 9:16 (TikTok / IG)
-              </a>
-              <a
-                href="/videos/taller-promo.mp4"
-                download="Taller-Dayana-Promo-16x9.mp4"
-                className="inline-flex items-center gap-1 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-[11px] font-bold text-zinc-200 transition hover:border-red-500"
-              >
-                ⬇️ Video Horizontal 16:9 (FB / YT)
-              </a>
-            </div>
           </div>
 
           <div className="rounded-2xl border border-red-600/40 bg-gradient-to-r from-red-950/50 via-zinc-900 to-zinc-950 p-4 shadow-xl">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <span className="rounded-md bg-red-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
-                  Nuevo • Herramienta Personal IA
+                  Transparencia Total • 24/7
                 </span>
                 <h3 className="mt-1.5 text-base font-extrabold text-white">
-                  Estudio Creativo para Redes Sociales
+                  Seguimiento en Vivo y Valoración Express
                 </h3>
                 <p className="mt-1 text-xs text-zinc-300">
-                  Edite sus propias fotos o las de Google Drive, aplique el sello oficial de Taller Dayana y genere videos con audio en formato TikTok, Reels e Instagram.
+                  Revise el avance fotográfico y en video de su vehículo en tiempo real con su número de placa o solicite su presupuesto sin compromiso.
                 </p>
               </div>
             </div>
             <div className="mt-3.5 flex flex-wrap gap-2">
               <a
-                href="/estudio"
+                href="#seguimiento-reparacion"
                 className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-xs font-extrabold text-white shadow-lg shadow-red-600/30 transition hover:bg-red-500"
               >
-                🎨 Abrir Estudio de Fotos y Videos
+                🔍 Consultar Placa en Vivo
               </a>
               <a
-                href="#seguimiento-reparacion"
+                href="#solicitar-presupuesto"
                 className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 bg-zinc-900 px-3.5 py-2.5 text-xs font-bold text-zinc-200 transition hover:border-red-500 hover:text-white"
               >
-                🔍 Consultar Placa en Vivo
+                📋 Solicitar Presupuesto
               </a>
             </div>
           </div>

@@ -1278,8 +1278,8 @@ app.get("/api/social-studio/proxy-image", async (req, res) => {
   }
 });
 
-// Edición y estilizado de imágenes con Gemini IA para Redes Sociales
-app.post("/api/social-studio/ai-image", searchLimiter, async (req, res) => {
+// Edición y estilizado de imágenes con Gemini IA para Redes Sociales (Solo Administrador)
+app.post("/api/social-studio/ai-image", requireAdmin, searchLimiter, async (req, res) => {
   const apiKey = String(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "").trim();
   if (!apiKey) {
     return res.status(503).json({ error: "GEMINI_API_KEY no está configurada en el servidor." });

@@ -1,4 +1,4 @@
-const DEFAULT_GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const DEFAULT_GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
 
 const SYSTEM_INSTRUCTION = [
   "Eres el Asistente Inteligente de Taller Dayana, un taller especializado en enderezado y pintura automotriz con más de 60 años de experiencia en Barrio San José de Alajuela, Costa Rica, dirigido por Don Dagoberto y Don Randy Barrantes.",
@@ -178,13 +178,34 @@ async function generateWorkshopChatReply({ message, history = [], plate = "", de
   const liveContext = await buildLiveContext(detectedPlate, deps);
   const contents = buildGeminiContents(history, cleanMessage, liveContext);
   const model = DEFAULT_GEMINI_MODEL;
-  const reply = await callGeminiApi({ apiKey, model, contents });
 
-  return {
-    reply,
-    model,
-    detectedPlate: detectedPlate || null
-  };
+  try {
+    const reply = await callGeminiApi({ apiKey, model, contents });
+    return {
+      reply,
+      model,
+      detectedPlate: detectedPlate || null
+    };
+  } catch (apiError) {
+    const rawMsg = String(apiError?.message || "");
+    const isBillingOrQuota = /402|429|RESOURCE_EXHAUSTED|prepayment credits|quota/i.test(rawMsg);
+
+    if (isBillingOrQuota && detectedPlate && liveContext) {
+      return {
+        reply: `${liveContext}\n\nPodés ver las fotos y el avance completo en la sección "Seguimiento 24/7" de la página, o escribirnos por WhatsApp al 7043-9248.`,
+        model: "fallback-db",
+        detectedPlate
+      };
+    }
+
+    if (isBillingOrQuota) {
+      const err = new Error("El servicio de Gemini alcanzó temporalmente su límite de créditos en Google AI Studio. Por favor escribinos directo por WhatsApp al 7043-9248 para atenderte de inmediato.");
+      err.statusCode = 503;
+      throw err;
+    }
+
+    throw apiError;
+  }
 }
 
 module.exports = {

@@ -974,7 +974,7 @@ export default function Home() {
 
         {/* Barra de Accesos Rápidos (Quick Action Hub) */}
         <section aria-label="Accesos rápidos" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <a href="#solicitar-presupuesto" className="quick-access-card hover:border-red-500/70">
+          <a href="#solicitar-presupuesto" className="group quick-access-card hover:border-red-500/70">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-red-500/40 bg-red-600/20 text-red-400 transition group-hover:bg-red-600 group-hover:text-white">
               <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2Z" />
@@ -987,7 +987,7 @@ export default function Home() {
             <span className="text-zinc-500 transition group-hover:translate-x-1 group-hover:text-red-400">→</span>
           </a>
 
-          <a href="/seguimiento" className="quick-access-card hover:border-sky-500/70">
+          <a href="/seguimiento" className="group quick-access-card hover:border-sky-500/70">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-sky-500/40 bg-sky-500/15 text-sky-300 transition group-hover:bg-sky-500 group-hover:text-white">
               <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
                 <circle cx="11" cy="11" r="7" />
@@ -1001,7 +1001,7 @@ export default function Home() {
             <span className="text-zinc-500 transition group-hover:translate-x-1 group-hover:text-sky-400">→</span>
           </a>
 
-          <a href="#solicitar-cita-visita" className="quick-access-card hover:border-emerald-500/70">
+          <a href="#solicitar-cita-visita" className="group quick-access-card hover:border-emerald-500/70">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-emerald-500/40 bg-emerald-500/15 text-emerald-300 transition group-hover:bg-emerald-600 group-hover:text-white">
               <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
                 <rect width="18" height="18" x="3" y="4" rx="2" />
@@ -1019,7 +1019,7 @@ export default function Home() {
             href={currentTenant.whatsappContacts[0]?.link || "https://wa.me/50670439248"}
             target="_blank"
             rel="noreferrer"
-            className="quick-access-card hover:border-zinc-500"
+            className="group quick-access-card hover:border-zinc-500"
           >
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-800/80 text-zinc-200 transition group-hover:bg-white group-hover:text-black">
               <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">

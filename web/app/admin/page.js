@@ -24,10 +24,12 @@ export default function AdminPage() {
   const [vehicleForm, setVehicleForm] = useState({
     plate: "",
     customerName: "",
+    customerPhone: "",
     workType: workTypeOptions[0],
     entryDate: new Date().toISOString().slice(0, 10),
     status: "received"
   });
+  const [lastWhatsAppNotice, setLastWhatsAppNotice] = useState(null);
   const [photoForm, setPhotoForm] = useState({
     plate: "",
     description: "",
@@ -1171,6 +1173,7 @@ export default function AdminPage() {
         ...vehicleForm,
         plate: vehicleForm.plate ? vehicleForm.plate.toUpperCase().trim() : "",
         customerName: vehicleForm.customerName.trim(),
+        customerPhone: (vehicleForm.customerPhone || "").trim(),
         entryDate: vehicleForm.entryDate || new Date().toISOString().slice(0, 10)
       })
     });
@@ -1185,6 +1188,7 @@ export default function AdminPage() {
     setVehicleForm({
       plate: "",
       customerName: "",
+      customerPhone: "",
       workType: workTypeOptions[0],
       entryDate: new Date().toISOString().slice(0, 10),
       status: "received"
@@ -1265,8 +1269,16 @@ export default function AdminPage() {
     }
 
     const createdPayload = await response.json();
-    const uploadedCount = Array.isArray(createdPayload) ? createdPayload.length : 1;
-    setStatus(`Fotos de avance subidas: ${uploadedCount}`);
+    const uploadedCount = Array.isArray(createdPayload)
+      ? createdPayload.length
+      : Number(createdPayload?.count || (Array.isArray(createdPayload?.photos) ? createdPayload.photos.length : 1));
+    const waNotice = createdPayload?.whatsappNotification || null;
+    setLastWhatsAppNotice(waNotice);
+    setStatus(
+      waNotice?.sentAutomatically
+        ? `Fotos de avance subidas (${uploadedCount}) y aviso enviado automáticamente por WhatsApp al cliente.`
+        : `Fotos de avance subidas: ${uploadedCount}`
+    );
     const activePlate = photoForm.plate.toUpperCase().trim();
     setPhotoForm({ plate: activePlate, description: "", files: [] });
     setPhotoPreview(null);
@@ -2407,6 +2419,13 @@ export default function AdminPage() {
             placeholder="Nombre del cliente"
             required
           />
+          <input
+            type="tel"
+            value={vehicleForm.customerPhone}
+            onChange={(e) => setVehicleForm((prev) => ({ ...prev, customerPhone: e.target.value }))}
+            className="rounded-md border border-emerald-600/60 bg-zinc-950 p-3 text-white placeholder:text-zinc-400"
+            placeholder="Celular / WhatsApp del cliente (ej: 7043-9248)"
+          />
           <select
             value={vehicleForm.workType}
             onChange={(e) => setVehicleForm((prev) => ({ ...prev, workType: e.target.value }))}
@@ -2740,6 +2759,42 @@ export default function AdminPage() {
             Subir foto
           </button>
         </form>
+
+        {lastWhatsAppNotice ? (
+          <div className="space-y-2 rounded-xl border border-emerald-500/50 bg-emerald-950/40 p-4 text-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="font-bold text-emerald-300">
+                {lastWhatsAppNotice.sentAutomatically
+                  ? `✅ WhatsApp enviado automáticamente (${lastWhatsAppNotice.phone})`
+                  : lastWhatsAppNotice.whatsappUrl
+                    ? `📲 Aviso de WhatsApp listo para placa ${lastWhatsAppNotice.plate} (${lastWhatsAppNotice.phone})`
+                    : `⚠️ Placa ${lastWhatsAppNotice.plate} sin celular registrado para WhatsApp`}
+              </p>
+              <button
+                type="button"
+                onClick={() => setLastWhatsAppNotice(null)}
+                className="text-xs text-zinc-400 hover:text-white"
+              >
+                Cerrar
+              </button>
+            </div>
+            {lastWhatsAppNotice.message ? (
+              <p className="whitespace-pre-line rounded-lg border border-zinc-800 bg-zinc-950/80 p-3 text-xs text-zinc-200">
+                {lastWhatsAppNotice.message}
+              </p>
+            ) : null}
+            {lastWhatsAppNotice.whatsappUrl && !lastWhatsAppNotice.sentAutomatically ? (
+              <a
+                href={lastWhatsAppNotice.whatsappUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-extrabold text-white transition hover:bg-emerald-500"
+              >
+                📲 Enviar notificación por WhatsApp al cliente ahora →
+              </a>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="space-y-2 rounded-md border border-zinc-700 bg-zinc-950 p-3">
           <p className="font-semibold text-white">Historial de fotos por placa</p>

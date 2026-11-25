@@ -159,6 +159,7 @@ function buildWorkshopVehicleRow(input, id = nextId(workshopVehicles)) {
     tenantId: Number(input.tenantId || input.tenant_id || 1),
     plate: String(input.plate || "").trim().toUpperCase(),
     customerName: input.customerName,
+    customerPhone: String(input.customerPhone || input.customer_phone || "").trim(),
     workType: input.workType,
     entryDate: input.entryDate,
     status: input.status || "received",
@@ -977,21 +978,34 @@ async function deleteAppointment(id) {
   };
 }
 
+let customerPhoneColumnChecked = false;
+async function ensureCustomerPhoneColumn(pool) {
+  if (customerPhoneColumnChecked || !pool) return;
+  try {
+    await pool.query(`ALTER TABLE workshop_vehicles ADD COLUMN IF NOT EXISTS customer_phone TEXT`);
+    customerPhoneColumnChecked = true;
+  } catch {
+    // Ignorar si no tiene permisos o ya existe
+  }
+}
+
 async function registerWorkshopVehicle(input) {
   const pool = getPool();
+  const cleanPhone = String(input.customerPhone || input.customer_phone || "").trim();
 
   if (!pool) {
-    const item = buildWorkshopVehicleRow(input);
+    const item = buildWorkshopVehicleRow({ ...input, customerPhone: cleanPhone });
     workshopVehicles.push(item);
     persistIfLocal();
     return item;
   }
 
+  await ensureCustomerPhoneColumn(pool);
   const result = await pool.query(
-    `INSERT INTO workshop_vehicles (plate, customer_name, work_type, entry_date, status)
-     VALUES ($1, $2, $3, $4, $5)
-     RETURNING id, plate, customer_name, work_type, entry_date, status, created_at`,
-    [input.plate, input.customerName, input.workType, input.entryDate, input.status || "received"]
+    `INSERT INTO workshop_vehicles (plate, customer_name, customer_phone, work_type, entry_date, status)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING id, plate, customer_name, customer_phone, work_type, entry_date, status, created_at`,
+    [input.plate, input.customerName, cleanPhone, input.workType, input.entryDate, input.status || "received"]
   );
 
   const row = result.rows[0];
@@ -999,6 +1013,7 @@ async function registerWorkshopVehicle(input) {
     id: row.id,
     plate: row.plate,
     customerName: row.customer_name,
+    customerPhone: row.customer_phone || "",
     workType: row.work_type,
     entryDate: formatDateOnly(row.entry_date),
     status: row.status,
@@ -1066,11 +1081,13 @@ async function listWorkshopVehicles() {
       });
   }
 
+  await ensureCustomerPhoneColumn(pool);
   const result = await pool.query(
     `SELECT
       wv.id,
       wv.plate,
       wv.customer_name,
+      wv.customer_phone,
       wv.work_type,
       wv.entry_date,
       wv.status,
@@ -1087,6 +1104,7 @@ async function listWorkshopVehicles() {
     id: row.id,
     plate: row.plate,
     customerName: row.customer_name,
+    customerPhone: row.customer_phone || "",
     workType: row.work_type,
     entryDate: formatDateOnly(row.entry_date),
     status: row.status,
@@ -1094,6 +1112,46 @@ async function listWorkshopVehicles() {
     photoCount: row.photo_count,
     lastPhotoAt: row.last_photo_at instanceof Date ? row.last_photo_at.toISOString() : row.last_photo_at
   }));
+}
+
+async function getCustomerContactByPlate(plate) {
+  const cleanPlate = String(plate || "").trim().toUpperCase();
+  if (!cleanPlate) return null;
+  const pool = getPool();
+
+  if (!pool) {
+    const vehicle = [...workshopVehicles].reverse().find((v) => String(v.plate || "").trim().toUpperCase() === cleanPlate);
+    const appt = [...appointments].reverse().find((a) => String(a.plate || "").trim().toUpperCase() === cleanPlate);
+    const quote = [...quotes].reverse().find((q) => String(q.plate || "").trim().toUpperCase() === cleanPlate);
+    const customerName = vehicle?.customerName || appt?.name || quote?.name || "";
+    const customerPhone = vehicle?.customerPhone || appt?.phone || quote?.phone || "";
+    if (!customerName && !customerPhone) return null;
+    return { plate: cleanPlate, customerName, customerPhone };
+  }
+
+  await ensureCustomerPhoneColumn(pool);
+  const [wsRes, apptRes, quoteRes] = await Promise.all([
+    pool.query(
+      `SELECT customer_name, customer_phone FROM workshop_vehicles WHERE UPPER(plate) = $1 ORDER BY id DESC LIMIT 1`,
+      [cleanPlate]
+    ).catch(() => ({ rows: [] })),
+    pool.query(
+      `SELECT name, phone FROM appointments WHERE UPPER(plate) = $1 ORDER BY id DESC LIMIT 1`,
+      [cleanPlate]
+    ).catch(() => ({ rows: [] })),
+    pool.query(
+      `SELECT name, phone FROM quotes WHERE UPPER(plate) = $1 ORDER BY id DESC LIMIT 1`,
+      [cleanPlate]
+    ).catch(() => ({ rows: [] }))
+  ]);
+
+  const ws = wsRes.rows[0];
+  const appt = apptRes.rows[0];
+  const quote = quoteRes.rows[0];
+  const customerName = ws?.customer_name || appt?.name || quote?.name || "";
+  const customerPhone = ws?.customer_phone || appt?.phone || quote?.phone || "";
+  if (!customerName && !customerPhone) return null;
+  return { plate: cleanPlate, customerName, customerPhone };
 }
 
 async function updateWorkshopVehicleStatus(id, status) {
@@ -1638,6 +1696,7 @@ module.exports = {
   deleteAppointment,
   registerWorkshopVehicle,
   listWorkshopVehicles,
+  getCustomerContactByPlate,
   updateWorkshopVehicleStatus,
   deleteWorkshopVehicle,
   deleteQuote,

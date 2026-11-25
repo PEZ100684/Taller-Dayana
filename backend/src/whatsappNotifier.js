@@ -1,190 +1,300 @@
-const https = require("https");
+const DEFAULT_WEB_URL = "https://taller-dayana.vercel.app";
 
-const DEFAULT_NUMBERS = ["50670439248", "50688698157"];
+// Evitar enviar múltiples mensajes seguidos a la misma placa en menos de 10 minutos
+const recentlyNotifiedByPlate = new Map();
+const COOLDOWN_MS = Math.max(60000, Number(process.env.WHATSAPP_NOTIFY_COOLDOWN_MS || 10 * 60 * 1000));
 
-function getConfiguredTargets() {
-  const sharedTextMeBotKey =
-    process.env.TEXTMEBOT_API_KEY ||
-    process.env.WHATSAPP_TEXTMEBOT_KEY ||
-    "";
-
-  return [
-    {
-      phone: "50670439248",
-      label: "7043-9248",
-      textMeBotKey:
-        process.env.TEXTMEBOT_KEY_70439248 ||
-        process.env.WHATSAPP_TEXTMEBOT_KEY_70439248 ||
-        sharedTextMeBotKey,
-      callMeBotKey: process.env.WHATSAPP_CALLMEBOT_KEY_70439248 || ""
-    },
-    {
-      phone: "50688698157",
-      label: "8869-8157",
-      textMeBotKey:
-        process.env.TEXTMEBOT_KEY_88698157 ||
-        process.env.WHATSAPP_TEXTMEBOT_KEY_88698157 ||
-        process.env.TEXTMEBOT_KEY_86898157 ||
-        process.env.WHATSAPP_TEXTMEBOT_KEY_86898157 ||
-        sharedTextMeBotKey,
-      callMeBotKey:
-        process.env.WHATSAPP_CALLMEBOT_KEY_88698157 ||
-        process.env.WHATSAPP_CALLMEBOT_KEY_86898157 ||
-        ""
-    }
-  ];
+function normalizeCostaRicaPhone(rawPhone) {
+  const digits = String(rawPhone || "").replace(/\D+/g, "");
+  if (!digits) return "";
+  if (digits.length === 8) return `506${digits}`;
+  if (digits.startsWith("506") && digits.length === 11) return digits;
+  return digits;
 }
 
-function sendHttpGet(url, phone, provider) {
-  return new Promise((resolve) => {
-    https
-      .get(url, (res) => {
-        let body = "";
-        res.on("data", (chunk) => {
-          body += chunk;
-        });
-        res.on("end", () => {
-          resolve({
-            phone,
-            provider,
-            sent: res.statusCode >= 200 && res.statusCode < 300,
-            statusCode: res.statusCode,
-            response: body.slice(0, 200)
-          });
-        });
-      })
-      .on("error", (err) => {
-        resolve({ phone, provider, sent: false, reason: err.message });
-      });
-  });
+function getTrackingUrl(plate) {
+  const base = String(process.env.PUBLIC_WEB_URL || process.env.FRONTEND_URL || DEFAULT_WEB_URL)
+    .trim()
+    .replace(/\/+$/, "");
+  const cleanPlate = encodeURIComponent(String(plate || "").trim().toUpperCase());
+  return `${base}/seguimiento?plate=${cleanPlate}`;
 }
 
-function sendTextMeBotMessage(phone, text, apiKey) {
-  const recipient = phone.startsWith("+") ? phone : `+${phone}`;
-  const url = `https://api.textmebot.com/send.php?recipient=${encodeURIComponent(
-    recipient
-  )}&apikey=${encodeURIComponent(apiKey)}&text=${encodeURIComponent(text)}&json=yes`;
-  return sendHttpGet(url, phone, "textmebot");
-}
+function buildProgressWhatsAppMessage({ customerName, plate, photoCount = 1, description = "" }) {
+  const cleanPlate = String(plate || "").trim().toUpperCase();
+  const greeting = customerName ? `Hola ${String(customerName).trim()},` : "Hola,";
+  const trackingUrl = getTrackingUrl(cleanPlate);
+  const photoLabel = photoCount > 1 ? `${photoCount} nuevos avances fotográficos` : "un nuevo avance fotográfico";
+  const noteLine = description && description.trim() ? `\nDetalle: ${description.trim()}` : "";
 
-function sendCallMeBotMessage(phone, text, apiKey) {
-  const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(
-    text
-  )}&apikey=${encodeURIComponent(apiKey)}`;
-  return sendHttpGet(url, phone, "callmebot");
-}
-
-async function dispatchWhatsAppAlerts(message) {
-  const targets = getConfiguredTargets();
-  const sharedKey =
-    targets.length === 2 &&
-    targets[0].textMeBotKey &&
-    targets[0].textMeBotKey === targets[1].textMeBotKey;
-
-  if (sharedKey) {
-    const firstResult = await sendTextMeBotMessage(targets[0].phone, message, targets[0].textMeBotKey);
-    setTimeout(() => {
-      sendTextMeBotMessage(targets[1].phone, message, targets[1].textMeBotKey).catch(() => {});
-    }, 6000);
-
-    return [
-      firstResult,
-      {
-        phone: targets[1].phone,
-        provider: "textmebot",
-        sent: true,
-        scheduledAfterMs: 6000
-      }
-    ];
-  }
-
-  return Promise.all(
-    targets.map((target) => {
-      if (target.textMeBotKey) {
-        return sendTextMeBotMessage(target.phone, message, target.textMeBotKey);
-      }
-      if (target.callMeBotKey) {
-        return sendCallMeBotMessage(target.phone, message, target.callMeBotKey);
-      }
-      return Promise.resolve({
-        phone: target.phone,
-        sent: false,
-        reason: "missing_whatsapp_apikey"
-      });
-    })
+  return (
+    `${greeting} le saludamos de *Taller Dayana*. ` +
+    `Le informamos que su vehículo placa *${cleanPlate}* se encuentra *En Proceso* de reparación y acabamos de registrar ${photoLabel}.${noteLine}\n\n` +
+    `Puede consultar lo que se está realizando y ver las fotos en vivo en nuestra página web ingresando su placa aquí:\n` +
+    `${trackingUrl}`
   );
 }
 
-function buildQuoteWhatsAppMessage(quote) {
-  const photoCount = Array.isArray(quote.photos) ? quote.photos.length : 0;
-  const parts = Array.isArray(quote.selectedParts) && quote.selectedParts.length > 0
-    ? quote.selectedParts.join(", ")
-    : "Por evaluar";
-  const channel = quote.contactChannel === "email"
-    ? `✉️ Correo electrónico (${quote.email || "No indicado"})`
-    : `🟢 WhatsApp (${quote.phone})`;
-
-  return [
-    "🚗 *NUEVA SOLICITUD DE PRESUPUESTO - TALLER DAYANA*",
-    `• *Cliente:* ${quote.customerName}`,
-    `• *Teléfono:* ${quote.phone}`,
-    quote.email ? `• *Correo:* ${quote.email}` : null,
-    `• *Responder por:* ${channel}`,
-    `• *Vehículo:* ${quote.vehicle}`,
-    `• *Piezas a cotizar:* ${parts}`,
-    `• *Daño:* ${quote.damageDescription}`,
-    `• *Fotos adjuntas:* ${photoCount}`
-  ].filter(Boolean).join("\n");
+function buildWaMeUrl(rawPhone, message) {
+  const phone = normalizeCostaRicaPhone(rawPhone);
+  if (!phone) return null;
+  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 }
 
-function buildAppointmentWhatsAppMessage(appointment) {
-  const channel = appointment.contactChannel === "email"
-    ? `✉️ Correo (${appointment.email || "No indicado"})`
-    : `🟢 WhatsApp (${appointment.phone})`;
+async function sendViaMetaCloudApi({ phone, message, plate, customerName, trackingUrl }) {
+  const token = String(process.env.WHATSAPP_CLOUD_TOKEN || "").trim();
+  const phoneNumberId = String(process.env.WHATSAPP_PHONE_NUMBER_ID || "").trim();
+  if (!token || !phoneNumberId) {
+    return { attempted: false, sent: false };
+  }
 
-  return [
-    "📅 *NUEVA CITA DE ATENCIÓN - TALLER DAYANA*",
-    `• *Cliente:* ${appointment.customerName}`,
-    `• *Teléfono:* ${appointment.phone}`,
-    appointment.email ? `• *Correo:* ${appointment.email}` : null,
-    `• *Confirmación por:* ${channel}`,
-    `• *Vehículo:* ${appointment.vehicle}`,
-    `• *Fecha y hora:* ${appointment.appointmentDate}`
-  ].filter(Boolean).join("\n");
-}
+  const templateName = String(process.env.WHATSAPP_TEMPLATE_NAME || "").trim();
+  const templateLang = String(process.env.WHATSAPP_TEMPLATE_LANG || "es").trim();
 
-function buildDirectLinks(message) {
-  const encoded = encodeURIComponent(message);
-  return DEFAULT_NUMBERS.map((phone) => ({
-    phone,
-    label: phone === "50670439248" ? "7043-9248" : "8869-8157",
-    url: `https://wa.me/${phone}?text=${encoded}`
-  }));
-}
+  const payload = templateName
+    ? {
+        messaging_product: "whatsapp",
+        to: phone,
+        type: "template",
+        template: {
+          name: templateName,
+          language: { code: templateLang },
+          components: [
+            {
+              type: "body",
+              parameters: [
+                { type: "text", text: customerName || "Cliente" },
+                { type: "text", text: plate },
+                { type: "text", text: trackingUrl }
+              ]
+            }
+          ]
+        }
+      }
+    : {
+        messaging_product: "whatsapp",
+        to: phone,
+        type: "text",
+        text: {
+          preview_url: true,
+          body: message
+        }
+      };
 
-async function sendQuoteWhatsAppAlerts(quote) {
-  const message = buildQuoteWhatsAppMessage(quote);
-  const results = await dispatchWhatsAppAlerts(message);
+  const endpoint = `https://graph.facebook.com/v20.0/${encodeURIComponent(phoneNumberId)}/messages`;
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
 
+  if (!response.ok) {
+    const errText = await response.text().catch(() => "");
+    return {
+      attempted: true,
+      sent: false,
+      provider: "meta-cloud-api",
+      error: `Meta API HTTP ${response.status}: ${errText.slice(0, 200)}`
+    };
+  }
+
+  const data = await response.json().catch(() => ({}));
   return {
-    sent: results.some((r) => r.sent),
-    results,
-    links: buildDirectLinks(message)
+    attempted: true,
+    sent: true,
+    provider: "meta-cloud-api",
+    messageId: data?.messages?.[0]?.id || null
   };
 }
 
-async function sendAppointmentWhatsAppAlerts(appointment) {
-  const message = buildAppointmentWhatsAppMessage(appointment);
-  const results = await dispatchWhatsAppAlerts(message);
+async function sendViaCustomWebhook({ phone, customerName, plate, message, trackingUrl, photoCount }) {
+  const webhookUrl = String(process.env.WHATSAPP_WEBHOOK_URL || "").trim();
+  if (!webhookUrl) {
+    return { attempted: false, sent: false };
+  }
+
+  const headers = { "Content-Type": "application/json" };
+  const secret = String(process.env.WHATSAPP_WEBHOOK_SECRET || "").trim();
+  if (secret) {
+    headers["X-Webhook-Secret"] = secret;
+  }
+
+  const response = await fetch(webhookUrl, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      event: "vehicle_progress_photo_uploaded",
+      phone,
+      customerName: customerName || "",
+      plate,
+      message,
+      trackingUrl,
+      photoCount,
+      timestamp: new Date().toISOString()
+    })
+  });
+
+  if (!response.ok) {
+    const errText = await response.text().catch(() => "");
+    return {
+      attempted: true,
+      sent: false,
+      provider: "custom-webhook",
+      error: `Webhook HTTP ${response.status}: ${errText.slice(0, 200)}`
+    };
+  }
 
   return {
-    sent: results.some((r) => r.sent),
-    results,
-    links: buildDirectLinks(message)
+    attempted: true,
+    sent: true,
+    provider: "custom-webhook"
+  };
+}
+
+async function notifyCustomerProgressPhoto({
+  plate,
+  customerName = "",
+  customerPhone = "",
+  photoCount = 1,
+  description = "",
+  respectCooldown = false
+}) {
+  const cleanPlate = String(plate || "").trim().toUpperCase();
+  const phone = normalizeCostaRicaPhone(customerPhone);
+  const trackingUrl = getTrackingUrl(cleanPlate);
+  const message = buildProgressWhatsAppMessage({
+    customerName,
+    plate: cleanPlate,
+    photoCount,
+    description
+  });
+  const whatsappUrl = buildWaMeUrl(phone, message);
+
+  if (!phone) {
+    return {
+      phone: "",
+      plate: cleanPlate,
+      trackingUrl,
+      message,
+      whatsappUrl: null,
+      sentAutomatically: false,
+      provider: "none",
+      reason: "Vehículo sin número de celular registrado"
+    };
+  }
+
+  if (respectCooldown) {
+    const lastSentAt = recentlyNotifiedByPlate.get(cleanPlate) || 0;
+    if (Date.now() - lastSentAt < COOLDOWN_MS) {
+      return {
+        phone,
+        plate: cleanPlate,
+        trackingUrl,
+        message,
+        whatsappUrl,
+        sentAutomatically: false,
+        provider: "cooldown",
+        reason: "Notificación reciente ya enviada para esta placa"
+      };
+    }
+  }
+
+  // 1. Intentar envío automático vía Meta WhatsApp Business Cloud API
+  try {
+    const metaResult = await sendViaMetaCloudApi({
+      phone,
+      message,
+      plate: cleanPlate,
+      customerName,
+      trackingUrl
+    });
+    if (metaResult.attempted) {
+      if (metaResult.sent) {
+        recentlyNotifiedByPlate.set(cleanPlate, Date.now());
+      }
+      return {
+        phone,
+        plate: cleanPlate,
+        trackingUrl,
+        message,
+        whatsappUrl,
+        sentAutomatically: metaResult.sent,
+        provider: metaResult.provider,
+        messageId: metaResult.messageId || null,
+        error: metaResult.error || null
+      };
+    }
+  } catch (err) {
+    return {
+      phone,
+      plate: cleanPlate,
+      trackingUrl,
+      message,
+      whatsappUrl,
+      sentAutomatically: false,
+      provider: "meta-cloud-api",
+      error: err.message
+    };
+  }
+
+  // 2. Intentar envío automático vía Webhook externo (n8n / Make / UltraMsg / Evolution API)
+  try {
+    const webhookResult = await sendViaCustomWebhook({
+      phone,
+      customerName,
+      plate: cleanPlate,
+      message,
+      trackingUrl,
+      photoCount
+    });
+    if (webhookResult.attempted) {
+      if (webhookResult.sent) {
+        recentlyNotifiedByPlate.set(cleanPlate, Date.now());
+      }
+      return {
+        phone,
+        plate: cleanPlate,
+        trackingUrl,
+        message,
+        whatsappUrl,
+        sentAutomatically: webhookResult.sent,
+        provider: webhookResult.provider,
+        error: webhookResult.error || null
+      };
+    }
+  } catch (err) {
+    return {
+      phone,
+      plate: cleanPlate,
+      trackingUrl,
+      message,
+      whatsappUrl,
+      sentAutomatically: false,
+      provider: "custom-webhook",
+      error: err.message
+    };
+  }
+
+  // 3. Modo inmediato sin API configurada: devuelve enlace wa.me listo para 1 clic
+  return {
+    phone,
+    plate: cleanPlate,
+    trackingUrl,
+    message,
+    whatsappUrl,
+    sentAutomatically: false,
+    provider: "wa-me-manual",
+    reason: "Configura WHATSAPP_CLOUD_TOKEN + WHATSAPP_PHONE_NUMBER_ID (o WHATSAPP_WEBHOOK_URL) en Render para envío 100% automático sin clic."
   };
 }
 
 module.exports = {
-  sendQuoteWhatsAppAlerts,
-  sendAppointmentWhatsAppAlerts
+  normalizeCostaRicaPhone,
+  getTrackingUrl,
+  buildProgressWhatsAppMessage,
+  buildWaMeUrl,
+  notifyCustomerProgressPhoto
 };

@@ -38,6 +38,7 @@ const {
   deleteQuote,
   registerWorkshopVehicle,
   listWorkshopVehicles,
+  getCustomerContactByPlate,
   updateWorkshopVehicleStatus,
   deleteWorkshopVehicle,
   addWorkshopProgressPhoto,
@@ -52,6 +53,7 @@ const {
   createReview
 } = require("./store");
 const { ensureDrivePlateFolder, trashDrivePlateFolder } = require("./driveSync");
+const { notifyCustomerProgressPhoto } = require("./whatsappNotifier");
 
 const app = express();
 const PORT = Number(process.env.PORT || 4000);
@@ -780,7 +782,7 @@ app.delete("/api/admin/quotes/:id", requireAdmin, async (req, res) => {
 });
 
 app.post("/api/admin/workshop-vehicles", requireAdmin, async (req, res) => {
-  const { plate, customerName, workType, entryDate, status } = req.body;
+  const { plate, customerName, customerPhone, workType, entryDate, status } = req.body;
 
   if (!customerName || !workType || !entryDate) {
     return res.status(400).json({ error: "Faltan campos requeridos (cliente, tipo de trabajo o fecha de ingreso)" });
@@ -794,6 +796,7 @@ app.post("/api/admin/workshop-vehicles", requireAdmin, async (req, res) => {
     const item = await registerWorkshopVehicle({
       plate: cleanPlate,
       customerName: customerName.trim(),
+      customerPhone: String(customerPhone || "").trim(),
       workType,
       entryDate,
       status: status || "received",
@@ -915,11 +918,49 @@ app.post("/api/admin/workshop-progress-photos", requireAdmin, async (req, res) =
       photoUrl: toPublicPhotoUrl(photo.photoUrl)
     }));
 
-    if (payload.length === 1) {
-      return res.status(201).json(payload[0]);
+    // Notificar al cliente por WhatsApp (automático si hay API configurada, o enlace listo 1-clic)
+    let whatsappNotification = null;
+    try {
+      const contact = await getCustomerContactByPlate(plate);
+      whatsappNotification = await notifyCustomerProgressPhoto({
+        plate,
+        customerName: contact?.customerName || "",
+        customerPhone: contact?.customerPhone || "",
+        photoCount: payload.length,
+        description
+      });
+    } catch (notifyErr) {
+      console.warn("[WhatsApp] Error generando notificación de avance:", notifyErr.message);
     }
 
-    return res.status(201).json(payload);
+    return res.status(201).json({
+      photos: payload,
+      photo: payload[0] || null,
+      count: payload.length,
+      whatsappNotification
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint administrativo para enviar o probar notificación WhatsApp de avance por placa
+app.post("/api/admin/whatsapp/notify-plate", requireAdmin, async (req, res) => {
+  const { plate, customerPhone, customerName, description } = req.body || {};
+  const cleanPlate = String(plate || "").trim().toUpperCase();
+  if (!cleanPlate) {
+    return res.status(400).json({ error: "La placa es requerida" });
+  }
+  try {
+    const contact = await getCustomerContactByPlate(cleanPlate);
+    const result = await notifyCustomerProgressPhoto({
+      plate: cleanPlate,
+      customerName: customerName || contact?.customerName || "",
+      customerPhone: customerPhone || contact?.customerPhone || "",
+      photoCount: 1,
+      description: description || ""
+    });
+    return res.json(result);
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }

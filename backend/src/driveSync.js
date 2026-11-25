@@ -3,6 +3,8 @@ const http = require("http");
 const https = require("https");
 const { google } = require("googleapis");
 const { getPool } = require("./db");
+const { notifyCustomerProgressPhoto } = require("./whatsappNotifier");
+const { getCustomerContactByPlate } = require("./store");
 const {
   quotes,
   appointments,
@@ -821,6 +823,8 @@ async function syncFromGoogleDrive({ force = false } = {}) {
       syncState.lastError = null;
       syncState.lastSummary = summary;
 
+      await notifyNewDriveUploads(snapshot).catch(() => {});
+
       return {
         synced: true,
         ...getDriveSyncStatus()
@@ -839,6 +843,60 @@ async function syncFromGoogleDrive({ force = false } = {}) {
   })();
 
   return inFlightSync;
+}
+
+let driveSnapshotBaselineReady = false;
+const knownDriveFilesByPlate = new Map();
+
+async function notifyNewDriveUploads(snapshot) {
+  if (!snapshot || !Array.isArray(snapshot.folders)) return;
+
+  if (!driveSnapshotBaselineReady) {
+    for (const folder of snapshot.folders) {
+      const plate = String(folder.plate || "").trim().toUpperCase();
+      if (!plate) continue;
+      const ids = new Set((folder.files || []).map((f) => String(f.id || f.fileId || f.name || "")).filter(Boolean));
+      knownDriveFilesByPlate.set(plate, ids);
+    }
+    driveSnapshotBaselineReady = true;
+    return;
+  }
+
+  for (const folder of snapshot.folders) {
+    const plate = String(folder.plate || "").trim().toUpperCase();
+    if (!plate) continue;
+    const prevIds = knownDriveFilesByPlate.get(plate) || new Set();
+    const currentFiles = folder.files || [];
+    const newFiles = currentFiles.filter((f) => {
+      const fid = String(f.id || f.fileId || f.name || "");
+      return fid && !prevIds.has(fid);
+    });
+
+    const updatedIds = new Set(prevIds);
+    for (const f of currentFiles) {
+      const fid = String(f.id || f.fileId || f.name || "");
+      if (fid) updatedIds.add(fid);
+    }
+    knownDriveFilesByPlate.set(plate, updatedIds);
+
+    if (newFiles.length > 0) {
+      try {
+        const contact = await getCustomerContactByPlate(plate);
+        if (contact && contact.customerPhone) {
+          await notifyCustomerProgressPhoto({
+            plate,
+            customerName: contact.customerName || "",
+            customerPhone: contact.customerPhone,
+            photoCount: newFiles.length,
+            description: "Nuevo avance fotográfico cargado desde Google Drive",
+            respectCooldown: true
+          });
+        }
+      } catch (err) {
+        console.warn(`[WhatsApp Drive] Error notificando placa ${plate}:`, err.message);
+      }
+    }
+  }
 }
 
 async function ensureDriveSynced({ maxAgeMs = SYNC_TTL_MS } = {}) {

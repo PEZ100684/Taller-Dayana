@@ -1064,6 +1064,34 @@ export default function Home() {
           </a>
         </section>
 
+        {/* Asistencia Vial y Grúas Banner (Ubicación prioritaria arriba) */}
+        <section aria-label="Asistencia en carretera y grúas" className="rounded-2xl border border-amber-500/35 bg-gradient-to-r from-amber-950/35 via-zinc-900/90 to-zinc-950/90 p-5 shadow-xl backdrop-blur-xl flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-start gap-3.5">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-amber-500/35 bg-amber-500/15 text-amber-300">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16V6a1 1 0 0 1 1-1h9v11m0-7h4l3 4v3h-7m-7 2a2 2 0 1 0 4 0 2 2 0 1 0-4 0Zm10 0a2 2 0 1 0 4 0 2 2 0 1 0-4 0Z" />
+              </svg>
+            </div>
+            <div>
+              <span className="rounded bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-300">
+                Asistencia en Carretera & Grúas
+              </span>
+              <h3 className="mt-1 text-base font-bold text-white">¿Tuvo un accidente o su vehículo no camina?</h3>
+              <p className="mt-0.5 text-xs text-zinc-300">
+                Coordinamos operadores de grúa de confianza en Alajuela, Heredia y GAM para trasladar su vehículo de inmediato a Taller Dayana.
+              </p>
+            </div>
+          </div>
+          <a
+            href="https://wa.me/50670439248?text=Hola%2C%20tuve%20un%20accidente%20o%20el%20carro%20no%20me%20camina%2C%20ocupo%20asistencia%20de%20gr%C3%BAa%20para%20llevarlo%20a%20Taller%20Dayana."
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-amber-600/20 transition hover:opacity-90"
+          >
+            <span>Pedir Asistencia / Grúa ➔</span>
+          </a>
+        </section>
+
         {/* Experiencia Interactiva 3D: Comparador Antes y Después + Video */}
         <BeforeAfterShowcase />
 
@@ -1115,34 +1143,6 @@ export default function Home() {
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 scale-x-0 bg-gradient-to-r from-red-600 via-red-400 to-red-600 transition-transform duration-300 group-hover:scale-x-100" />
               </article>
             ))}
-          </div>
-
-          {/* Asistencia Vial y Grúas Banner */}
-          <div className="mt-8 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-950/30 via-zinc-900 to-zinc-950 p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex items-start gap-3.5">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-amber-500/35 bg-amber-500/15 text-amber-300">
-                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16V6a1 1 0 0 1 1-1h9v11m0-7h4l3 4v3h-7m-7 2a2 2 0 1 0 4 0 2 2 0 1 0-4 0Zm10 0a2 2 0 1 0 4 0 2 2 0 1 0-4 0Z" />
-                </svg>
-              </div>
-              <div>
-                <span className="rounded bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-300">
-                  Asistencia en Carretera & Grúas
-                </span>
-                <h3 className="mt-1 text-base font-bold text-white">¿Tuvo un accidente o su vehículo no camina?</h3>
-                <p className="mt-0.5 text-xs text-zinc-300">
-                  Coordinamos operadores de grúa de confianza en Alajuela, Heredia y GAM para trasladar su vehículo de inmediato a Taller Dayana.
-                </p>
-              </div>
-            </div>
-            <a
-              href="https://wa.me/50670439248?text=Hola%2C%20tuve%20un%20accidente%20o%20el%20carro%20no%20me%20camina%2C%20ocupo%20asistencia%20de%20gr%C3%BAa%20para%20llevarlo%20a%20Taller%20Dayana."
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-amber-600/20 transition hover:opacity-90"
-            >
-              <span>Pedir Asistencia / Grúa ➔</span>
-            </a>
           </div>
         </section>
 

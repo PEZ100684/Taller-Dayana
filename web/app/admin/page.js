@@ -1190,7 +1190,17 @@ export default function AdminPage() {
       return;
     }
 
-    setStatus("Vehículo registrado correctamente");
+    const createdVehicle = await response.json().catch(() => ({}));
+    const driveInfo = createdVehicle?.drive;
+    if (driveInfo?.created) {
+      setStatus(`Vehículo ${createdVehicle.plate} registrado y carpeta creada en Google Drive.`);
+    } else if (driveInfo?.exists) {
+      setStatus(`Vehículo ${createdVehicle.plate} registrado (la carpeta en Google Drive ya existía).`);
+    } else {
+      setStatus(
+        `Vehículo ${createdVehicle.plate || ""} registrado, pero no se pudo crear la carpeta en Drive: ${driveInfo?.reason || "verifica permisos de Google Drive o Webhook en Render"}.`
+      );
+    }
     setVehicleForm({
       plate: "",
       customerName: "",

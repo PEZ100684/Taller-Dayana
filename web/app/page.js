@@ -754,48 +754,48 @@ export default function Home() {
       {/* Top Sticky Navbar */}
       <header className="sticky top-0 z-40 border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-2xl">
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-red-600/50 to-transparent" />
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 md:px-8">
-          <div className="flex items-center gap-3">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 md:px-8">
+          <div className="flex shrink-0 items-center gap-3">
             {currentTenant.slug === "taller-dayana" ? (
               <BrandLogo
-                className="h-11 w-11 rounded-full object-cover ring-2 ring-red-600/70 shadow-lg shadow-red-600/25"
+                className="h-11 w-11 shrink-0 rounded-full object-cover ring-2 ring-red-600/70 shadow-lg shadow-red-600/25"
               />
             ) : (
               <span
-                className="flex h-10 w-10 items-center justify-center rounded-xl font-extrabold text-white shadow-md shadow-brandRed/30"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-extrabold text-white shadow-md shadow-brandRed/30"
                 style={{ backgroundColor: currentTenant.brandColor }}
               >
                 {currentTenant.initials}
               </span>
             )}
-            <a href="#inicio" className="group">
+            <a href="#inicio" className="group whitespace-nowrap">
               <p className="text-base font-extrabold tracking-tight text-white transition group-hover:text-red-400">{currentTenant.name}</p>
               <p className="text-[11px] font-medium text-zinc-400">{currentTenant.province}, Costa Rica</p>
             </a>
           </div>
 
-          <nav className="hidden items-center gap-1 rounded-full border border-zinc-800/80 bg-zinc-900/60 px-2 py-1 lg:flex">
+          <nav className="hidden min-w-0 items-center gap-1 overflow-x-auto rounded-full border border-zinc-800/80 bg-zinc-900/60 px-2 py-1 lg:flex">
             {navigationTabs.map((tab) => (
               <a
                 key={tab.id}
                 href={`#${tab.id}`}
-                className="rounded-full px-3 py-1.5 text-xs font-semibold text-zinc-300 transition hover:bg-zinc-800 hover:text-white"
+                className="shrink-0 whitespace-nowrap rounded-full px-2.5 py-1.5 text-xs font-semibold text-zinc-300 transition hover:bg-zinc-800 hover:text-white"
               >
                 {tab.label}
               </a>
             ))}
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <a
               href="/seguimiento"
-              className="rounded-xl border border-sky-500/40 bg-sky-500/10 px-3.5 py-2 text-xs font-semibold text-sky-300 transition hover:bg-sky-500 hover:text-white"
+              className="whitespace-nowrap rounded-xl border border-sky-500/40 bg-sky-500/10 px-3.5 py-2 text-xs font-semibold text-sky-300 transition hover:bg-sky-500 hover:text-white"
             >
               Mi Vehículo
             </a>
             <a
               href="#solicitar-presupuesto"
-              className="btn-primary-glow px-4 py-2 text-xs"
+              className="btn-primary-glow whitespace-nowrap px-4 py-2 text-xs"
             >
               Cotizar
             </a>

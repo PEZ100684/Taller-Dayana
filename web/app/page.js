@@ -754,7 +754,7 @@ export default function Home() {
       {/* Top Sticky Navbar */}
       <header className="sticky top-0 z-40 border-b border-zinc-800/80 bg-zinc-950/85 backdrop-blur-2xl">
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-red-600/50 to-transparent" />
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 md:px-6">
+        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-10">
           <div className="flex shrink-0 items-center gap-3">
             {currentTenant.slug === "taller-dayana" ? (
               <BrandLogo
@@ -774,36 +774,23 @@ export default function Home() {
             </a>
           </div>
 
-          <nav className="hidden items-center justify-center gap-0.5 rounded-full border border-emerald-500/35 bg-emerald-500/10 px-2 py-1 lg:flex">
-            {navigationTabs.map((tab) => (
-              <a
-                key={tab.id}
-                href={`#${tab.id}`}
-                className="shrink-0 whitespace-nowrap rounded-full px-2.5 py-1.5 text-[11px] font-semibold text-emerald-300 transition hover:bg-emerald-600 hover:text-white xl:text-xs"
-              >
-                {tab.label}
-              </a>
-            ))}
+          <nav className="hidden flex-1 items-center justify-center lg:flex">
+            <div className="flex items-center justify-center gap-0.5 rounded-full border border-emerald-500/35 bg-emerald-500/10 px-2.5 py-1">
+              {navigationTabs.map((tab) => (
+                <a
+                  key={tab.id}
+                  href={`#${tab.id}`}
+                  className="shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-[11px] font-semibold text-emerald-300 transition hover:bg-emerald-600 hover:text-white xl:text-xs"
+                >
+                  {tab.label}
+                </a>
+              ))}
+            </div>
           </nav>
-
-          <div className="flex shrink-0 items-center gap-2">
-            <a
-              href="/seguimiento"
-              className="whitespace-nowrap rounded-xl border border-sky-500/40 bg-sky-500/10 px-3.5 py-2 text-xs font-semibold text-sky-300 transition hover:bg-sky-500 hover:text-white"
-            >
-              Mi Vehículo
-            </a>
-            <a
-              href="#solicitar-presupuesto"
-              className="btn-primary-glow whitespace-nowrap px-4 py-2 text-xs"
-            >
-              Cotizar
-            </a>
-          </div>
         </div>
       </header>
 
-      <main className="mx-auto flex max-w-6xl flex-col gap-10 px-4 pt-6 md:px-8 md:pt-10">
+      <main className="mx-auto flex max-w-[1400px] flex-col gap-10 px-4 pt-6 sm:px-6 md:pt-10 lg:px-10">
         {/* Hero Section */}
         <section className="relative overflow-hidden rounded-3xl border border-zinc-800/90 bg-gradient-to-br from-zinc-900/95 via-zinc-950 to-black p-6 shadow-2xl md:p-12" style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 30px 60px -20px rgba(0,0,0,0.9)" }}>
           <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-red-600/20 blur-3xl" />

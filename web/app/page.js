@@ -903,18 +903,29 @@ export default function Home() {
                     href={currentTenant.mapsLink}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center justify-between rounded-xl border border-zinc-700/90 bg-zinc-900/90 px-3.5 py-3 text-xs font-semibold text-zinc-200 transition hover:border-white hover:text-white"
+                    className="flex min-h-[44px] items-center justify-between rounded-xl border border-zinc-700/90 bg-zinc-900/90 px-3.5 py-2.5 text-xs font-semibold text-zinc-200 transition hover:border-white hover:text-white"
                   >
-                    <span>📍 Google Maps</span>
-                    <span className="text-red-500">Ir →</span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4 text-red-400">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 21s-6-5.33-6-10a6 6 0 1 1 12 0c0 4.67-6 10-6 10Z" />
+                        <circle cx="12" cy="11" r="2.2" />
+                      </svg>
+                      Google Maps
+                    </span>
+                    <span className="text-red-400">Ir →</span>
                   </a>
                   <a
                     href={currentTenant.wazeLink}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center justify-between rounded-xl border border-sky-500/40 bg-sky-500/10 px-3.5 py-3 text-xs font-semibold text-sky-300 transition hover:bg-sky-500 hover:text-white"
+                    className="flex min-h-[44px] items-center justify-between rounded-xl border border-sky-500/40 bg-sky-500/10 px-3.5 py-2.5 text-xs font-semibold text-sky-300 transition hover:bg-sky-500 hover:text-white"
                   >
-                    <span>🚗 Ir con Waze</span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 11l18-8-8 18-2-8-8-2Z" />
+                      </svg>
+                      Ir con Waze
+                    </span>
                     <span>Abrir →</span>
                   </a>
                 </div>
@@ -953,12 +964,74 @@ export default function Home() {
               <a
                 key={tab.id}
                 href={`#${tab.id}`}
-                className="whitespace-nowrap rounded-xl border border-zinc-700 bg-zinc-900/90 px-4 py-2 text-xs font-semibold text-zinc-100 transition hover:border-brandRed"
+                className="inline-flex min-h-[44px] items-center whitespace-nowrap rounded-xl border border-zinc-700 bg-zinc-900/90 px-4 py-2 text-xs font-semibold text-zinc-100 transition hover:border-brandRed"
               >
                 {tab.label}
               </a>
             ))}
           </div>
+        </section>
+
+        {/* Barra de Accesos Rápidos (Quick Action Hub) */}
+        <section aria-label="Accesos rápidos" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <a href="#solicitar-presupuesto" className="quick-access-card hover:border-red-500/70">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-red-500/40 bg-red-600/20 text-red-400 transition group-hover:bg-red-600 group-hover:text-white">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2Z" />
+              </svg>
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-white">Cotizar en Línea</p>
+              <p className="truncate text-xs text-zinc-400">Envíe fotos y reciba respuesta</p>
+            </div>
+            <span className="text-zinc-500 transition group-hover:translate-x-1 group-hover:text-red-400">→</span>
+          </a>
+
+          <a href="/seguimiento" className="quick-access-card hover:border-sky-500/70">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-sky-500/40 bg-sky-500/15 text-sky-300 transition group-hover:bg-sky-500 group-hover:text-white">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
+                <circle cx="11" cy="11" r="7" />
+                <path strokeLinecap="round" d="m20 20-3.5-3.5" />
+              </svg>
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-white">Estado por Placa</p>
+              <p className="truncate text-xs text-zinc-400">Fotos y avances en vivo 24/7</p>
+            </div>
+            <span className="text-zinc-500 transition group-hover:translate-x-1 group-hover:text-sky-400">→</span>
+          </a>
+
+          <a href="#solicitar-cita-visita" className="quick-access-card hover:border-emerald-500/70">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-emerald-500/40 bg-emerald-500/15 text-emerald-300 transition group-hover:bg-emerald-600 group-hover:text-white">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
+                <rect width="18" height="18" x="3" y="4" rx="2" />
+                <path strokeLinecap="round" d="M16 2v4M8 2v4M3 10h18" />
+              </svg>
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-white">Agendar Cita</p>
+              <p className="truncate text-xs text-zinc-400">Valoración presencial rápida</p>
+            </div>
+            <span className="text-zinc-500 transition group-hover:translate-x-1 group-hover:text-emerald-400">→</span>
+          </a>
+
+          <a
+            href={currentTenant.whatsappContacts[0]?.link || "https://wa.me/50670439248"}
+            target="_blank"
+            rel="noreferrer"
+            className="quick-access-card hover:border-zinc-500"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-800/80 text-zinc-200 transition group-hover:bg-white group-hover:text-black">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.58 2.81.7A2 2 0 0 1 22 16.92Z" />
+              </svg>
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-white">Atención Directa</p>
+              <p className="truncate text-xs text-zinc-400">WhatsApp o asistencia de grúa</p>
+            </div>
+            <span className="text-zinc-500 transition group-hover:translate-x-1 group-hover:text-white">→</span>
+          </a>
         </section>
 
         {/* Experiencia Interactiva 3D: Comparador Antes y Después + Video */}
@@ -1017,8 +1090,10 @@ export default function Home() {
           {/* Asistencia Vial y Grúas Banner */}
           <div className="mt-8 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-950/30 via-zinc-900 to-zinc-950 p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex items-start gap-3.5">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-2xl border border-amber-500/30">
-                🚜
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-amber-500/35 bg-amber-500/15 text-amber-300">
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16V6a1 1 0 0 1 1-1h9v11m0-7h4l3 4v3h-7m-7 2a2 2 0 1 0 4 0 2 2 0 1 0-4 0Zm10 0a2 2 0 1 0 4 0 2 2 0 1 0-4 0Z" />
+                </svg>
               </div>
               <div>
                 <span className="rounded bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-300">

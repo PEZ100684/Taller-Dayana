@@ -177,7 +177,10 @@ export default function BeforeAfterShowcase({ promoVideoUrl = "/videos/taller-pr
           <div className="relative overflow-hidden rounded-2xl border border-zinc-700/90 bg-zinc-950 p-4 shadow-2xl">
             <div className="mb-2.5 flex items-center justify-between">
               <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-red-400">
-                <span>🎬</span> Video Oficial • Precisión y Brillo
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
+                  <polygon points="5 3 19 12 5 21 5 3" />
+                </svg>
+                Video Oficial • Precisión y Brillo
               </span>
               <span className="rounded-full bg-zinc-800 px-2.5 py-0.5 text-[11px] font-semibold text-zinc-300">
                 Audio + HD
@@ -217,15 +220,22 @@ export default function BeforeAfterShowcase({ promoVideoUrl = "/videos/taller-pr
             <div className="mt-3.5 flex flex-wrap gap-2">
               <a
                 href="#seguimiento-reparacion"
-                className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-xs font-extrabold text-white shadow-lg shadow-red-600/30 transition hover:bg-red-500"
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-sky-500/15 border border-sky-500/40 px-4 py-2.5 text-xs font-extrabold text-sky-300 transition hover:bg-sky-500 hover:text-white"
               >
-                🔍 Consultar Placa en Vivo
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+                  <circle cx="11" cy="11" r="7" />
+                  <path strokeLinecap="round" d="m20 20-3.5-3.5" />
+                </svg>
+                Consultar Placa en Vivo
               </a>
               <a
                 href="#solicitar-presupuesto"
-                className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 bg-zinc-900 px-3.5 py-2.5 text-xs font-bold text-zinc-200 transition hover:border-red-500 hover:text-white"
+                className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-red-600/30 transition hover:bg-red-500"
               >
-                📋 Solicitar Presupuesto
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2Z" />
+                </svg>
+                Solicitar Presupuesto
               </a>
             </div>
           </div>

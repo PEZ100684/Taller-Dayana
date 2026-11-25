@@ -754,7 +754,7 @@ export default function Home() {
       {/* Top Sticky Navbar */}
       <header className="sticky top-0 z-40 border-b border-zinc-800/80 bg-zinc-950/85 backdrop-blur-2xl">
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-red-600/50 to-transparent" />
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-10">
+        <div className="mx-auto flex w-[96%] max-w-[1600px] items-center justify-between gap-4 px-2 py-3 sm:px-4 lg:px-6">
           <div className="flex shrink-0 items-center gap-3">
             {currentTenant.slug === "taller-dayana" ? (
               <BrandLogo
@@ -790,7 +790,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="mx-auto flex max-w-[1400px] flex-col gap-10 px-4 pt-6 sm:px-6 md:pt-10 lg:px-10">
+      <main className="mx-auto flex w-[96%] max-w-[1600px] flex-col gap-10 px-2 pt-6 sm:px-4 md:pt-10 lg:px-6">
         {/* Hero Section */}
         <section className="relative overflow-hidden rounded-3xl border border-zinc-800/90 bg-gradient-to-br from-zinc-900/95 via-zinc-950 to-black p-6 shadow-2xl md:p-12" style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 30px 60px -20px rgba(0,0,0,0.9)" }}>
           <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-red-600/20 blur-3xl" />
@@ -1119,11 +1119,11 @@ export default function Home() {
             </span>
           </div>
 
-          <div className="mt-6 space-y-8">
+          <div className="mt-6 grid gap-6 xl:grid-cols-2">
             {defaultBeforeAfterCases.map((vehicleCase) => (
               <div
                 key={vehicleCase.plate}
-                className="rounded-2xl border border-zinc-800 bg-zinc-950/90 p-5 shadow-xl md:p-6"
+                className="flex flex-col justify-between rounded-2xl border border-zinc-800 bg-zinc-950/90 p-5 shadow-xl md:p-6"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800 pb-4">
                   <div>
@@ -1409,8 +1409,8 @@ export default function Home() {
           </div>
         ) : null}
 
-        {/* Two-Column Forms Section: Quote & Appointment */}
-        <div className="grid gap-8 lg:grid-cols-2">
+        {/* Two-Column Bento Forms Section: Quote & Appointment */}
+        <div className="grid gap-6 xl:grid-cols-2 xl:gap-8">
           {/* Quote Request Form */}
           <section id="solicitar-presupuesto" className="section-card scroll-mt-24 flex flex-col justify-between">
             <div>

@@ -23,7 +23,7 @@ const services = [
     title: "Pintura",
     subtitle: "Igualación exacta de color, materiales de alta gama y brillo duradero.",
     badge: "Acabado profesional",
-    image: "/images/services/pintura.jpeg"
+    image: "/images/services/pintura-acabado.jpg"
   },
   {
     title: "Reparación de carrocería",
@@ -789,7 +789,7 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <a
               href="/seguimiento"
-              className="rounded-xl border border-zinc-700/90 bg-zinc-900/90 px-3.5 py-2 text-xs font-semibold text-zinc-100 transition hover:border-red-500 hover:text-white"
+              className="rounded-xl border border-sky-500/40 bg-sky-500/10 px-3.5 py-2 text-xs font-semibold text-sky-300 transition hover:bg-sky-500 hover:text-white"
             >
               Mi Vehículo
             </a>
@@ -840,13 +840,13 @@ export default function Home() {
                 </a>
                 <a
                   href="#solicitar-cita-visita"
-                  className="inline-flex items-center justify-center rounded-xl border border-zinc-700 bg-zinc-900/90 px-6 py-3.5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:border-zinc-400 hover:bg-zinc-800/90"
+                  className="inline-flex items-center justify-center rounded-xl border border-emerald-500/35 bg-emerald-500/10 px-6 py-3.5 text-sm font-bold text-emerald-300 transition hover:-translate-y-0.5 hover:bg-emerald-600 hover:text-white"
                 >
                   Agendar cita de valoración
                 </a>
                 <a
                   href="/seguimiento"
-                  className="inline-flex items-center justify-center rounded-xl border border-zinc-800 bg-zinc-950/90 px-5 py-3.5 text-sm font-semibold text-zinc-200 transition hover:-translate-y-0.5 hover:border-red-500/70 hover:text-white"
+                  className="inline-flex items-center justify-center rounded-xl border border-sky-500/40 bg-sky-500/10 px-5 py-3.5 text-sm font-semibold text-sky-300 transition hover:-translate-y-0.5 hover:bg-sky-500 hover:text-white"
                 >
                   Consultar estado por placa →
                 </a>

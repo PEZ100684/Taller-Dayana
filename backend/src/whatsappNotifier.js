@@ -1,4 +1,4 @@
-const DEFAULT_WEB_URL = "https://taller-dayana.vercel.app";
+const DEFAULT_WEB_URL = "https://tallerdayana.vercel.app";
 
 // Evitar enviar múltiples mensajes seguidos a la misma placa en menos de 10 minutos
 const recentlyNotifiedByPlate = new Map();

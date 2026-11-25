@@ -20,7 +20,7 @@ const {
 const DEFAULT_ROOT_FOLDER_ID = "1W3nJyaA8nMaI_HWQU_HD1xd8tkqzwR12";
 const DEFAULT_GALLERY_FOLDER_ID = "1DHB3yVKlVQyqMLroi70K4DqsMhrABoeb";
 const SYNC_TTL_MS = Math.max(10000, Number(process.env.DRIVE_SYNC_TTL_MS || 45000));
-const SYNC_INTERVAL_MS = Math.max(60000, Number(process.env.DRIVE_SYNC_INTERVAL_MS || 300000));
+const SYNC_INTERVAL_MS = Math.max(30000, Number(process.env.DRIVE_SYNC_INTERVAL_MS || 60000));
 
 const IGNORED_FOLDER_NAMES = new Set([
   "FOTOS DUEÑOS",

@@ -944,6 +944,35 @@ app.post("/api/admin/workshop-progress-photos", requireAdmin, async (req, res) =
   }
 });
 
+// Verificación de Webhook de Meta WhatsApp Cloud API (opcional para recibir eventos)
+app.get("/api/whatsapp/webhook", (req, res) => {
+  const mode = req.query["hub.mode"];
+  const token = req.query["hub.verify_token"];
+  const challenge = req.query["hub.challenge"];
+  const expectedToken = String(process.env.WHATSAPP_VERIFY_TOKEN || "taller_dayana_whatsapp_2026").trim();
+
+  if (mode === "subscribe" && token === expectedToken) {
+    return res.status(200).send(String(challenge || ""));
+  }
+  return res.sendStatus(403);
+});
+
+app.post("/api/whatsapp/webhook", (req, res) => {
+  return res.sendStatus(200);
+});
+
+// Estado de configuración de notificaciones WhatsApp (Solo Admin)
+app.get("/api/admin/whatsapp/status", requireAdmin, (_req, res) => {
+  const hasMeta = Boolean(process.env.WHATSAPP_CLOUD_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID);
+  const hasWebhook = Boolean(process.env.WHATSAPP_WEBHOOK_URL);
+  return res.json({
+    configured: hasMeta || hasWebhook,
+    mode: hasMeta ? "meta-cloud-api" : hasWebhook ? "custom-webhook" : "wa-me-manual",
+    publicWebUrl: process.env.PUBLIC_WEB_URL || process.env.FRONTEND_URL || "https://tallerdayana.vercel.app",
+    driveSyncIntervalMs: Math.max(30000, Number(process.env.DRIVE_SYNC_INTERVAL_MS || 60000))
+  });
+});
+
 // Endpoint administrativo para enviar o probar notificación WhatsApp de avance por placa
 app.post("/api/admin/whatsapp/notify-plate", requireAdmin, async (req, res) => {
   const { plate, customerPhone, customerName, description } = req.body || {};

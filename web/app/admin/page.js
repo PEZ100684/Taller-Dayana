@@ -300,7 +300,7 @@ export default function AdminPage() {
 
   const [socialStudio, setSocialStudio] = useState({
     vehicle: "Toyota Corolla 2019",
-    workType: "Enderezado de golpe frontal y pintura al horno",
+    workType: "Enderezado de golpe frontal y pintura automotriz",
     beforeImage: "/cases/caso-proceso-1.jpg",
     afterImage: "/cases/caso-final-1.jpg",
     notes: "Alineación milimétrica de chasis y acabado espejo en cabina de pintura.",
@@ -313,15 +313,15 @@ export default function AdminPage() {
     {
       label: "Toyota Corolla • Golpe Frontal",
       vehicle: "Toyota Corolla 2019",
-      workType: "Enderezado de chasis y pintura bicapa al horno",
+      workType: "Enderezado de chasis y pintura automotriz bicapa",
       beforeImage: "/cases/caso-proceso-1.jpg",
       afterImage: "/cases/caso-final-1.jpg",
       notes: "Devolvimos las líneas originales de fábrica y aplicamos transparente de alta gama."
     },
     {
-      label: "Suzuki Swift • Horneado y Brillo",
+      label: "Suzuki Swift • Pintura Automotriz y Brillo",
       vehicle: "Suzuki Swift Sport",
-      workType: "Pintura horneada en cabina y pulido cerámico",
+      workType: "Pintura automotriz en cabina y pulido cerámico",
       beforeImage: "/cases/case-36.jpg",
       afterImage: "/cases/caso-final-2.jpg",
       notes: "Igualación computarizada de tono de color y protección de barniz."
@@ -352,7 +352,7 @@ export default function AdminPage() {
       `Trabajo realizado: ${socialStudio.workType}\n\n` +
       `Don Randy Barrantes y nuestro equipo devolvieron este vehículo a su estado original de fábrica. ${socialStudio.notes}\n\n` +
       `✅ Materiales automotrices de primera gama\n` +
-      `✅ Cabina de pintura y secado al horno\n` +
+      `✅ Cabina de pintura automotriz profesional\n` +
       `✅ Garantía por escrito en tono y acabado\n` +
       `✅ Seguimiento en línea 24/7 de su reparación\n\n` +
       `📍 Ubicación: Barrio San José de Alajuela, Costa Rica\n` +
@@ -544,7 +544,7 @@ export default function AdminPage() {
       quoteAssistant.paintType === "monocapa"
         ? "Monocapa convencional con sellado"
         : quoteAssistant.paintType === "bicapa"
-        ? "Bicapa Poliuretano de Alto Sólido (HS) curado al horno en cabina presurizada"
+        ? "Pintura automotriz Bicapa Poliuretano de Alto Sólido (HS) en cabina presurizada"
         : "Tricapa Especial / Perlado profundo con doble barniz cerámico protector";
 
     const msg =
@@ -3285,7 +3285,7 @@ export default function AdminPage() {
             <div className="rounded bg-zinc-900 p-2.5 border border-zinc-800">
               <span className="font-bold text-emerald-400">7-12 seg (El Brillo)</span>
               <p className="mt-1 text-zinc-300">Transición al auto listo en cabina.</p>
-              <p className="text-[11px] text-zinc-400 italic mt-1">Texto en pantalla: "¡Como de agencia! Pintura al horno ✨"</p>
+              <p className="text-[11px] text-zinc-400 italic mt-1">Texto en pantalla: "¡Como de agencia! Pintura automotriz ✨"</p>
             </div>
             <div className="rounded bg-zinc-900 p-2.5 border border-zinc-800">
               <span className="font-bold text-blue-400">12-15 seg (CTA)</span>
@@ -3388,7 +3388,7 @@ export default function AdminPage() {
                       <tr key={idx} className="hover:bg-zinc-50">
                         <td className="p-2.5 font-mono text-zinc-500">#{idx + 1}</td>
                         <td className="p-2.5 font-bold text-zinc-900">{part}</td>
-                        <td className="p-2.5 text-zinc-600">Desabollado, sellador epóxico y pintura al horno</td>
+                        <td className="p-2.5 text-zinc-600">Desabollado, sellador epóxico y pintura automotriz</td>
                         <td className="p-2.5 text-right font-medium text-zinc-800">Incluido en total</td>
                       </tr>
                     ))}
@@ -3399,7 +3399,7 @@ export default function AdminPage() {
               <div className="rounded-xl border border-zinc-200 p-4 bg-zinc-50/50 text-xs space-y-1.5 text-zinc-700">
                 <p className="font-bold text-zinc-900 text-xs uppercase tracking-wider">🔬 Certificación de Materiales & Proceso:</p>
                 <p>• <strong>Pintura:</strong> Poliuretano bicapa con igualación computarizada y barniz de alto sólido (HS).</p>
-                <p>• <strong>Cabina:</strong> Horneado en cabina presurizada libre de polvo para un curado parejo y sin imperfecciones.</p>
+                <p>• <strong>Cabina:</strong> Pintura automotriz aplicada en cabina presurizada libre de polvo para un acabado parejo y sin imperfecciones.</p>
                 <p>• <strong>Anticorrosivo:</strong> Imprimación epóxica en lámina viva para protección duradera contra óxido.</p>
                 <p>• <strong>Acabado de entrega:</strong> Desmotado y pulido profesional 3M de cortesía incluido.</p>
               </div>

@@ -859,7 +859,7 @@ export default function Home() {
                 </div>
                 <div className="rounded-xl border border-zinc-800/90 bg-zinc-950/70 px-3 py-2.5">
                   <p className="text-sm font-black text-red-400">Cabina</p>
-                  <p className="text-[11px] text-zinc-400">Pintura al horno</p>
+                  <p className="text-[11px] text-zinc-400">Pintura automotriz</p>
                 </div>
                 <div className="rounded-xl border border-zinc-800/90 bg-zinc-950/70 px-3 py-2.5">
                   <p className="text-sm font-black text-white">24/7 Web</p>
@@ -1918,7 +1918,7 @@ export default function Home() {
                   </div>
                   <h3 className="mt-4 text-lg font-bold text-white">TikTok @tallerdayanacr</h3>
                   <p className="mt-1 text-xs leading-relaxed text-zinc-300">
-                    Transformaciones rápidas de carrocería, procesos en horno de secado, enderezado estructural y tips automotrices con Don Randy.
+                    Transformaciones rápidas de carrocería, procesos de pintura automotriz, enderezado estructural y tips automotrices con Don Randy.
                   </p>
                 </div>
                 <a
@@ -1962,7 +1962,7 @@ export default function Home() {
                     <img src="/cases/case-36.jpg" alt="Acabado en cabina" className="h-full w-full object-cover transition group-hover:scale-105" />
                     <span className="absolute bottom-2 right-2 rounded bg-black/80 px-2 py-0.5 text-[10px] font-bold text-white">▶ Ver Reel</span>
                   </div>
-                  <p className="mt-2 text-xs font-bold text-white group-hover:text-pink-400">Pintura Bicapa y Horneado de Cabina</p>
+                  <p className="mt-2 text-xs font-bold text-white group-hover:text-pink-400">Pintura Automotriz Bicapa en Cabina</p>
                   <p className="text-[11px] text-zinc-400">Suzuki Swift • Acabado espejo de alta durabilidad</p>
                 </a>
 

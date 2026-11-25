@@ -175,7 +175,7 @@ export const defaultBeforeAfterCases = [
   {
     plate: "ADT564",
     title: "Restauración integral y acabado premium",
-    subtitle: "Enderezado de precisión, preparación de superficie y pintura bicapa al horno",
+    subtitle: "Enderezado de precisión, preparación de superficie y pintura automotriz bicapa",
     category: "Sedán familiar",
     beforePhotos: [
       {

@@ -16,7 +16,7 @@ const SOCIAL_FORMATS = [
 ];
 
 const FALLBACK_LOCAL_PHOTOS = [
-  { id: "loc-1", title: "Acabado al Horno Final", url: "/cases/caso-final-1.jpg" },
+  { id: "loc-1", title: "Pintura Automotriz Final", url: "/cases/caso-final-1.jpg" },
   { id: "loc-2", title: "Proceso en Taller", url: "/cases/caso-proceso-1.jpg" },
   { id: "loc-3", title: "Entrega Impecable", url: "/cases/caso-final-2.jpg" },
   { id: "loc-4", title: "Preparación de Carrocería", url: "/cases/caso-proceso-2.jpg" },

@@ -1109,7 +1109,7 @@ app.post("/api/admin/quote-assistant", requireAdmin, async (req, res) => {
     `🛠️ *Alcance del trabajo:*\n` +
     `  • Daño: ${damageLabel}\n` +
     `  • Acabado: ${paintLabel}\n` +
-    `  • Proceso: Desabollado profesional, fondo anticorrosivo, cabina presurizada y secado al horno.\n\n` +
+    `  • Proceso: Desabollado profesional, fondo anticorrosivo, cabina presurizada y pintura automotriz de alto brillo.\n\n` +
     `💰 *Rango Estimado:* *₡${minEstimate.toLocaleString("es-CR")} - ₡${maxEstimate.toLocaleString("es-CR")} colones*\n` +
     `_(Sujeto a revisión visual en taller para verificar detalles internos o fijaciones)_\n\n` +
     `⏱️ *Tiempo estimado de entrega:* ${deliveryDays}\n` +

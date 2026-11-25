@@ -5,12 +5,12 @@ import { useState } from "react";
 const TRANSFORMATION_CASES = [
   {
     id: "case-1",
-    title: "Restauración de Colisión y Pintura al Horno",
+    title: "Restauración de Colisión y Pintura Automotriz",
     subtitle: "Alineación de carrocería, preparación en cabina y barniz de alto brillo",
     beforeImg: "/cases/caso-proceso-1.jpg",
     afterImg: "/cases/caso-final-1.jpg",
-    tag: "Enderezado + Cabina Presurizada",
-    stats: ["Igualación Computarizada", "Secado al Horno", "Garantía Escrita"]
+    tag: "Enderezado + Pintura Automotriz",
+    stats: ["Igualación Computarizada", "Pintura Automotriz", "Garantía Escrita"]
   },
   {
     id: "case-2",
@@ -196,7 +196,7 @@ export default function BeforeAfterShowcase({ promoVideoUrl = "/videos/taller-pr
             </div>
 
             <p className="mt-2.5 text-xs leading-relaxed text-zinc-300">
-              Conozca nuestro estándar en enderezado estructural, laboratorio de color y pintura horneada en Barrio San José de Alajuela.
+              Conozca nuestro estándar en enderezado estructural, laboratorio de color y pintura automotriz en Barrio San José de Alajuela.
             </p>
           </div>
 

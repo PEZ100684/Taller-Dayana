@@ -784,8 +784,8 @@ app.delete("/api/admin/quotes/:id", requireAdmin, async (req, res) => {
 app.post("/api/admin/workshop-vehicles", requireAdmin, async (req, res) => {
   const { plate, customerName, customerPhone, workType, entryDate, status } = req.body;
 
-  if (!customerName || !workType || !entryDate) {
-    return res.status(400).json({ error: "Faltan campos requeridos (cliente, tipo de trabajo o fecha de ingreso)" });
+  if (!customerName || !customerPhone || !workType || !entryDate) {
+    return res.status(400).json({ error: "Faltan campos requeridos (cliente, celular/WhatsApp, tipo de trabajo o fecha de ingreso)" });
   }
 
   const cleanPlate = (plate && String(plate).trim())

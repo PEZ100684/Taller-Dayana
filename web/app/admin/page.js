@@ -1166,6 +1166,12 @@ export default function AdminPage() {
       return;
     }
 
+    const cleanPhone = (vehicleForm.customerPhone || "").trim();
+    if (!cleanPhone || cleanPhone.replace(/\D+/g, "").length < 8) {
+      setStatus("Debe ingresar un número de celular / WhatsApp válido (mínimo 8 dígitos).");
+      return;
+    }
+
     const response = await fetch(`${apiBase}/api/admin/workshop-vehicles`, {
       method: "POST",
       headers: authHeaders,
@@ -2424,7 +2430,8 @@ export default function AdminPage() {
             value={vehicleForm.customerPhone}
             onChange={(e) => setVehicleForm((prev) => ({ ...prev, customerPhone: e.target.value }))}
             className="rounded-md border border-emerald-600/60 bg-zinc-950 p-3 text-white placeholder:text-zinc-400"
-            placeholder="Celular / WhatsApp del cliente (ej: 7043-9248)"
+            placeholder="Celular / WhatsApp del cliente * (ej: 7043-9248)"
+            required
           />
           <select
             value={vehicleForm.workType}

@@ -752,9 +752,9 @@ export default function Home() {
       )}
 
       {/* Top Sticky Navbar */}
-      <header className="sticky top-0 z-40 border-b border-emerald-500/40 bg-gradient-to-r from-emerald-950/95 via-emerald-900/90 to-emerald-950/95 backdrop-blur-2xl shadow-lg shadow-emerald-950/40">
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/70 to-transparent" />
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 md:px-8">
+      <header className="sticky top-0 z-40 border-b border-zinc-800/80 bg-zinc-950/85 backdrop-blur-2xl">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-red-600/50 to-transparent" />
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 md:px-6">
           <div className="flex shrink-0 items-center gap-3">
             {currentTenant.slug === "taller-dayana" ? (
               <BrandLogo
@@ -774,12 +774,12 @@ export default function Home() {
             </a>
           </div>
 
-          <nav className="hidden min-w-0 items-center gap-1 overflow-x-auto rounded-full border border-emerald-500/35 bg-emerald-950/65 px-2 py-1 lg:flex">
+          <nav className="hidden items-center justify-center gap-0.5 rounded-full border border-emerald-500/35 bg-emerald-500/10 px-2 py-1 lg:flex">
             {navigationTabs.map((tab) => (
               <a
                 key={tab.id}
                 href={`#${tab.id}`}
-                className="shrink-0 whitespace-nowrap rounded-full px-2.5 py-1.5 text-xs font-semibold text-emerald-100/90 transition hover:bg-emerald-600/80 hover:text-white"
+                className="shrink-0 whitespace-nowrap rounded-full px-2.5 py-1.5 text-[11px] font-semibold text-emerald-300 transition hover:bg-emerald-600 hover:text-white xl:text-xs"
               >
                 {tab.label}
               </a>

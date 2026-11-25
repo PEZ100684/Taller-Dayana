@@ -1,14 +1,21 @@
 {
-  "name": "taller-dayana",
-  "private": true,
+  "name": "taller-dayana-web",
   "version": "1.0.0",
+  "private": true,
   "scripts": {
-    "backend": "npm run dev --prefix backend",
-    "web": "npm run dev --prefix web",
-    "mobile": "npm run start --prefix mobile",
-    "build:web": "npm run build --prefix web",
-    "start:all": "powershell -ExecutionPolicy Bypass -File scripts/start-all.ps1",
-    "setup:env": "powershell -ExecutionPolicy Bypass -File scripts/setup-env.ps1",
-    "verify": "powershell -ExecutionPolicy Bypass -File scripts/verify.ps1"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "14.2.5",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "autoprefixer": "10.4.19",
+    "postcss": "8.4.39",
+    "tailwindcss": "3.4.10"
   }
 }

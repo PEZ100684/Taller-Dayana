@@ -754,7 +754,7 @@ export default function Home() {
       {/* Top Sticky Navbar */}
       <header className="sticky top-0 z-40 border-b border-zinc-800/80 bg-zinc-950/85 backdrop-blur-2xl">
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-red-600/50 to-transparent" />
-        <div className="mx-auto flex w-[96%] max-w-[1600px] items-center justify-between gap-4 px-2 py-3 sm:px-4 lg:px-6">
+        <div className="flex w-full items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-10 xl:px-12">
           <div className="flex shrink-0 items-center gap-3">
             {currentTenant.slug === "taller-dayana" ? (
               <BrandLogo
@@ -790,7 +790,50 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="mx-auto flex w-[96%] max-w-[1600px] flex-col gap-10 px-2 pt-6 sm:px-4 md:pt-10 lg:px-6">
+      <main className="w-full px-4 pt-6 sm:px-6 md:pt-10 lg:px-8 2xl:grid 2xl:grid-cols-[230px_minmax(0,1fr)_245px] 2xl:items-start 2xl:gap-6">
+        {/* Galería Ambiental Lateral Izquierda (Widescreen) */}
+        <aside aria-label="Galería ambiental del taller" className="hidden 2xl:sticky 2xl:top-24 2xl:block 2xl:space-y-3">
+          <div className="glass-panel p-3.5">
+            <div className="mb-2.5 flex items-center justify-between">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-red-400">Galería en Vivo</span>
+              <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
+            </div>
+            <p className="mb-3 text-[11px] text-zinc-400">Acabados reales entregados en Alajuela. Toca para ampliar.</p>
+            <div className="space-y-2.5">
+              {[
+                { src: "/images/services/pintura-acabado.jpg", label: "Pintura Automotriz" },
+                { src: "/cases/caso-final-1.jpg", label: "Entrega Final" },
+                { src: "/cases/caso-final-2.jpg", label: "Acabado Espejo" },
+                { src: "/images/services/enderezado.jpeg", label: "Enderezado Chasis" }
+              ].map((item) => (
+                <button
+                  key={item.src}
+                  type="button"
+                  onClick={() => openMediaLightbox({ url: item.src, title: item.label })}
+                  className="group relative block w-full overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 text-left transition hover:border-red-500/70"
+                >
+                  <img
+                    src={item.src}
+                    alt={item.label}
+                    className="h-28 w-full object-cover transition duration-500 group-hover:scale-105"
+                  />
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent px-2.5 py-1.5">
+                    <p className="text-[11px] font-semibold text-zinc-100">{item.label}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <a
+              href="#trabajos-listos"
+              className="mt-3 block rounded-xl border border-zinc-700 bg-zinc-900 py-2 text-center text-[11px] font-bold text-zinc-200 transition hover:border-red-500 hover:text-white"
+            >
+              Ver más casos ↓
+            </a>
+          </div>
+        </aside>
+
+        {/* Columna Central Principal */}
+        <div className="flex min-w-0 flex-col gap-10">
         {/* Hero Section */}
         <section className="relative overflow-hidden rounded-3xl border border-zinc-800/90 bg-gradient-to-br from-zinc-900/95 via-zinc-950 to-black p-6 shadow-2xl md:p-12" style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 30px 60px -20px rgba(0,0,0,0.9)" }}>
           <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-red-600/20 blur-3xl" />
@@ -2363,6 +2406,72 @@ export default function Home() {
             </div>
           </article>
         </section>
+        </div>
+
+        {/* Barra Lateral Derecha Fija (Widescreen) */}
+        <aside aria-label="Accesos rápidos laterales" className="hidden 2xl:sticky 2xl:top-24 2xl:block 2xl:space-y-4">
+          <div className="glass-panel space-y-3 p-4">
+            <p className="text-[11px] font-extrabold uppercase tracking-wider text-sky-400">Consulta Rápida</p>
+            <h3 className="text-sm font-extrabold text-white">Estado de tu Vehículo</h3>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const val = String(e.currentTarget.plateInput?.value || "").trim().toUpperCase();
+                if (val && typeof window !== "undefined") {
+                  window.location.href = `/seguimiento?plate=${encodeURIComponent(val)}`;
+                }
+              }}
+              className="space-y-2"
+            >
+              <input
+                name="plateInput"
+                type="text"
+                placeholder="Placa (ej: AROS1)"
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-xs uppercase text-white placeholder:text-zinc-500 focus:border-sky-400 focus:outline-none"
+              />
+              <button
+                type="submit"
+                className="w-full rounded-xl border border-sky-500/40 bg-sky-500/15 py-2 text-xs font-bold text-sky-300 transition hover:bg-sky-500 hover:text-white"
+              >
+                Consultar Placa →
+              </button>
+            </form>
+          </div>
+
+          <div className="glass-panel space-y-2.5 p-4">
+            <p className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-400">Contacto Directo</p>
+            <a
+              href={currentTenant.whatsappContacts[0]?.link || "https://wa.me/50670439248"}
+              target="_blank"
+              rel="noreferrer"
+              className="block rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-3 py-2.5 text-center text-xs font-bold text-emerald-300 transition hover:bg-emerald-600 hover:text-white"
+            >
+              WhatsApp {currentTenant.whatsappContacts[0]?.number || "7043-9248"}
+            </a>
+            <a
+              href="#solicitar-presupuesto"
+              className="btn-primary-glow w-full py-2.5 text-xs"
+            >
+              Cotizar en Línea
+            </a>
+            <a
+              href={currentTenant.wazeLink}
+              target="_blank"
+              rel="noreferrer"
+              className="block rounded-xl border border-zinc-700 bg-zinc-900 py-2 text-center text-xs font-semibold text-zinc-200 transition hover:border-sky-400 hover:text-white"
+            >
+              Abrir ruta en Waze
+            </a>
+          </div>
+
+          <div className="glass-panel space-y-2 p-4 text-xs">
+            <p className="font-extrabold text-white">Respaldo Taller Dayana</p>
+            <p className="text-[11px] text-zinc-400">✓ Más de 60 años de experiencia</p>
+            <p className="text-[11px] text-zinc-400">✓ Pintura automotriz profesional</p>
+            <p className="text-[11px] text-zinc-400">✓ Garantía por escrito</p>
+            <p className="text-[11px] text-zinc-400">✓ Lunes a Viernes 7:30am - 5:00pm</p>
+          </div>
+        </aside>
       </main>
 
       <a
